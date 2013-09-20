@@ -68,29 +68,27 @@ public class PendingConnection extends Connection {
 
     private static final java.util.regex.Pattern validName = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{2,16}$"); // Spigot
     public void a(Packet2Handshake packet2handshake) {
-        // CraftBukkit start
         if (this.g != null) {
-            this.disconnect("Invalid username " + this.g);
-        }
-        this.hostname = packet2handshake.c == null ? "" : packet2handshake.c + ':' + packet2handshake.d;
-        // CraftBukkit end
-        this.g = packet2handshake.f();
-        if (!this.g.equals(StripColor.a(this.g)) || !validName.matcher( this.g ).matches() ) { // Spigot
-            this.disconnect("Invalid username!");
+            this.disconnect("Quit repeating yourself!");
         } else {
-            PublicKey publickey = this.server.H().getPublic();
-
-            if (packet2handshake.d() != 74) {
-                if (packet2handshake.d() > 74) {
-                    this.disconnect(org.spigotmc.SpigotConfig.outdatedServerMessage); // Spigot
-                } else {
-                    this.disconnect(org.spigotmc.SpigotConfig.outdatedClientMessage); // Spigot
-                }
+            this.g = packet2handshake.f();
+            if (!this.g.equals(StripColor.a(this.g)) || !validName.matcher( this.g ).matches() ) { // Spigot
+                this.disconnect("Invalid username!");
             } else {
-                this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
-                this.d = new byte[4];
-                random.nextBytes(this.d);
-                this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+                PublicKey publickey = this.server.H().getPublic();
+
+                if (packet2handshake.d() != 78) {
+                    if (packet2handshake.d() > 78) {
+                        this.disconnect(org.spigotmc.SpigotConfig.outdatedServerMessage); // Spigot
+                    } else {
+                        this.disconnect(org.spigotmc.SpigotConfig.outdatedClientMessage); // Spigot
+                    }
+                } else {
+                    this.loginKey = this.server.getOnlineMode() ? Long.toString(random.nextLong(), 16) : "-";
+                    this.d = new byte[4];
+                    random.nextBytes(this.d);
+                    this.networkManager.queue(new Packet253KeyRequest(this.loginKey, publickey, this.d));
+                }
             }
         }
     }
@@ -160,7 +158,7 @@ public class PendingConnection extends Connection {
                 s = pingEvent.getMotd() + "\u00A7" + playerlist.getPlayerCount() + "\u00A7" + pingEvent.getMaxPlayers();
             } else {
                 // CraftBukkit start - Don't create a list from an array
-                Object[] list = new Object[] { 1, 74, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
+                Object[] list = new Object[] { 1, 78, this.server.getVersion(), pingEvent.getMotd(), playerlist.getPlayerCount(), pingEvent.getMaxPlayers() };
 
                 StringBuilder builder = new StringBuilder();
                 for (Object object : list) {

@@ -79,7 +79,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
             // Spigot start
             double targetMovement = entityliving.e( pathX, pathY, pathZ );
             // If this is true, then we are re-pathing
-            if ( ( this.h <= 0 && targetMovement >= 1.0D ) || ( this.h <= 0 && this.b.aC().nextInt( 200 ) == 0 ) ) /* EntityCreature random instance */
+            if ( ( this.h <= 0 && targetMovement >= 1.0D ) || ( this.h <= 0 && this.b.aD().nextInt( 200 ) == 0 ) ) /* EntityCreature random instance */
 
             {
                 AttributeInstance rangeAttr = this.b.getAttributeInstance( GenericAttributes.b );
@@ -114,7 +114,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
                 pathX = entityliving.locX;
                 pathY = entityliving.boundingBox.b;
                 pathZ = entityliving.locZ;
-                this.h = 4 + this.b.aC().nextInt( 7 ); /* EntityCreature random instance */
+                this.h = 4 + this.b.aD().nextInt( 7 ); /* EntityCreature random instance */
 
                 if ( goalDistanceSq > 256.0D )
                 {
@@ -134,7 +134,7 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
                 {
                     if ( fullRangeSearchDelay <= 0 )
                     {
-                        fullRangeSearchDelay = 4 + this.b.aC().nextInt( 4 ); /* EntityCreature random instance */
+                        fullRangeSearchDelay = 4 + this.b.aD().nextInt( 4 ); /* EntityCreature random instance */
                     }
                 }
             }
@@ -147,8 +147,8 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         if (goalDistanceSq <= d0) { // Spigot
             if (this.c <= 0) {
                 this.c = 20;
-                if (this.b.aY() != null) {
-                    this.b.aU();
+                if (this.b.aZ() != null) {
+                    this.b.aV();
                 }
 
                 this.b.m(entityliving);
