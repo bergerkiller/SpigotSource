@@ -149,18 +149,6 @@ public class SpigotConfig
         commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
     }
 
-    public static int timeoutTime = 60;
-    public static boolean restartOnCrash = true;
-    public static String restartScript = "./start.sh";
-    private static void watchdog()
-    {
-        timeoutTime = getInt( "settings.timeout-time", timeoutTime );
-        restartOnCrash = getBoolean( "settings.restart-on-crash", restartOnCrash );
-        restartScript = getString( "settings.restart-script", restartScript );
-        commands.put( "restart", new RestartCommand( "restart" ) );
-        WatchdogThread.doStart( timeoutTime, restartOnCrash );
-    }
-
     public static class Listener
     {
 
@@ -289,5 +277,19 @@ public class SpigotConfig
         }
 
         Bukkit.getLogger().setFilter( new LogFilter() );
+    }
+
+    public static int timeoutTime = 60;
+    public static boolean restartOnCrash = true;
+    public static String restartScript = "./start.sh";
+    public static String restartMessage;
+    private static void watchdog()
+    {
+        timeoutTime = getInt( "settings.timeout-time", timeoutTime );
+        restartOnCrash = getBoolean( "settings.restart-on-crash", restartOnCrash );
+        restartScript = getString( "settings.restart-script", restartScript );
+        restartMessage = transform( getString( "messages.restart", "Server is restarting" ) );
+        commands.put( "restart", new RestartCommand( "restart" ) );
+        WatchdogThread.doStart( timeoutTime, restartOnCrash );
     }
 }

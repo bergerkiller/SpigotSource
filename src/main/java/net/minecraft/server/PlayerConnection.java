@@ -96,6 +96,7 @@ public class PlayerConnection extends Connection {
     private float lastPitch = Float.MAX_VALUE;
     private float lastYaw = Float.MAX_VALUE;
     private boolean justTeleported = false;
+    private boolean hasMoved; // Spigot
 
     // For the packet15 hack :(
     Long lastPacket;
@@ -222,7 +223,7 @@ public class PlayerConnection extends Connection {
                 this.lastPitch = to.getPitch();
 
                 // Skip the first time we do this
-                if (from.getX() != Double.MAX_VALUE) {
+                if (hasMoved) { // Spigot - Better Check!
                     PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                     this.server.getPluginManager().callEvent(event);
 
@@ -246,7 +247,7 @@ public class PlayerConnection extends Connection {
                         this.justTeleported = false;
                         return;
                     }
-                }
+                } else { hasMoved = true; } // Spigot - Better Check!
             }
 
             if (Double.isNaN(packet10flying.x) || Double.isNaN(packet10flying.y) || Double.isNaN(packet10flying.z) || Double.isNaN(packet10flying.stance)) {
@@ -831,7 +832,16 @@ public class PlayerConnection extends Connection {
                     return;
                 }
 
-                this.chat(s, packet3chat.a_());
+                if (!packet3chat.a_()) {
+                    try {
+                        this.minecraftServer.server.playerCommandState = true;
+                        this.chat(s, packet3chat.a_());
+                    } finally {
+                        this.minecraftServer.server.playerCommandState = false;
+                    }
+                } else {
+                    this.chat(s, packet3chat.a_());
+                }
 
                 // This section stays because it is only applicable to packets
                 // Spigot - spam exclusions

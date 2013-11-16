@@ -100,7 +100,7 @@ public class EntityItem extends Entity {
         }
 
         // ++this.age; // CraftBukkit - Moved up
-        if (!this.world.isStatic && this.age >= 6000) {
+        if (!this.world.isStatic && this.age >= world.spigotConfig.itemDespawnRate) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
                 this.age = 0;

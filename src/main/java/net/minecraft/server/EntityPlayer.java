@@ -958,7 +958,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.expTotal = this.newTotalExp;
         this.exp = 0;
         this.deathTicks = 0;
-        this.aJ(); // Should be removeAllEffects.
+        this.aK(); // Should be removeAllEffects.
         this.updateEffects = true;
         this.activeContainer = this.defaultContainer;
         this.killer = null;

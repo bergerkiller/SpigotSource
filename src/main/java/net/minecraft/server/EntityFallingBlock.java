@@ -102,6 +102,7 @@ public class EntityFallingBlock extends Entity {
                             }
                             this.world.setTypeIdAndData(i, j, k, this.id, this.data, 3);
                             // CraftBukkit end
+                            world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, i, j, k); // Spigot
 
                             if (Block.byId[this.id] instanceof BlockSand) {
                                 ((BlockSand) Block.byId[this.id]).a_(this.world, i, j, k, this.data);
