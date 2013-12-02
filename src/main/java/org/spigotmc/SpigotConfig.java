@@ -6,15 +6,10 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -138,92 +133,9 @@ public class SpigotConfig
         return config.getString( path, config.getString( path ) );
     }
 
-    public static boolean preventProxies;
-    private static void preventProxies()
-    {
-        preventProxies = getBoolean( "settings.prevent-proxies", false );
-    }
-
     private static void tpsCommand()
     {
         commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
-    }
-
-    public static class Listener
-    {
-
-        public String host;
-        public int port;
-        public boolean netty;
-        public long connectionThrottle;
-
-        public Listener(String host, int port, boolean netty, long connectionThrottle)
-        {
-            this.host = host;
-            this.port = port;
-            this.netty = netty;
-            this.connectionThrottle = connectionThrottle;
-        }
-    }
-    public static List<Listener> listeners = new ArrayList<Listener>();
-    public static int nettyThreads;
-    private static void listeners()
-    {
-        listeners.clear(); // We don't rebuild listeners on reload but we should clear them out!
-
-        Map<String, Object> def = new HashMap<String, Object>();
-        def.put( "host", "default" );
-        def.put( "port", "default" );
-        def.put( "netty", true );
-        // def.put( "throttle", "default" );
-
-        config.addDefault( "listeners", Collections.singletonList( def ) );
-        for ( Map<String, Object> info : (List<Map<String, Object>>) config.getList( "listeners" ) )
-        {
-            String host = (String) info.get( "host" );
-            if ( "default".equals( host ) )
-            {
-                host = Bukkit.getIp();
-            } else
-            {
-                throw new IllegalArgumentException( "Can only bind listener to default! Configure it in server.properties" );
-            }
-            int port ;
-            
-            if (info.get( "port" ) instanceof Integer){
-                throw new IllegalArgumentException( "Can only bind port to default! Configure it in server.properties");
-            } else{
-                port = Bukkit.getPort();
-            }
-            boolean netty = (Boolean) info.get( "netty" );
-            // long connectionThrottle = ( info.get( "throttle" ) instanceof Number ) ? ( (Number) info.get( "throttle" ) ).longValue() : Bukkit.getConnectionThrottle();
-            listeners.add( new Listener( host, port, netty, Bukkit.getConnectionThrottle() ) );
-        }
-        if ( listeners.size() != 1 )
-        {
-            throw new IllegalArgumentException( "May only have one listener!" );
-        }
-
-        nettyThreads = getInt( "settings.netty-threads", 3 );
-    }
-    public static List<String> bungeeAddresses = Arrays.asList( new String[]
-    {
-        "127.0.0.1"
-    } );
-    public static boolean bungee = true;
-    private static void bungee()
-    {
-        bungeeAddresses = getList( "settings.bungeecord-addresses", bungeeAddresses );
-        bungee = getBoolean( "settings.bungeecord", true );
-    }
-
-    public static List<String> spamExclusions;
-    private static void spamExclusions()
-    {
-        spamExclusions = getList( "commands.spam-exclusions", Arrays.asList( new String[]
-        {
-            "/skill"
-        } ) );
     }
 
     public static boolean logCommands;
@@ -241,42 +153,25 @@ public class SpigotConfig
     public static String whitelistMessage;
     public static String unknownCommandMessage;
     public static String serverFullMessage;
-    public static String outdatedClientMessage;
-    public static String outdatedServerMessage;
+    public static String outdatedClientMessage = "Outdated client! Please use {}";
+    public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
     private static String transform(String s)
     {
         return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\n", "\n" );
     }
     private static void messages()
     {
+        if (version < 4) 
+        {
+            set( "messages.outdated-client", outdatedClientMessage );
+            set( "messages.outdated-server", outdatedServerMessage );
+        }
+
         whitelistMessage = transform( getString( "messages.whitelist", "You are not whitelisted on this server!" ) );
         unknownCommandMessage = transform( getString( "messages.unknown-command", "Unknown command. Type \"/help\" for help." ) );
         serverFullMessage = transform( getString( "messages.server-full", "The server is full!" ) );
-        outdatedClientMessage = transform( getString( "messages.outdated-client", "Outdated client!" ) );
-        outdatedServerMessage = transform( getString( "messages.outdated-server", "Outdated server!" ) );
-    }
-
-    public static List<Pattern> logFilters;
-    private static void filters()
-    {
-        List<String> def = Arrays.asList( new String[]
-        {
-            "^(.*)(/login)(.*)$"
-        } );
-        logFilters = new ArrayList<Pattern>();
-
-        for ( String regex : (List<String>) getList( "settings.log-filters", def ) )
-        {
-            try
-            {
-                logFilters.add( Pattern.compile( regex ) );
-            } catch ( PatternSyntaxException ex )
-            {
-                Bukkit.getLogger().log( Level.WARNING, "Supplied filter " + regex + " is invalid, ignoring!", ex );
-            }
-        }
-
-        Bukkit.getLogger().setFilter( new LogFilter() );
+        outdatedClientMessage = transform( getString( "messages.outdated-client", outdatedClientMessage ) );
+        outdatedServerMessage = transform( getString( "messages.outdated-server", outdatedServerMessage ) );
     }
 
     public static int timeoutTime = 60;
@@ -291,5 +186,10 @@ public class SpigotConfig
         restartMessage = transform( getString( "messages.restart", "Server is restarting" ) );
         commands.put( "restart", new RestartCommand( "restart" ) );
         WatchdogThread.doStart( timeoutTime, restartOnCrash );
+    }
+
+    public static boolean bungee = true;
+    private static void bungee() {
+        bungee = getBoolean("settings.bungeecord", true);
     }
 }

@@ -31,9 +31,9 @@ public class AntiXray
             // If we are obfuscating it
             if ( obfuscateBlocks[i] )
             {
-                Block block = Block.byId[i];
+                Block block = Block.e(i);
                 // Check it exists and is not a tile entity
-                if ( block != null && !block.t() /* isTileEntity */ )
+                if ( block != null && !block.isTileEntity() )
                 {
                     // Add it to the set of replacement blocks
                     blocks.add( (byte) i );
@@ -127,7 +127,7 @@ public class AntiXray
                                         {
                                             case 1:
                                                 // Replace with stone
-                                                buffer[index] = (byte) Block.STONE.id;
+                                                buffer[index] = 1;
                                                 break;
                                             case 2:
                                                 // Replace with random ore.
@@ -156,10 +156,10 @@ public class AntiXray
         if ( world.isLoaded( x, y, z ) )
         {
             // Get block id
-            int id = world.getTypeId( x, y, z );
+            Block block = world.getType(x, y, z);
 
             // See if it needs update
-            if ( updateSelf && obfuscateBlocks[id] )
+            if ( updateSelf && obfuscateBlocks[Block.b(block)] )
             {
                 // Send the update
                 world.notify( x, y, z );
@@ -192,7 +192,7 @@ public class AntiXray
 
     private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
     {
-        return !Block.l( world.getTypeId( x, y, z ) ) /* isSolidBlock */
+        return !world.getType(x, y, z).r() /* isSolidBlock */
                 || ( radius > 0
                 && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
                 || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )

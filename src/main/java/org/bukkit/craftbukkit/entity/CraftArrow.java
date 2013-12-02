@@ -47,7 +47,7 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         @Override
         public double getDamage()
         {
-            return getHandle().c();
+            return getHandle().e();
         }
 
         @Override

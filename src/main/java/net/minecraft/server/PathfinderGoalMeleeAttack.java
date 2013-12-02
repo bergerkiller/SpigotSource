@@ -12,6 +12,9 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
     PathEntity f;
     Class g;
     private int h;
+    private double i;
+    private double j;
+    private double k;
 
     public PathfinderGoalMeleeAttack(EntityCreature entitycreature, Class oclass, double d0, boolean flag) {
         this(entitycreature, d0, flag);
@@ -63,96 +66,38 @@ public class PathfinderGoalMeleeAttack extends PathfinderGoal {
         this.b.getNavigation().h();
     }
 
-    // Spigot start
-    private double pathX;
-    private double pathY;
-    private double pathZ;
-    private boolean prevPathOK;
-    private int fullRangeSearchDelay;
-    // Spigot end
     public void e() {
         EntityLiving entityliving = this.b.getGoalTarget();
 
         this.b.getControllerLook().a(entityliving, 30.0F, 30.0F);
-        double goalDistanceSq = this.b.e( entityliving.locX, entityliving.boundingBox.b, entityliving.locZ ); // Spigot
-        if ((this.e || this.b.getEntitySenses().canSee(entityliving)) && --this.h <= 0) {
-            // Spigot start
-            double targetMovement = entityliving.e( pathX, pathY, pathZ );
-            // If this is true, then we are re-pathing
-            if ( ( this.h <= 0 && targetMovement >= 1.0D ) || ( this.h <= 0 && this.b.aD().nextInt( 200 ) == 0 ) ) /* EntityCreature random instance */
+        double d0 = this.b.e(entityliving.locX, entityliving.boundingBox.b, entityliving.locZ);
+        double d1 = (double) (this.b.width * 2.0F * this.b.width * 2.0F + entityliving.width);
 
-            {
-                AttributeInstance rangeAttr = this.b.getAttributeInstance( GenericAttributes.b );
-                double origRange = rangeAttr.getValue();
-                if ( fullRangeSearchDelay > 0 )
-                {
+        --this.h;
+        if ((this.e || this.b.getEntitySenses().canSee(entityliving)) && this.h <= 0 && (this.i == 0.0D && this.j == 0.0D && this.k == 0.0D || entityliving.e(this.i, this.j, this.k) >= 1.0D || this.b.aI().nextFloat() < 0.05F)) {
+            this.i = entityliving.locX;
+            this.j = entityliving.boundingBox.b;
+            this.k = entityliving.locZ;
+            this.h = 4 + this.b.aI().nextInt(7);
+            if (d0 > 1024.0D) {
+                this.h += 10;
+            } else if (d0 > 256.0D) {
+                this.h += 5;
+            }
 
-                    double dist = Math.sqrt( goalDistanceSq );
-                    if ( dist <= 8.0D )
-                    {
-                        dist = 8.0D;
-                    }
-                    if ( dist > origRange )
-                    {
-                        dist = origRange;
-                    }
-                    rangeAttr.setValue( dist );
-                }
-
-                prevPathOK = this.b.getNavigation().a( (Entity) entityliving, this.d );
-
-                if ( fullRangeSearchDelay > 0 )
-                {
-                    fullRangeSearchDelay--;
-                    if ( origRange > 40.0D )
-                    {
-                        origRange = 40.0D;
-                    }
-                    rangeAttr.setValue( origRange );
-                }
-
-                pathX = entityliving.locX;
-                pathY = entityliving.boundingBox.b;
-                pathZ = entityliving.locZ;
-                this.h = 4 + this.b.aD().nextInt( 7 ); /* EntityCreature random instance */
-
-                if ( goalDistanceSq > 256.0D )
-                {
-                    if ( goalDistanceSq > 1024.0D )
-                    {
-                        this.h += 8;
-                    } else
-                    {
-                        this.h += 16;
-                    }
-                } else if ( !prevPathOK )
-                {
-                    this.h += 24;
-                }
-
-                if ( !prevPathOK || goalDistanceSq <= 256.0D )
-                {
-                    if ( fullRangeSearchDelay <= 0 )
-                    {
-                        fullRangeSearchDelay = 4 + this.b.aD().nextInt( 4 ); /* EntityCreature random instance */
-                    }
-                }
+            if (!this.b.getNavigation().a((Entity) entityliving, this.d)) {
+                this.h += 15;
             }
         }
-        // Spigot end
 
         this.c = Math.max(this.c - 1, 0);
-        double d0 = (double) (this.b.width * 2.0F * this.b.width * 2.0F + entityliving.width);
-
-        if (goalDistanceSq <= d0) { // Spigot
-            if (this.c <= 0) {
-                this.c = 20;
-                if (this.b.aZ() != null) {
-                    this.b.aV();
-                }
-
-                this.b.m(entityliving);
+        if (d0 <= d1 && this.c <= 20) {
+            this.c = 20;
+            if (this.b.be() != null) {
+                this.b.ba();
             }
+
+            this.b.m(entityliving);
         }
     }
 }
