@@ -61,9 +61,18 @@ public class LoginListener implements PacketLoginInListener {
 
     public void c() {
         if (!this.i.isComplete()) {
-            UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + this.i.getName()).getBytes(Charsets.UTF_8));
+            // Spigot Start
+            String uuid;
+            if ( networkManager.spoofedUUID != null )
+            {
+                uuid = networkManager.spoofedUUID;
+            } else
+            {
+                uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + this.i.getName()).getBytes(Charsets.UTF_8)).toString().replaceAll("-", "");
+            }
 
-            this.i = new GameProfile(uuid.toString().replaceAll("-", ""), this.i.getName());
+            this.i = new GameProfile(uuid, this.i.getName());
+            // Spigot End
         }
 
         // CraftBukkit start
@@ -99,7 +108,7 @@ public class LoginListener implements PacketLoginInListener {
             this.g = EnumProtocolState.KEY;
             this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.I().getPublic(), this.e), new GenericFutureListener[0]);
         } else {
-            this.g = EnumProtocolState.READY_TO_ACCEPT;
+            (new ThreadPlayerLookupUUID(this, "User Authenticator #" + b.incrementAndGet())).start(); // Spigot
         }
     }
 

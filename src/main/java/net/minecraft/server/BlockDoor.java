@@ -166,8 +166,8 @@ public class BlockDoor extends Block {
                 if (!world.isStatic) {
                     this.b(world, i, j, k, l, 0);
                 }
-            } else {
-                // CraftBukkit start
+            // CraftBukkit start
+            } else if (block.isPowerSource()) {
                 org.bukkit.World bworld = world.getWorld();
                 org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(i, j, k);
                 org.bukkit.block.Block blockTop = bworld.getBlockAt(i, j + 1, k);

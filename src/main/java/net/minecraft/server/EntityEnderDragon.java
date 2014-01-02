@@ -7,8 +7,10 @@ import java.util.List;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.event.entity.EntityCreatePortalEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.Bukkit;
 // CraftBukkit end
 
@@ -300,7 +302,15 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
         if (this.bC != null) {
             if (this.bC.dead) {
                 if (!this.world.isStatic) {
-                    this.a(this.bq, DamageSource.explosion((Explosion) null), 10.0F);
+                    // CraftBukkit start
+                    EntityDamageEvent event = new EntityDamageEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_EXPLOSION, 10.0F);
+                    Bukkit.getPluginManager().callEvent(event);
+
+                    if (!event.isCancelled()) {
+                        getBukkitEntity().setLastDamageCause(event);
+                        this.a(this.bq, DamageSource.explosion((Explosion) null), (float) event.getDamage());
+                    }
+                    // CraftBukkit end
                 }
 
                 this.bC = null;
@@ -368,7 +378,19 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
     private void bO() {
         this.bz = false;
         if (this.random.nextInt(2) == 0 && !this.world.players.isEmpty()) {
-            this.bD = (Entity) this.world.players.get(this.random.nextInt(this.world.players.size()));
+            // CraftBukkit start
+            Entity target = (Entity) this.world.players.get(this.random.nextInt(this.world.players.size()));
+            EntityTargetEvent event = new EntityTargetEvent(this.getBukkitEntity(), target.getBukkitEntity(), EntityTargetEvent.TargetReason.RANDOM_TARGET);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+                if (event.getTarget() == null) {
+                    this.bD = null;
+                } else {
+                    this.bD = ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
+                }
+            }
+            // CraftBukkit end
         } else {
             boolean flag = false;
 
@@ -584,10 +606,10 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
         world.setType(i, b0 + 0, j, Blocks.BEDROCK);
         world.setType(i, b0 + 1, j, Blocks.BEDROCK);
         world.setType(i, b0 + 2, j, Blocks.BEDROCK);
-        world.setType(i - 1, b0 + 2, j, Blocks.TORCH);
-        world.setType(i + 1, b0 + 2, j, Blocks.TORCH);
-        world.setType(i, b0 + 2, j - 1, Blocks.TORCH);
-        world.setType(i, b0 + 2, j + 1, Blocks.TORCH);
+        world.setTypeAndData(i - 1, b0 + 2, j, Blocks.TORCH, 2, 0);
+        world.setTypeAndData(i + 1, b0 + 2, j, Blocks.TORCH, 1, 0);
+        world.setTypeAndData(i, b0 + 2, j - 1, Blocks.TORCH, 4, 0);
+        world.setTypeAndData(i, b0 + 2, j + 1, Blocks.TORCH, 3, 0);
         world.setType(i, b0 + 3, j, Blocks.BEDROCK);
         world.setType(i, b0 + 4, j, Blocks.DRAGON_EGG);
 

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.command.TicksPerSecondCommand;
 
@@ -47,8 +49,8 @@ public class SpigotConfig
 
         commands = new HashMap<String, Command>();
 
-        version = getInt( "config-version", 3 );
-        set( "config-version", 3 );
+        version = getInt( "config-version", 5 );
+        set( "config-version", 5 );
         readConfig( SpigotConfig.class, null );
     }
 
@@ -188,8 +190,34 @@ public class SpigotConfig
         WatchdogThread.doStart( timeoutTime, restartOnCrash );
     }
 
-    public static boolean bungee = true;
+    public static boolean bungee;
     private static void bungee() {
-        bungee = getBoolean("settings.bungeecord", true);
+        if ( version < 4 )
+        {
+            set( "settings.bungeecord", false );
+            System.out.println( "Oudated config, disabling BungeeCord support!" );
+        }
+        bungee = getBoolean( "settings.bungeecord", false );
+    }
+
+    private static void nettyThreads()
+    {
+        int count = getInt( "settings.netty-threads", 4 );
+        System.setProperty( "io.netty.eventLoopThreads", Integer.toString( count ) );
+        Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
+    }
+
+    private static void replaceCommands()
+    {
+        for ( String command : (List<String>) getList( "replace-commands", Arrays.asList( "setblock", "summon", "testforblock" ) ) )
+        {
+            SimpleCommandMap.removeFallback( command );
+            VanillaCommandWrapper.allowedCommands.add( command );
+        }
+    }
+
+    public static boolean lateBind;
+    private static void lateBind() {
+        lateBind = getBoolean( "settings.late-bind", false );
     }
 }

@@ -546,6 +546,12 @@ public final class CraftServer implements Server {
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
+        // Spigot Start - Try vanilla commands
+        if ( org.spigotmc.VanillaCommandWrapper.dispatch( sender, commandLine ) != -1 )
+        {
+            return true;
+        }
+        // Spigot End
 
         sender.sendMessage(org.spigotmc.SpigotConfig.unknownCommandMessage);
 
@@ -988,11 +994,13 @@ public final class CraftServer implements Server {
     public void clearRecipes() {
         CraftingManager.getInstance().recipes.clear();
         RecipesFurnace.getInstance().recipes.clear();
+        RecipesFurnace.getInstance().customRecipes.clear();
     }
 
     public void resetRecipes() {
         CraftingManager.getInstance().recipes = new CraftingManager().recipes;
         RecipesFurnace.getInstance().recipes = new RecipesFurnace().recipes;
+        RecipesFurnace.getInstance().customRecipes.clear();
     }
 
     public Map<String, String[]> getCommandAliases() {
@@ -1392,15 +1400,30 @@ public final class CraftServer implements Server {
     }
 
     public List<String> tabCompleteCommand(Player player, String message) {
-        List<String> completions = null;
+        // Spigot Start
+        if ( !org.spigotmc.SpigotConfig.tabComplete )
+        {
+            return ImmutableList.of();
+        }
+        // Spigot End
+
+        // Spigot Start
+        List<String> completions = new ArrayList<String>();
         try {
-            completions = (org.spigotmc.SpigotConfig.tabComplete) ? getCommandMap().tabComplete(player, message.substring(1)) : null;
+            message = message.substring( 1 );
+            List<String> bukkitCompletions = getCommandMap().tabComplete( player, message );
+            if ( bukkitCompletions != null )
+            {
+                completions.addAll( bukkitCompletions );
+            }
+            completions.addAll( org.spigotmc.VanillaCommandWrapper.complete( player, message ) );
+            // Spigot End
         } catch (CommandException ex) {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
             getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
         }
 
-        return completions == null ? ImmutableList.<String>of() : completions;
+        return completions; // Spigot
     }
 
     public List<String> tabCompleteChat(Player player, String message) {

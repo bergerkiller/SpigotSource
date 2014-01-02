@@ -119,13 +119,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         this.a(MinecraftEncryption.b());
         h.info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.J());
 
-        try {
-            this.ag().a(inetaddress, this.J());
-        } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
-            h.warn("**** FAILED TO BIND TO PORT!");
-            h.warn("The exception was: {}", new Object[] { ioexception.toString()});
-            h.warn("Perhaps a server is already running on that port?");
-            return false;
+        if (!org.spigotmc.SpigotConfig.lateBind) {
+            try {
+                this.ag().a(inetaddress, this.J());
+            } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
+                h.warn("**** FAILED TO BIND TO PORT!");
+                h.warn("The exception was: {}", new Object[] { ioexception.toString()});
+                h.warn("Perhaps a server is already running on that port?");
+                return false;
+            }
         }
 
         // Spigot Start - Move DedicatedPlayerList up and bring plugin loading from CraftServer to here
@@ -186,6 +188,18 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         String s3 = String.format("%.3fs", new Object[] { Double.valueOf((double) i1 / 1.0E9D)});
 
         h.info("Done (" + s3 + ")! For help, type \"help\" or \"?\"");
+
+        if (org.spigotmc.SpigotConfig.lateBind) {
+            try {
+                this.ag().a(inetaddress, this.J());
+            } catch (Throwable ioexception) { // CraftBukkit - IOException -> Throwable
+                h.warn("**** FAILED TO BIND TO PORT!");
+                h.warn("The exception was: {}", new Object[] { ioexception.toString()});
+                h.warn("Perhaps a server is already running on that port?");
+                return false;
+            }
+        }
+
         if (this.propertyManager.getBoolean("enable-query", false)) {
             h.info("Starting GS4 status listener");
             this.j = new RemoteStatusListener(this);

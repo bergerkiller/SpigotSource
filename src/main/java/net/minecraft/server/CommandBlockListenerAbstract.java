@@ -96,7 +96,7 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
 
             // Make sure this is a valid command
             if (commandMap.getCommand(args[0]) == null) {
-                this.b = 0;
+                this.b = org.spigotmc.VanillaCommandWrapper.dispatch( sender, command ); // Spigot - Try vanilla commands
                 return;
             }
 

@@ -31,9 +31,13 @@ public class HandshakeListener implements PacketHandshakingInListener {
                 // Spigot Start
                 if (org.spigotmc.SpigotConfig.bungee) {
                     String[] split = packethandshakinginsetprotocol.b.split("\00");
-                    if (split.length == 2) {
+                    if (split.length == 2 || split.length == 3) {
                         packethandshakinginsetprotocol.b = split[0];
                         b.l = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
+                    }
+                    if ( split.length == 3 )
+                    {
+                        b.spoofedUUID = split[2];
                     }
                 }
                 // Spigot End

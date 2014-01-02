@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 import org.bukkit.craftbukkit.util.UnsafeList;
@@ -88,6 +89,7 @@ public abstract class World implements IBlockAccess {
     public boolean callingPlaceEvent = false;
     public long ticksPerAnimalSpawns;
     public long ticksPerMonsterSpawns;
+    public boolean populating;
     // CraftBukkit end
     private ArrayList M;
     private boolean N;
@@ -449,6 +451,11 @@ public abstract class World implements IBlockAccess {
     }
 
     public void update(int i, int j, int k, Block block) {
+        // CraftBukkit start
+        if (this.populating) {
+            return;
+        }
+        // CraftBukkit end
         this.applyPhysics(i, j, k, block);
     }
 
@@ -520,7 +527,7 @@ public abstract class World implements IBlockAccess {
                 // CraftBukkit start
                 CraftWorld world = ((WorldServer) this).getWorld();
                 if (world != null) {
-                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(i, j, k), l);
+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(i, j, k), CraftMagicNumbers.getId(block));
                     this.getServer().getPluginManager().callEvent(event);
 
                     if (event.isCancelled()) {
@@ -2483,7 +2490,7 @@ public abstract class World implements IBlockAccess {
         boolean defaultReturn = axisalignedbb != null && !this.a(axisalignedbb, entity) ? false : (block1.getMaterial() == Material.ORIENTABLE && block == Blocks.ANVIL ? true : block1.getMaterial().isReplaceable() && block.canPlace(this, i, j, k, l, itemstack));
 
         // CraftBukkit start
-        BlockCanBuildEvent event = new BlockCanBuildEvent(this.getWorld().getBlockAt(i, j, k), l, defaultReturn);
+        BlockCanBuildEvent event = new BlockCanBuildEvent(this.getWorld().getBlockAt(i, j, k), CraftMagicNumbers.getId(block), defaultReturn);
         this.getServer().getPluginManager().callEvent(event);
 
         return event.isBuildable();

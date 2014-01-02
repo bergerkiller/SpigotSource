@@ -30,7 +30,6 @@ public class ChunkProviderServer implements IChunkProvider {
     private IChunkLoader f;
     public boolean forceChunkLoad = false; // true -> false
     public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>();
-    private List chunkList = new ArrayList();
     public WorldServer world;
     // CraftBukkit end
 
@@ -129,7 +128,6 @@ public class ChunkProviderServer implements IChunkProvider {
             }
 
             this.chunks.put(LongHash.toLong(i, j), chunk); // CraftBukkit
-            this.chunkList.add(chunk);
             chunk.addEntities();
 
             // CraftBukkit start
@@ -239,8 +237,13 @@ public class ChunkProviderServer implements IChunkProvider {
 
                 org.bukkit.World world = this.world.getWorld();
                 if (world != null) {
-                    for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
-                        populator.populate(world, random, chunk.bukkitChunk);
+                    this.world.populating = true;
+                    try {
+                        for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
+                            populator.populate(world, random, chunk.bukkitChunk);
+                        }
+                    } finally {
+                        this.world.populating = false;
                     }
                 }
                 BlockSand.instaFall = false;
@@ -302,7 +305,6 @@ public class ChunkProviderServer implements IChunkProvider {
                     // this.unloadQueue.remove(olong);
                     // this.chunks.remove(olong.longValue());
                     this.chunks.remove(chunkcoordinates); // CraftBukkit
-                    this.chunkList.remove(chunk);
                 }
             }
             // CraftBukkit end

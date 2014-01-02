@@ -43,7 +43,25 @@ public class PacketPlayInChat extends Packet {
     }
     // CraftBukkit end
 
-    public void handle(PacketListener packetlistener) {
+    // Spigot Start
+    private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
+            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "Async Chat Thread - #%d" ).build() );
+    public void handle(final PacketListener packetlistener)
+    {
+        if ( a() )
+        {
+            executors.submit( new Runnable()
+            {
+
+                @Override
+                public void run()
+                {
+                    PacketPlayInChat.this.a( (PacketPlayInListener) packetlistener );
+                }
+            } );
+            return;
+        }
+        // Spigot End
         this.a((PacketPlayInListener) packetlistener);
     }
 }

@@ -14,30 +14,26 @@ public class AntiXray
     // Used to keep track of which blocks to obfuscate
     private final boolean[] obfuscateBlocks = new boolean[ Short.MAX_VALUE ];
     // Used to select a random replacement ore
-    private byte[] replacementOres;
+    private final byte[] replacementOres;
 
     public AntiXray(SpigotWorldConfig config)
     {
         // Set all listed blocks as true to be obfuscated
-        for ( int id : config.blocks )
+        for ( int id : ( config.engineMode == 1 ) ? config.hiddenBlocks : config.replaceBlocks )
         {
             obfuscateBlocks[id] = true;
         }
 
         // For every block
         TByteSet blocks = new TByteHashSet();
-        for ( int i = 0; i < obfuscateBlocks.length; i++ )
+        for ( Integer i : config.hiddenBlocks )
         {
-            // If we are obfuscating it
-            if ( obfuscateBlocks[i] )
+            Block block = Block.e( i );
+            // Check it exists and is not a tile entity
+            if ( block != null && !block.isTileEntity() )
             {
-                Block block = Block.e(i);
-                // Check it exists and is not a tile entity
-                if ( block != null && !block.isTileEntity() )
-                {
-                    // Add it to the set of replacement blocks
-                    blocks.add( (byte) i );
-                }
+                // Add it to the set of replacement blocks
+                blocks.add( (byte) (int) i );
             }
         }
         // Bake it to a flat array of replacements

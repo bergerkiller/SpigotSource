@@ -55,6 +55,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.util.NumberConversions;
 // CraftBukkit end
 
 public class PlayerConnection implements PacketPlayInListener {
@@ -77,6 +78,7 @@ public class PlayerConnection implements PacketPlayInListener {
     private double z;
     private double q;
     public boolean checkMovement = true; // CraftBukkit - private -> public
+    private boolean processedDisconnect; // CraftBukkit - added
 
     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -93,7 +95,8 @@ public class PlayerConnection implements PacketPlayInListener {
     private int lastTick = MinecraftServer.currentTick;
     private int lastDropTick = MinecraftServer.currentTick;
     private int dropCount = 0;
-    private static final int PLACE_DISTANCE_SQUARED = 6 * 6;
+    private static final int SURVIVAL_PLACE_DISTANCE_SQUARED = 6 * 6;
+    private static final int CREATIVE_PLACE_DISTANCE_SQUARED = 7 * 7;
 
     // Get position of last block hit for BlockDamageLevel.STOPPED
     private double lastPosX = Double.MAX_VALUE;
@@ -168,6 +171,7 @@ public class PlayerConnection implements PacketPlayInListener {
         ChatComponentText chatcomponenttext = new ChatComponentText(s);
 
         this.networkManager.handle(new PacketPlayOutKickDisconnect(chatcomponenttext), new GenericFutureListener[] { new PlayerConnectionFuture(this, chatcomponenttext)});
+        this.a(chatcomponenttext); // CraftBukkit - Process quit immediately
         this.networkManager.g();
     }
 
@@ -411,7 +415,6 @@ public class PlayerConnection implements PacketPlayInListener {
 
                 this.player.onGround = packetplayinflying.i();
                 this.minecraftServer.getPlayerList().d(this.player);
-                if (this.player.playerInteractManager.isCreative()) return; // CraftBukkit - fixed fall distance accumulating while being in Creative mode.
                 this.player.b(this.player.locY - d0, packetplayinflying.i());
             } else if (this.e % 20 == 0) {
                 this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
@@ -618,7 +621,8 @@ public class PlayerConnection implements PacketPlayInListener {
         } else {
             // CraftBukkit start - Check if we can actually do something over this large a distance
             Location eyeLoc = this.getPlayer().getEyeLocation();
-            if (Math.pow(eyeLoc.getX() - i, 2) + Math.pow(eyeLoc.getY() - j, 2) + Math.pow(eyeLoc.getZ() - k, 2) > PLACE_DISTANCE_SQUARED) {
+            double reachDistance = NumberConversions.square(eyeLoc.getX() - i) + NumberConversions.square(eyeLoc.getY() - j) + NumberConversions.square(eyeLoc.getZ() - k);
+            if (reachDistance > (this.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
                 return;
             }
 
@@ -678,6 +682,13 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {
+        // CraftBukkit start - Rarely it would send a disconnect line twice
+        if (this.processedDisconnect) {
+            return;
+        } else {
+            this.processedDisconnect = true;
+        }
+        // CraftBukkit end
         c.info(this.player.getName() + " lost connection: " + ichatbasecomponent.c()); // CraftBukkit - Don't toString the component
         this.minecraftServer.au();
         // CraftBukkit start - Replace vanilla quit message handling with our own.
@@ -757,7 +768,7 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(PacketPlayInChat packetplayinchat) {
-        if (this.player.getChatFlags() == EnumChatVisibility.HIDDEN) {
+        if (this.player.dead || this.player.getChatFlags() == EnumChatVisibility.HIDDEN) { // CraftBukkit - dead men tell no tales
             ChatMessage chatmessage = new ChatMessage("chat.cannotSend", new Object[0]);
 
             chatmessage.b().setColor(EnumChatFormat.RED);
@@ -834,73 +845,71 @@ public class PlayerConnection implements PacketPlayInListener {
 
     // CraftBukkit start
     public void chat(String s, boolean async) {
-        if (s.isEmpty()) {
+        if (s.isEmpty() || this.player.getChatFlags() == EnumChatVisibility.HIDDEN) {
             return;
         }
 
-        if (!this.player.dead) {
-            if (s.startsWith("/")) {
-                this.handleCommand(s);
-            } else if (this.player.getChatFlags() != EnumChatVisibility.FULL) {
-                // Do nothing, this is coming from a plugin
-            } else {
-                Player player = this.getPlayer();
-                AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet());
-                this.server.getPluginManager().callEvent(event);
+        if (s.startsWith("/")) {
+            this.handleCommand(s);
+        } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
+            // Do nothing, this is coming from a plugin
+        } else {
+            Player player = this.getPlayer();
+            AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet());
+            this.server.getPluginManager().callEvent(event);
 
-                if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
-                    // Evil plugins still listening to deprecated event
-                    final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
-                    queueEvent.setCancelled(event.isCancelled());
-                    Waitable waitable = new Waitable() {
-                        @Override
-                        protected Object evaluate() {
-                            org.bukkit.Bukkit.getPluginManager().callEvent(queueEvent);
+            if (PlayerChatEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                // Evil plugins still listening to deprecated event
+                final PlayerChatEvent queueEvent = new PlayerChatEvent(player, event.getMessage(), event.getFormat(), event.getRecipients());
+                queueEvent.setCancelled(event.isCancelled());
+                Waitable waitable = new Waitable() {
+                    @Override
+                    protected Object evaluate() {
+                        org.bukkit.Bukkit.getPluginManager().callEvent(queueEvent);
 
-                            if (queueEvent.isCancelled()) {
-                                return null;
-                            }
-
-                            String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage());
-                            PlayerConnection.this.minecraftServer.console.sendMessage(message);
-                            if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
-                                for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
-                                    ((EntityPlayer) player).sendMessage(CraftChatMessage.fromString(message));
-                                }
-                            } else {
-                                for (Player player : queueEvent.getRecipients()) {
-                                    player.sendMessage(message);
-                                }
-                            }
+                        if (queueEvent.isCancelled()) {
                             return null;
-                        }};
-                    if (async) {
-                        minecraftServer.processQueue.add(waitable);
-                    } else {
-                        waitable.run();
-                    }
-                    try {
-                        waitable.get();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
-                    } catch (ExecutionException e) {
-                        throw new RuntimeException("Exception processing chat event", e.getCause());
+                        }
+
+                        String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage());
+                        PlayerConnection.this.minecraftServer.console.sendMessage(message);
+                        if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
+                            for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
+                                ((EntityPlayer) player).sendMessage(CraftChatMessage.fromString(message));
+                            }
+                        } else {
+                            for (Player player : queueEvent.getRecipients()) {
+                                player.sendMessage(message);
+                            }
+                        }
+                        return null;
+                    }};
+                if (async) {
+                    minecraftServer.processQueue.add(waitable);
+                } else {
+                    waitable.run();
+                }
+                try {
+                    waitable.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
+                } catch (ExecutionException e) {
+                    throw new RuntimeException("Exception processing chat event", e.getCause());
+                }
+            } else {
+                if (event.isCancelled()) {
+                    return;
+                }
+
+                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+                minecraftServer.console.sendMessage(s);
+                if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
+                    for (Object recipient : minecraftServer.getPlayerList().players) {
+                        ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s));
                     }
                 } else {
-                    if (event.isCancelled()) {
-                        return;
-                    }
-
-                    s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-                    minecraftServer.console.sendMessage(s);
-                    if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
-                        for (Object recipient : minecraftServer.getPlayerList().players) {
-                            ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s));
-                        }
-                    } else {
-                        for (Player recipient : event.getRecipients()) {
-                            recipient.sendMessage(s);
-                        }
+                    for (Player recipient : event.getRecipients()) {
+                        recipient.sendMessage(s);
                     }
                 }
             }
@@ -966,7 +975,17 @@ public class PlayerConnection implements PacketPlayInListener {
             Vec3D vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
             MovingObjectPosition movingobjectposition = this.player.world.rayTrace(vec3d, vec3d1, true);
 
+            boolean valid = false;
             if (movingobjectposition == null || movingobjectposition.type != EnumMovingObjectType.BLOCK) {
+                valid = true;
+            } else {
+                Block block = this.player.world.getType(movingobjectposition.b, movingobjectposition.c, movingobjectposition.d);
+                if (!block.c()) { // Should be isBreakable?
+                    valid = true;
+                }
+            }
+
+            if (valid) {
                 CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.inventory.getItemInHand());
             }
 
@@ -1543,6 +1562,7 @@ public class PlayerConnection implements PacketPlayInListener {
 
             for (j = 0; j < 4; ++j) {
                 boolean flag = true;
+                packetplayinupdatesign.f()[j] = packetplayinupdatesign.f()[j].replaceAll( "\uF700", "" ).replaceAll( "\uF701", "" ); // Spigot - Mac OSX sends weird chars
 
                 if (packetplayinupdatesign.f()[j].length() > 15) {
                     flag = false;
@@ -1602,14 +1622,13 @@ public class PlayerConnection implements PacketPlayInListener {
     }
 
     public void a(PacketPlayInAbilities packetplayinabilities) {
-        // CraftBukkit start
-        if (this.player.abilities.canFly && this.player.abilities.isFlying != packetplayinabilities.f()) {
-            PlayerToggleFlightEvent event = new PlayerToggleFlightEvent(this.server.getPlayer(this.player), packetplayinabilities.f());
+        // CraftBukkit start - d() should be isFlying()
+        if (this.player.abilities.canFly && this.player.abilities.isFlying != packetplayinabilities.d()) {
+            PlayerToggleFlightEvent event = new PlayerToggleFlightEvent(this.server.getPlayer(this.player), packetplayinabilities.d());
             this.server.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
-                this.player.abilities.isFlying = packetplayinabilities.f(); // Actually set the player's flying status
-            }
-            else {
+                this.player.abilities.isFlying = packetplayinabilities.d(); // Actually set the player's flying status
+            } else {
                 this.player.updateAbilities(); // Tell the player their ability was reverted
             }
         }

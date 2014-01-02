@@ -430,9 +430,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
 
-        if (entity.vehicle != null || entity.passenger != null) {
-            return false;
-        }
+        // Spigot Start
+        // if (entity.vehicle != null || entity.passenger != null) {
+        // return false;
+        // }
+        // Spigot End
 
         // From = Players current Location
         Location from = this.getLocation();
@@ -446,6 +448,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (event.isCancelled()) {
             return false;
         }
+        
+        // Spigot Start
+        eject();
+        leaveVehicle();
+        // Spigot End
 
         // Update the From Location
         from = event.getFrom();
@@ -629,6 +636,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
 
             getHandle().playerInteractManager.setGameMode(EnumGamemode.a(mode.getValue()));
+            getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
         }
     }
@@ -880,12 +888,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setTexturePack(String url) {
-        Validate.notNull(url, "Texture pack URL cannot be null");
+        setResourcePack(url);
+    }
 
-        byte[] message = (url + "\0" + "16").getBytes();
-        Validate.isTrue(message.length <= Messenger.MAX_MESSAGE_SIZE, "Texture pack URL is too long");
+    @Override
+    public void setResourcePack(String url) {
+        Validate.notNull(url, "Resource pack URL cannot be null");
 
-        getHandle().playerConnection.sendPacket(new PacketPlayOutCustomPayload("MC|TPack", message));
+        getHandle().a(url); // should be setResourcePack
     }
 
     public void addChannel(String channel) {
@@ -1058,7 +1068,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             throw new IllegalStateException("Cannot set scoreboard yet");
         }
         if (playerConnection.isDisconnected()) {
-            throw new IllegalStateException("Cannot set scoreboard for invalid CraftPlayer");
+            // throw new IllegalStateException("Cannot set scoreboard for invalid CraftPlayer"); // Spigot - remove this as Mojang's semi asynchronous Netty implementation can lead to races
         }
 
         this.server.getScoreboardManager().setPlayerBoard(this, scoreboard);

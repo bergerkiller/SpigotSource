@@ -35,6 +35,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     private final Queue j = Queues.newConcurrentLinkedQueue();
     private Channel k;
     public SocketAddress l; // Spigot
+    public String spoofedUUID; // Spigot
     private PacketListener m;
     private EnumProtocol n;
     private IChatBaseComponent o;

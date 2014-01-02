@@ -149,6 +149,22 @@ public class Main {
                     useConsole = false;
                 }
 
+                // Spigot Start
+                int maxPermGen = 0; // In kb
+                for ( String s : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments() )
+                {
+                    if ( s.startsWith( "-XX:MaxPermSize" ) )
+                    {
+                        maxPermGen = Integer.parseInt( s.replaceAll( "[^\\d]", "" ) );
+                        maxPermGen <<= 10 * ("kmg".indexOf( Character.toLowerCase( s.charAt( s.length() - 1 ) ) ) );
+                    }
+                }
+                if ( maxPermGen < (128<<10) ) // 128mb
+                {
+                    System.out.println( "Warning, your max perm gen size is not set or less than 128mb. It is recommended you restart Java with the following argument: -XX:MaxPermSize=128M" );
+                }
+                // Spigot End
+                System.out.println("Loading libraries, please wait...");
                 MinecraftServer.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();

@@ -843,7 +843,7 @@ public abstract class PlayerList {
         this.operators.add(s.toLowerCase());
 
         // CraftBukkit start
-        Player player = server.server.getPlayer(s);
+        Player player = server.server.getPlayerExact(s);
         if (player != null) {
             player.recalculatePermissions();
         }
@@ -854,7 +854,7 @@ public abstract class PlayerList {
         this.operators.remove(s.toLowerCase());
 
         // CraftBukkit start
-        Player player = server.server.getPlayer(s);
+        Player player = server.server.getPlayerExact(s);
         if (player != null) {
             player.recalculatePermissions();
         }

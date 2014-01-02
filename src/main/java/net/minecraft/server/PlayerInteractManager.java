@@ -315,7 +315,7 @@ public class PlayerInteractManager {
 
             // CraftBukkit start - Drop event experience
             if (flag && event != null) {
-                block.dropExperience(this.world, i, j, k, event.getExpToDrop()); // Spigot
+                block.dropExperience(this.world, i, j, k, event.getExpToDrop());
             }
             // CraftBukkit end
 

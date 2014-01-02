@@ -913,13 +913,21 @@ public class Chunk {
         }
 
         this.m = true;
-        if (!this.lit && this.done) {
+        if (!this.lit && this.done && this.world.spigotConfig.randomLightUpdates) { // Spigot - also use random light updates setting to determine if we should relight
             this.p();
         }
     }
 
     public boolean k() {
-        return this.m && this.done && this.lit;
+        // Spigot Start
+        /*
+         * As of 1.7, Mojang added a check to make sure that only chunks which have been lit are sent to the client.
+         * Unfortunately this interferes with our modified chunk ticking algorithm, which will only tick chunks distant from the player on a very infrequent basis.
+         * We cannot unfortunately do this lighting stage during chunk gen as it appears to put a lot more noticeable load on the server, than when it is done at play time.
+         * For now at least we will simply send all chunks, in accordance with pre 1.7 behaviour.
+         */
+        return true;
+        // Spigot End
     }
 
     public ChunkCoordIntPair l() {

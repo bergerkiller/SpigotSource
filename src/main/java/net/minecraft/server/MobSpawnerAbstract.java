@@ -136,6 +136,12 @@ public abstract class MobSpawnerAbstract {
                 SpawnerSpawnEvent event = CraftEventFactory.callSpawnerSpawnEvent(entity, this.b(), this.c(), this.d());
                 if (!event.isCancelled()) {
                     entity.world.addEntity(entity, CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
+                    // Spigot Start
+                    if ( entity.world.spigotConfig.nerfSpawnerMobs )
+                    {
+                        entity.fromMobSpawner = true;
+                    }
+                    // Spigot End
                 }
                 // CraftBukkit end
             }

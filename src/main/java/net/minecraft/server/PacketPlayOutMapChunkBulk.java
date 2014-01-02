@@ -89,7 +89,7 @@ public class PacketPlayOutMapChunkBulk extends Packet {
         int finalBufferSize = 0;
         // Obfuscate all sections
         for (int i = 0; i < a.length; i++) {
-            world.spigotConfig.antiXrayInstance.obfuscate(c[i], d[i], a[i], inflatedBuffers[i], world);
+            world.spigotConfig.antiXrayInstance.obfuscate(a[i], b[i], c[i], inflatedBuffers[i], world);
             finalBufferSize += inflatedBuffers[i].length;
         }
 

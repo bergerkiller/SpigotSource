@@ -33,7 +33,8 @@ public final class CraftChatMessage {
         private ChatModifier modifier = new ChatModifier();
         private StringBuilder builder = new StringBuilder();
         private final IChatBaseComponent[] output;
-        private static final Pattern url = Pattern.compile("^(?:(https?)://)?([-\\w_\\.]{2,}\\.[a-z]{2,4})(/\\S*)?$");
+        private static final Pattern url = Pattern.compile("^(\u00A7.)*?((?:(https?)://)?([-\\w_\\.]{2,}\\.[a-z]{2,4})(/\\S*?)?)(\u00A7.)*?$");
+        private int lastWord = 0;
 
         private FromString(String message) {
             if (message == null) {
@@ -44,11 +45,13 @@ public final class CraftChatMessage {
 
             EnumChatFormat format = null;
             Matcher matcher = url.matcher(message);
-            int lastWord = 0;
+            lastWord = 0;
 
             for (int i = 0; i < message.length(); i++) {
                 char currentChar = message.charAt(i);
                 if (currentChar == '\u00A7' && (i < (message.length() - 1)) && (format = formatMap.get(message.charAt(i + 1))) != null) {
+                    checkUrl(matcher, message, i);
+                    lastWord++;
                     if (builder.length() > 0) {
                         appendNewComponent();
                     }
@@ -80,31 +83,16 @@ public final class CraftChatMessage {
                     }
                     i++;
                 } else if (currentChar == '\n') {
+                    checkUrl(matcher, message, i);
+                    lastWord = i + 1;
                     if (builder.length() > 0) {
                         appendNewComponent();
                     }
                     currentChatComponent = null;
                 } else {
                     if (currentChar == ' ' || i == message.length() - 1) {
-                        Matcher urlMatcher = matcher.region(lastWord, i == message.length() - 1 ? message.length() : i);
-                        lastWord = i + 1;
-                        if (urlMatcher.find()) {
-                            String fullUrl = urlMatcher.group(0);
-                            String protocol = urlMatcher.group(1);
-                            String url = urlMatcher.group(2);
-                            builder.delete(builder.length() - fullUrl.length() + (i == message.length() - 1 ? 1 : 0), builder.length());
-                            if (builder.length() > 0) {
-                                appendNewComponent();
-                            }
-                            builder.append(fullUrl);
-                            ChatClickable link = new ChatClickable(EnumClickAction.OPEN_URL, (protocol!=null?protocol:"http") + "://" + url);
-                            modifier.a(link);
-                            appendNewComponent();
-                            modifier.a((ChatClickable) null);
-                            if (i == message.length() - 1) {
-                                appendNewComponent();
-                                break;
-                            }
+                        if (checkUrl(matcher, message, i)) {
+                            break;
                         }
                     }
                     builder.append(currentChar);
@@ -116,6 +104,31 @@ public final class CraftChatMessage {
             }
 
             output = list.toArray(new IChatBaseComponent[0]);
+        }
+
+        private boolean checkUrl(Matcher matcher, String message, int i) {
+            Matcher urlMatcher = matcher.region(lastWord, i == message.length() - 1 ? message.length() : i);
+            lastWord = i + 1;
+            if (urlMatcher.find()) {
+                String fullUrl = urlMatcher.group(2);
+                String protocol = urlMatcher.group(3);
+                String url = urlMatcher.group(4);
+                String path = urlMatcher.group(5);
+                builder.delete(builder.length() - fullUrl.length() + (i == message.length() - 1 ? 1 : 0), builder.length());
+                if (builder.length() > 0) {
+                    appendNewComponent();
+                }
+                builder.append(fullUrl);
+                ChatClickable link = new ChatClickable(EnumClickAction.OPEN_URL,
+                        (protocol!=null?protocol:"http") + "://" + url + (path!=null?path:""));
+                modifier.a(link);
+                appendNewComponent();
+                modifier.a((ChatClickable) null);
+                if (i == message.length() - 1) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void appendNewComponent() {

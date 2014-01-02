@@ -116,6 +116,7 @@ public abstract class Entity {
     public final byte activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
     public long activatedTick = 0;
+    public boolean fromMobSpawner;
     public void inactiveTick() { }
     // Spigot end
 
@@ -138,7 +139,6 @@ public abstract class Entity {
         this.random = new Random();
         this.maxFireTicks = 1;
         this.justCreated = true;
-        this.uniqueID = UUID.randomUUID();
         this.uniqueID = new UUID(random.nextLong(), random.nextLong()); // Spigot
         this.at = EnumEntitySize.SIZE_2;
         this.world = world;
@@ -1132,6 +1132,7 @@ public abstract class Entity {
             nbttagcompound.setLong("WorldUUIDLeast", this.world.getDataManager().getUUID().getLeastSignificantBits());
             nbttagcompound.setLong("WorldUUIDMost", this.world.getDataManager().getUUID().getMostSignificantBits());
             nbttagcompound.setInt("Bukkit.updateLevel", CURRENT_LEVEL);
+            nbttagcompound.setInt("Spigot.ticksLived", this.ticksLived);
             // CraftBukkit end
             this.b(nbttagcompound);
             if (this.vehicle != null) {
@@ -1199,6 +1200,8 @@ public abstract class Entity {
             // CraftBukkit start
             if (this instanceof EntityLiving) {
                 EntityLiving entity = (EntityLiving) this;
+
+                this.ticksLived = nbttagcompound.getInt("Spigot.ticksLived");
 
                 // Reset the persistence for tamed animals
                 if (entity instanceof EntityTameableAnimal && !isLevelAtLeast(nbttagcompound, 2) && !nbttagcompound.getBoolean("PersistenceRequired")) {
@@ -1795,7 +1798,7 @@ public abstract class Entity {
             EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, agent);
             event.useTravelAgent(useTravelAgent);
             event.getEntity().getServer().getPluginManager().callEvent(event);
-            if (event.isCancelled() || event.getTo() == null || !this.isAlive()) {
+            if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !this.isAlive()) {
                 return;
             }
             exit = event.useTravelAgent() ? event.getPortalTravelAgent().findOrCreate(event.getTo()) : event.getTo();

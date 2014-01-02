@@ -85,28 +85,27 @@ public class SpigotWorldConfig
     public int pumpkinModifier;
     public int saplingModifier;
     public int wheatModifier;
+    private int getAndValidateGrowth(String crop)
+    {
+        int modifier = getInt( "growth." + crop.toLowerCase() + "-modifier", 100 );
+        if ( modifier == 0 )
+        {
+            log( "Cannot set " + crop + " growth to zero, defaulting to 100" );
+            modifier = 100;
+        }
+        log( crop + " Growth Modifier: " + modifier + "%" );
+
+        return modifier;
+    }
     private void growthModifiers()
     {
-        cactusModifier = getInt( "growth.cactus-modifier", 100 );
-        log( "Cactus Growth Modifier: " + cactusModifier + "%" );
-
-        caneModifier = getInt( "growth.cane-modifier", 100 );
-        log( "Cane Growth Modifier: " + caneModifier + "%" );
-
-        melonModifier = getInt( "growth.melon-modifier", 100 );
-        log( "Melon Growth Modifier: " + melonModifier + "%" );
-
-        mushroomModifier = getInt( "growth.mushroom-modifier", 100 );
-        log( "Mushroom Growth Modifier: " + mushroomModifier + "%" );
-
-        pumpkinModifier = getInt( "growth.pumpkin-modifier", 100 );
-        log( "Pumpkin Growth Modifier: " + pumpkinModifier + "%" );
-
-        saplingModifier = getInt( "growth.sapling-modifier", 100 );
-        log( "Sapling Growth Modifier: " + saplingModifier + "%" );
-
-        wheatModifier = getInt( "growth.wheat-modifier", 100 );
-        log( "Wheat Growth Modifier: " + wheatModifier + "%" );
+        cactusModifier = getAndValidateGrowth( "Cactus" );
+        caneModifier = getAndValidateGrowth( "Cane" );
+        melonModifier = getAndValidateGrowth( "Melon" );
+        mushroomModifier = getAndValidateGrowth( "Mushroom" );
+        pumpkinModifier = getAndValidateGrowth( "Pumpkin" );
+        saplingModifier = getAndValidateGrowth( "Sapling" );
+        wheatModifier = getAndValidateGrowth( "Wheat" );
     }
 
     public double itemMerge;
@@ -128,31 +127,6 @@ public class SpigotWorldConfig
     {
         viewDistance = getInt( "view-distance", Bukkit.getViewDistance() );
         log( "View Distance: " + viewDistance );
-    }
-
-    public boolean antiXray = true;
-    public int engineMode = 1;
-    public List<Integer> blocks = Arrays.asList( new Integer[]
-    {
-        1, 5, 14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
-    } );
-    public AntiXray antiXrayInstance;
-    private void antiXray()
-    {
-        antiXray = getBoolean( "anti-xray.enabled", antiXray );
-        log( "Anti X-Ray: " + antiXray );
-
-        engineMode = getInt( "anti-xray.engine-mode", engineMode );
-        log( "\tEngine Mode: " + engineMode );
-
-        if ( SpigotConfig.version < 3 )
-        {
-            set( "anti-xray.blocks", blocks );
-        }
-        blocks = getList( "anti-xray.blocks", blocks );
-        log( "\tBlocks: " + blocks );
-
-        antiXrayInstance = new AntiXray( this );
     }
 
     public byte mobSpawnRange;
@@ -232,5 +206,51 @@ public class SpigotWorldConfig
     {
         arrowDespawnRate = getInt( "arrow-despawn-rate", 1200  );
         log( "Arrow Despawn Rate: " + arrowDespawnRate );
+    }
+    
+    public boolean antiXray;
+    public int engineMode;
+    public List<Integer> hiddenBlocks;
+    public List<Integer> replaceBlocks;
+    public AntiXray antiXrayInstance;
+    private void antiXray()
+    {
+        antiXray = getBoolean( "anti-xray.enabled", true );
+        log( "Anti X-Ray: " + antiXray );
+
+        engineMode = getInt( "anti-xray.engine-mode", 1 );
+        log( "\tEngine Mode: " + engineMode );
+
+        if ( SpigotConfig.version < 5 )
+        {
+            set( "anti-xray.blocks", null );
+        }
+        hiddenBlocks = getList( "anti-xray.hide-blocks", Arrays.asList( new Integer[]
+        {
+            14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
+        } ) );
+        log( "\tHidden Blocks: " + hiddenBlocks );
+
+        replaceBlocks = getList( "anti-xray.replace-blocks", Arrays.asList( new Integer[]
+        {
+            1, 5
+        } ) );
+        log( "\tReplace Blocks: " + hiddenBlocks );
+
+        antiXrayInstance = new AntiXray( this );
+    }
+
+    public boolean zombieAggressiveTowardsVillager;
+    private void zombieAggressiveTowardsVillager()
+    {
+        zombieAggressiveTowardsVillager = getBoolean( "zombie-aggressive-towards-villager", true );
+        log( "Zombie Aggressive Towards Villager: " + zombieAggressiveTowardsVillager );
+    }
+
+    public boolean nerfSpawnerMobs;
+    private void nerfSpawnerMobs()
+    {
+        nerfSpawnerMobs = getBoolean( "nerf-spawner-mobs", false );
+        log( "Nerfing mobs spawned from spawners " + nerfSpawnerMobs );
     }
 }
