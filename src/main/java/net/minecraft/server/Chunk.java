@@ -115,7 +115,7 @@ public class Chunk {
                         }
 
                         this.sections[l1].setTypeId(l, j1 & 15, i1, block);
-                        this.sections[l1].setData(l, j1 & 15, i1, abyte[k1]);
+                        this.sections[l1].setData(l, j1 & 15, i1, checkData( block, abyte[k1] ) );
                     }
                 }
             }
@@ -398,6 +398,17 @@ public class Chunk {
         }
     }
 
+    // Spigot start - prevent invalid data values
+    private static int checkData( Block block, int l )
+    {
+        if (block == Block.b( "minecraft:double_plant" ) )
+        {
+            return l == 7 ? 0 : l;
+        }
+        return l;
+    }
+    // Spigot end
+
     public boolean a(int i, int j, int k, Block block, int l) {
         int i1 = k << 4 | i;
 
@@ -431,17 +442,28 @@ public class Chunk {
                 block1.f(this.world, l1, j, i2, k1);
             }
 
-            chunksection.setTypeId(i, j & 15, k, block);
+            // CraftBukkit start - Delay removing containers until after they're cleaned up
+            if (!(block1 instanceof IContainer)) {
+                chunksection.setTypeId(i, j & 15, k, block);
+            }
+            // CraftBukkit end
+
             if (!this.world.isStatic) {
                 block1.remove(this.world, l1, j, i2, block1, k1);
             } else if (block1 instanceof IContainer && block1 != block) {
                 this.world.p(l1, j, i2);
             }
 
+            // CraftBukkit start - Remove containers now after cleanup
+            if (block1 instanceof IContainer) {
+                chunksection.setTypeId(i, j & 15, k, block);
+            }
+            // CraftBukkit end
+
             if (chunksection.getTypeId(i, j & 15, k) != block) {
                 return false;
             } else {
-                chunksection.setData(i, j & 15, k, l);
+                chunksection.setData(i, j & 15, k, checkData( block, l ) );
                 if (flag) {
                     this.initLighting();
                 } else {
@@ -511,8 +533,9 @@ public class Chunk {
                 return false;
             } else {
                 this.n = true;
-                chunksection.setData(i, j & 15, k, l);
-                if (chunksection.getTypeId(i, j & 15, k) instanceof IContainer) {
+                Block block = chunksection.getTypeId( i, j & 15, k );
+                chunksection.setData(i, j & 15, k, checkData( block, l ) );
+                if (block instanceof IContainer) {
                     TileEntity tileentity = this.e(i, j, k);
 
                     if (tileentity != null) {
@@ -581,7 +604,7 @@ public class Chunk {
         if (i != this.locX || j != this.locZ) {
             // CraftBukkit start
             Bukkit.getLogger().warning("Wrong location for " + entity + " in world '" + world.getWorld().getName() + "'!");
-            // t.error("Wrong location! " + entity);
+            // t.warn("Wrong location! " + entity + " (at " + i + ", " + j + " instead of " + this.locX + ", " + this.locZ + ")");
             // Thread.dumpStack();
             Bukkit.getLogger().warning("Entity is at " + entity.locX + "," + entity.locZ + " (chunk " + i + "," + j + ") but was stored in chunk " + this.locX + "," + this.locZ);
             // CraftBukkit end
@@ -597,10 +620,10 @@ public class Chunk {
             k = this.entitySlices.length - 1;
         }
 
-        entity.ah = true;
-        entity.ai = this.locX;
-        entity.aj = k;
-        entity.ak = this.locZ;
+        entity.ag = true;
+        entity.ah = this.locX;
+        entity.ai = k;
+        entity.aj = this.locZ;
         this.entitySlices[k].add(entity);
         // Spigot start - increment creature type count
         // Keep this synced up with World.a(Class)
@@ -621,7 +644,7 @@ public class Chunk {
     }
 
     public void b(Entity entity) {
-        this.a(entity, entity.aj);
+        this.a(entity, entity.ai);
     }
 
     public void a(Entity entity, int i) {
@@ -707,7 +730,7 @@ public class Chunk {
             // CraftBukkit start
         } else {
             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.x + "," + tileentity.y + "," + tileentity.z
-                    + " (" + org.bukkit.Material.getMaterial(Block.b(getType(i, j, k))) + ") where there was no entity tile!");
+                    + " (" + org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getType(i, j, k)) + ") where there was no entity tile!");
             System.out.println("Chunk coordinates: " + (this.locX * 16) + "," + (this.locZ * 16));
             new Exception().printStackTrace();
             // CraftBukkit end
@@ -736,7 +759,7 @@ public class Chunk {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                entity.X();
+                entity.W();
             }
 
             this.world.a(this.entitySlices[i]);
@@ -808,7 +831,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.b(axisalignedbb) && (ientityselector == null || ientityselector.a(entity1))) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.at();
+                    Entity[] aentity = entity1.as();
 
                     if (aentity != null) {
                         for (int i1 = 0; i1 < aentity.length; ++i1) {

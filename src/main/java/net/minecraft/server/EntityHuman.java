@@ -27,16 +27,16 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     public Container defaultContainer;
     public Container activeContainer;
     protected FoodMetaData foodData = new FoodMetaData(this); // CraftBukkit - add "this" to constructor
-    protected int br;
+    protected int bq;
+    public float br;
     public float bs;
-    public float bt;
-    public int bu;
+    public int bt;
+    public double bu;
     public double bv;
     public double bw;
     public double bx;
     public double by;
     public double bz;
-    public double bA;
     // CraftBukkit start
     public boolean sleeping; // protected -> public
     public boolean fauxSleeping;
@@ -48,22 +48,22 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
     // CraftBukkit end
 
-    public ChunkCoordinates bC;
+    public ChunkCoordinates bB;
     public int sleepTicks; // CraftBukkit - private -> public
+    public float bC;
     public float bD;
-    public float bE;
     private ChunkCoordinates c;
     private boolean d;
     private ChunkCoordinates e;
     public PlayerAbilities abilities = new PlayerAbilities();
-    public int oldLevel = -1; // CraftBukkit
+    public int oldLevel = -1; // CraftBukkit - add field
     public int expLevel;
     public int expTotal;
     public float exp;
     private ItemStack f;
     private int g;
-    protected float bJ = 0.1F;
-    protected float bK = 0.02F;
+    protected float bI = 0.1F;
+    protected float bJ = 0.02F;
     private int h;
     private final GameProfile i;
     public EntityFishingHook hookedFish;
@@ -78,13 +78,13 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         ChunkCoordinates chunkcoordinates = world.getSpawn();
 
         this.setPositionRotation((double) chunkcoordinates.x + 0.5D, (double) (chunkcoordinates.y + 1), (double) chunkcoordinates.z + 0.5D, 0.0F, 0.0F);
-        this.ba = 180.0F;
+        this.aZ = 180.0F;
         this.maxFireTicks = 20;
     }
 
-    protected void aD() {
-        super.aD();
-        this.bc().b(GenericAttributes.e).setValue(1.0D);
+    protected void aC() {
+        super.aC();
+        this.bb().b(GenericAttributes.e).setValue(1.0D);
     }
 
     protected void c() {
@@ -94,19 +94,19 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.datawatcher.a(18, Integer.valueOf(0));
     }
 
-    public boolean bw() {
+    public boolean bx() {
         return this.f != null;
     }
 
-    public void by() {
+    public void bz() {
         if (this.f != null) {
             this.f.b(this.world, this, this.g);
         }
 
-        this.bz();
+        this.bA();
     }
 
-    public void bz() {
+    public void bA() {
         this.f = null;
         this.g = 0;
         if (!this.world.isStatic) {
@@ -115,7 +115,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public boolean isBlocking() {
-        return this.bw() && this.f.getItem().d(this.f) == EnumAnimation.BLOCK;
+        return this.bx() && this.f.getItem().d(this.f) == EnumAnimation.BLOCK;
     }
 
     public void h() {
@@ -131,12 +131,12 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     this.p();
                 }
             } else {
-                this.bz();
+                this.bA();
             }
         }
 
-        if (this.bu > 0) {
-            --this.bu;
+        if (this.bt > 0) {
+            --this.bt;
         }
 
         if (this.isSleeping()) {
@@ -148,7 +148,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             if (!this.world.isStatic) {
                 if (!this.j()) {
                     this.a(true, true, false);
-                } else if (this.world.v()) {
+                } else if (this.world.w()) {
                     this.a(false, true, true);
                 }
             }
@@ -169,41 +169,41 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             this.extinguish();
         }
 
+        this.bu = this.bx;
         this.bv = this.by;
         this.bw = this.bz;
-        this.bx = this.bA;
-        double d0 = this.locX - this.by;
-        double d1 = this.locY - this.bz;
-        double d2 = this.locZ - this.bA;
+        double d0 = this.locX - this.bx;
+        double d1 = this.locY - this.by;
+        double d2 = this.locZ - this.bz;
         double d3 = 10.0D;
 
         if (d0 > d3) {
-            this.bv = this.by = this.locX;
+            this.bu = this.bx = this.locX;
         }
 
         if (d2 > d3) {
-            this.bx = this.bA = this.locZ;
+            this.bw = this.bz = this.locZ;
         }
 
         if (d1 > d3) {
-            this.bw = this.bz = this.locY;
+            this.bv = this.by = this.locY;
         }
 
         if (d0 < -d3) {
-            this.bv = this.by = this.locX;
+            this.bu = this.bx = this.locX;
         }
 
         if (d2 < -d3) {
-            this.bx = this.bA = this.locZ;
+            this.bw = this.bz = this.locZ;
         }
 
         if (d1 < -d3) {
-            this.bw = this.bz = this.locY;
+            this.bv = this.by = this.locY;
         }
 
-        this.by += d0 * 0.25D;
-        this.bA += d2 * 0.25D;
-        this.bz += d1 * 0.25D;
+        this.bx += d0 * 0.25D;
+        this.bz += d2 * 0.25D;
+        this.by += d1 * 0.25D;
         if (this.vehicle == null) {
             this.e = null;
         }
@@ -214,19 +214,19 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
     }
 
-    public int D() {
+    public int C() {
         return this.abilities.isInvulnerable ? 0 : 80;
     }
 
-    protected String H() {
+    protected String G() {
         return "game.player.swim";
     }
 
-    protected String O() {
+    protected String N() {
         return "game.player.swim.splash";
     }
 
-    public int ai() {
+    public int ah() {
         return 10;
     }
 
@@ -241,11 +241,11 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
         if (itemstack.o() == EnumAnimation.EAT) {
             for (int j = 0; j < i; ++j) {
-                Vec3D vec3d = this.world.getVec3DPool().create(((double) this.random.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
+                Vec3D vec3d = Vec3D.a(((double) this.random.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
 
                 vec3d.a(-this.pitch * 3.1415927F / 180.0F);
                 vec3d.b(-this.yaw * 3.1415927F / 180.0F);
-                Vec3D vec3d1 = this.world.getVec3DPool().create(((double) this.random.nextFloat() - 0.5D) * 0.3D, (double) (-this.random.nextFloat()) * 0.6D - 0.3D, 0.6D);
+                Vec3D vec3d1 = Vec3D.a(((double) this.random.nextFloat() - 0.5D) * 0.3D, (double) (-this.random.nextFloat()) * 0.6D - 0.3D, 0.6D);
 
                 vec3d1.a(-this.pitch * 3.1415927F / 180.0F);
                 vec3d1.b(-this.yaw * 3.1415927F / 180.0F);
@@ -256,7 +256,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     s = s + "_" + itemstack.getData();
                 }
 
-                this.world.addParticle(s, vec3d1.c, vec3d1.d, vec3d1.e, vec3d.c, vec3d.d + 0.05D, vec3d.e);
+                this.world.addParticle(s, vec3d1.a, vec3d1.b, vec3d1.c, vec3d.a, vec3d.b + 0.05D, vec3d.c);
             }
 
             this.makeSound("random.eat", 0.5F + 0.5F * (float) this.random.nextInt(2), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
@@ -268,7 +268,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             this.c(this.f, 16);
             int i = this.f.count;
 
-            // CraftBukkit start
+            // CraftBukkit start - fire PlayerItemConsumeEvent
             org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.f);
             PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
             world.getServer().getPluginManager().callEvent(event);
@@ -306,11 +306,11 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 }
             }
 
-            this.bz();
+            this.bA();
         }
     }
 
-    protected boolean bh() {
+    protected boolean bg() {
         return this.getHealth() <= 0.0F || this.isSleeping();
     }
 
@@ -333,7 +333,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             // First statement moved down, second statement handled in parent method.
             /*
             if (!this.world.isStatic) {
-                this.l(this.vehicle);
+                this.m(this.vehicle);
             }
 
             if (this.vehicle != null) {
@@ -344,7 +344,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             */
             super.setPassengerOf(entity);
             if (!this.world.isStatic && this.vehicle == null) {
-                this.l(originalVehicle);
+                this.m(originalVehicle);
             }
             // CraftBukkit end
         } else {
@@ -352,7 +352,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
     }
 
-    public void ab() {
+    public void aa() {
         if (!this.world.isStatic && this.isSneaking()) {
             this.mount((Entity) null);
             this.setSneaking(false);
@@ -363,26 +363,26 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             float f = this.yaw;
             float f1 = this.pitch;
 
-            super.ab();
-            this.bs = this.bt;
-            this.bt = 0.0F;
+            super.aa();
+            this.br = this.bs;
+            this.bs = 0.0F;
             this.l(this.locX - d0, this.locY - d1, this.locZ - d2);
             if (this.vehicle instanceof EntityPig) {
                 this.pitch = f1;
                 this.yaw = f;
-                this.aN = ((EntityPig) this.vehicle).aN;
+                this.aM = ((EntityPig) this.vehicle).aM;
             }
         }
     }
 
-    protected void bq() {
-        super.bq();
-        this.bb();
+    protected void bp() {
+        super.bp();
+        this.ba();
     }
 
     public void e() {
-        if (this.br > 0) {
-            --this.br;
+        if (this.bq > 0) {
+            --this.bq;
         }
 
         if (this.world.difficulty == EnumDifficulty.PEACEFUL && this.getHealth() < this.getMaxHealth() && this.world.getGameRules().getBoolean("naturalRegeneration") && this.ticksLived % 20 * 12 == 0) {
@@ -391,7 +391,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         this.inventory.k();
-        this.bs = this.bt;
+        this.br = this.bs;
         super.e();
         AttributeInstance attributeinstance = this.getAttributeInstance(GenericAttributes.d);
 
@@ -399,9 +399,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             attributeinstance.setValue((double) this.abilities.b());
         }
 
-        this.aR = this.bK;
+        this.aQ = this.bJ;
         if (this.isSprinting()) {
-            this.aR = (float) ((double) this.aR + (double) this.bK * 0.3D);
+            this.aQ = (float) ((double) this.aQ + (double) this.bJ * 0.3D);
         }
 
         this.i((float) attributeinstance.getValue());
@@ -421,8 +421,8 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             f1 = 0.0F;
         }
 
-        this.bt += (f - this.bt) * 0.4F;
-        this.aK += (f1 - this.aK) * 0.8F;
+        this.bs += (f - this.bs) * 0.4F;
+        this.aJ += (f1 - this.aJ) * 0.8F;
         if (this.getHealth() > 0.0F) {
             AxisAlignedBB axisalignedbb = null;
 
@@ -439,14 +439,14 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     Entity entity = (Entity) list.get(i);
 
                     if (!entity.dead) {
-                        this.r(entity);
+                        this.d(entity);
                     }
                 }
             }
         }
     }
 
-    private void r(Entity entity) {
+    private void d(Entity entity) {
         entity.b_(this);
     }
 
@@ -478,8 +478,8 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         if (damagesource != null) {
-            this.motX = (double) (-MathHelper.cos((this.aA + this.yaw) * 3.1415927F / 180.0F) * 0.1F);
-            this.motZ = (double) (-MathHelper.sin((this.aA + this.yaw) * 3.1415927F / 180.0F) * 0.1F);
+            this.motX = (double) (-MathHelper.cos((this.az + this.yaw) * 3.1415927F / 180.0F) * 0.1F);
+            this.motZ = (double) (-MathHelper.sin((this.az + this.yaw) * 3.1415927F / 180.0F) * 0.1F);
         } else {
             this.motX = this.motZ = 0.0D;
         }
@@ -488,11 +488,11 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.a(StatisticList.v, 1);
     }
 
-    protected String aT() {
+    protected String aS() {
         return "game.player.hurt";
     }
 
-    protected String aU() {
+    protected String aT() {
         return "game.player.die";
     }
 
@@ -562,7 +562,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 entityitem.motZ += Math.sin((double) f1) * (double) f;
             }
 
-            // CraftBukkit start
+            // CraftBukkit start - fire PlayerDropItemEvent
             Player player = (Player) this.getBukkitEntity();
             CraftItem drop = new CraftItem(this.world.getServer(), entityitem);
 
@@ -640,7 +640,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.expTotal = nbttagcompound.getInt("XpTotal");
         this.setScore(nbttagcompound.getInt("Score"));
         if (this.sleeping) {
-            this.bC = new ChunkCoordinates(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ));
+            this.bB = new ChunkCoordinates(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ));
             this.a(true, true, false);
         }
 
@@ -716,7 +716,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         } else if (this.abilities.isInvulnerable && !damagesource.ignoresInvulnerability()) {
             return false;
         } else {
-            this.aV = 0;
+            this.aU = 0;
             if (this.getHealth() <= 0.0F) {
                 return false;
             } else {
@@ -784,11 +784,11 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.inventory.a(f);
     }
 
-    public int aV() {
+    public int aU() {
         return this.inventory.l();
     }
 
-    public float bC() {
+    public float bD() {
         int i = 0;
         ItemStack[] aitemstack = this.inventory.armor;
         int j = aitemstack.length;
@@ -814,14 +814,14 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             f = this.c(damagesource, f);
             float f1 = f;
 
-            f = Math.max(f - this.bs(), 0.0F);
-            this.m(this.bs() - (f1 - f));
+            f = Math.max(f - this.br(), 0.0F);
+            this.m(this.br() - (f1 - f));
             if (f != 0.0F) {
                 this.a(damagesource.f());
                 float f2 = this.getHealth();
 
                 this.setHealth(this.getHealth() - f);
-                this.aW().a(damagesource, f2, f);
+                this.aV().a(damagesource, f2, f);
             }
         }
     }
@@ -842,8 +842,8 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
     public void b(ItemStack itemstack) {}
 
-    public boolean p(Entity entity) {
-        ItemStack itemstack = this.bD();
+    public boolean q(Entity entity) {
+        ItemStack itemstack = this.bE();
         ItemStack itemstack1 = itemstack != null ? itemstack.cloneItemStack() : null;
 
         if (!entity.c(this)) {
@@ -855,7 +855,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 if (itemstack.a(this, (EntityLiving) entity)) {
                     // CraftBukkit - bypass infinite items; <= 0 -> == 0
                     if (itemstack.count == 0 && !this.abilities.canInstantlyBuild) {
-                        this.bE();
+                        this.bF();
                     }
 
                     return true;
@@ -864,9 +864,9 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
             return false;
         } else {
-            if (itemstack != null && itemstack == this.bD()) {
+            if (itemstack != null && itemstack == this.bE()) {
                 if (itemstack.count <= 0 && !this.abilities.canInstantlyBuild) {
-                    this.bE();
+                    this.bF();
                 } else if (itemstack.count < itemstack1.count && this.abilities.canInstantlyBuild) {
                     itemstack.count = itemstack1.count;
                 }
@@ -876,21 +876,21 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
     }
 
-    public ItemStack bD() {
+    public ItemStack bE() {
         return this.inventory.getItemInHand();
     }
 
-    public void bE() {
+    public void bF() {
         this.inventory.setItem(this.inventory.itemInHandIndex, (ItemStack) null);
     }
 
-    public double ad() {
+    public double ac() {
         return (double) (this.height - 0.5F);
     }
 
     public void attack(Entity entity) {
-        if (entity.av()) {
-            if (!entity.i(this)) {
+        if (entity.au()) {
+            if (!entity.j(this)) {
                 float f = (float) this.getAttributeInstance(GenericAttributes.e).getValue();
                 int i = 0;
                 float f1 = 0.0F;
@@ -905,7 +905,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 }
 
                 if (f > 0.0F || f1 > 0.0F) {
-                    boolean flag = this.fallDistance > 0.0F && !this.onGround && !this.h_() && !this.M() && !this.hasEffect(MobEffectList.BLINDNESS) && this.vehicle == null && entity instanceof EntityLiving;
+                    boolean flag = this.fallDistance > 0.0F && !this.onGround && !this.h_() && !this.L() && !this.hasEffect(MobEffectList.BLINDNESS) && this.vehicle == null && entity instanceof EntityLiving;
 
                     if (flag && f > 0.0F) {
                         f *= 1.5F;
@@ -942,13 +942,13 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                             this.a((Statistic) AchievementList.F);
                         }
 
-                        this.k(entity);
+                        this.l(entity);
                         if (entity instanceof EntityLiving) {
                             EnchantmentManager.a((EntityLiving) entity, (Entity) this);
                         }
 
                         EnchantmentManager.b(this, entity);
-                        ItemStack itemstack = this.bD();
+                        ItemStack itemstack = this.bE();
                         Object object = entity;
 
                         if (entity instanceof EntityComplexPart) {
@@ -963,7 +963,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                             itemstack.a((EntityLiving) object, this);
                             // CraftBukkit - bypass infinite items; <= 0 -> == 0
                             if (itemstack.count == 0) {
-                                this.bE();
+                                this.bF();
                             }
                         }
 
@@ -1020,7 +1020,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                 return EnumBedResult.NOT_POSSIBLE_HERE;
             }
 
-            if (this.world.v()) {
+            if (this.world.w()) {
                 return EnumBedResult.NOT_POSSIBLE_NOW;
             }
 
@@ -1030,18 +1030,18 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
             double d0 = 8.0D;
             double d1 = 5.0D;
-            List list = this.world.a(EntityMonster.class, AxisAlignedBB.a().a((double) i - d0, (double) j - d1, (double) k - d0, (double) i + d0, (double) j + d1, (double) k + d0));
+            List list = this.world.a(EntityMonster.class, AxisAlignedBB.a((double) i - d0, (double) j - d1, (double) k - d0, (double) i + d0, (double) j + d1, (double) k + d0));
 
             if (!list.isEmpty()) {
                 return EnumBedResult.NOT_SAFE;
             }
         }
 
-        if (this.am()) {
+        if (this.al()) {
             this.mount((Entity) null);
         }
 
-        // CraftBukkit start
+        // CraftBukkit start - fire PlayerBedEnterEvent
         if (this.getBukkitEntity() instanceof Player) {
             Player player = (Player) this.getBukkitEntity();
             org.bukkit.block.Block bed = this.world.getWorld().getBlockAt(i, j, k);
@@ -1088,7 +1088,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
         this.sleeping = true;
         this.sleepTicks = 0;
-        this.bC = new ChunkCoordinates(i, j, k);
+        this.bB = new ChunkCoordinates(i, j, k);
         this.motX = this.motZ = this.motY = 0.0D;
         if (!this.world.isStatic) {
             this.world.everyoneSleeping();
@@ -1098,31 +1098,31 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     private void w(int i) {
+        this.bC = 0.0F;
         this.bD = 0.0F;
-        this.bE = 0.0F;
         switch (i) {
         case 0:
-            this.bE = -1.8F;
+            this.bD = -1.8F;
             break;
 
         case 1:
-            this.bD = 1.8F;
+            this.bC = 1.8F;
             break;
 
         case 2:
-            this.bE = 1.8F;
+            this.bD = 1.8F;
             break;
 
         case 3:
-            this.bD = -1.8F;
+            this.bC = -1.8F;
         }
     }
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
         this.a(0.6F, 1.8F);
         this.e_();
-        ChunkCoordinates chunkcoordinates = this.bC;
-        ChunkCoordinates chunkcoordinates1 = this.bC;
+        ChunkCoordinates chunkcoordinates = this.bB;
+        ChunkCoordinates chunkcoordinates1 = this.bB;
 
         if (chunkcoordinates != null && this.world.getType(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z) == Blocks.BED) {
             BlockBed.a(this.world, chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, false);
@@ -1139,7 +1139,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             this.world.everyoneSleeping();
         }
 
-        // CraftBukkit start
+        // CraftBukkit start - fire PlayerBedLeaveEvent
         if (this.getBukkitEntity() instanceof Player) {
             Player player = (Player) this.getBukkitEntity();
 
@@ -1162,16 +1162,16 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         if (flag2) {
-            this.setRespawnPosition(this.bC, false);
+            this.setRespawnPosition(this.bB, false);
         }
     }
 
     private boolean j() {
-        return this.world.getType(this.bC.x, this.bC.y, this.bC.z) == Blocks.BED;
+        return this.world.getType(this.bB.x, this.bB.y, this.bB.z) == Blocks.BED;
     }
 
     public static ChunkCoordinates getBed(World world, ChunkCoordinates chunkcoordinates, boolean flag) {
-        IChunkProvider ichunkprovider = world.K();
+        IChunkProvider ichunkprovider = world.L();
 
         ichunkprovider.getChunkAt(chunkcoordinates.x - 3 >> 4, chunkcoordinates.z - 3 >> 4);
         ichunkprovider.getChunkAt(chunkcoordinates.x + 3 >> 4, chunkcoordinates.z - 3 >> 4);
@@ -1237,8 +1237,8 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
     public void a(Statistic statistic, int i) {}
 
-    public void bj() {
-        super.bj();
+    public void bi() {
+        super.bi();
         this.a(StatisticList.r, 1);
         if (this.isSprinting()) {
             this.a(0.8F);
@@ -1254,12 +1254,12 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
 
         if (this.abilities.isFlying && this.vehicle == null) {
             double d3 = this.motY;
-            float f2 = this.aR;
+            float f2 = this.aQ;
 
-            this.aR = this.abilities.a();
+            this.aQ = this.abilities.a();
             super.e(f, f1);
             this.motY = d3 * 0.6D;
-            this.aR = f2;
+            this.aQ = f2;
         } else {
             super.e(f, f1);
         }
@@ -1267,7 +1267,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.checkMovement(this.locX - d0, this.locY - d1, this.locZ - d2);
     }
 
-    public float bl() {
+    public float bk() {
         return (float) this.getAttributeInstance(GenericAttributes.d).getValue();
     }
 
@@ -1281,7 +1281,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     this.a(StatisticList.m, i);
                     this.a(0.015F * (float) i * 0.01F);
                 }
-            } else if (this.M()) {
+            } else if (this.L()) {
                 i = Math.round(MathHelper.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                 if (i > 0) {
                     this.a(StatisticList.i, i);
@@ -1353,16 +1353,16 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         }
 
         int i = EntityTypes.a(entityliving);
-        MonsterEggInfo monsteregginfo = (MonsterEggInfo) EntityTypes.a.get(Integer.valueOf(i));
+        MonsterEggInfo monsteregginfo = (MonsterEggInfo) EntityTypes.eggInfo.get(Integer.valueOf(i));
 
         if (monsteregginfo != null) {
-            this.a(monsteregginfo.d, 1);
+            this.a(monsteregginfo.killEntityStatistic, 1);
         }
     }
 
-    public void as() {
+    public void ar() {
         if (!this.abilities.isFlying) {
-            super.as();
+            super.ar();
         }
     }
 
@@ -1422,7 +1422,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         return (flag || this.foodData.c()) && !this.abilities.isInvulnerable;
     }
 
-    public boolean bP() {
+    public boolean bQ() {
         return this.getHealth() > 0.0F && this.getHealth() < this.getMaxHealth();
     }
 
@@ -1447,8 +1447,8 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
                     return true;
                 }
 
-                if (this.bD() != null) {
-                    ItemStack itemstack = this.bD();
+                if (this.bE() != null) {
+                    ItemStack itemstack = this.bE();
 
                     if (itemstack.b(block) || itemstack.a(block) > 1.0F) {
                         return true;
@@ -1487,7 +1487,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
             this.expTotal = entityhuman.expTotal;
             this.exp = entityhuman.exp;
             this.setScore(entityhuman.getScore());
-            this.ar = entityhuman.ar;
+            this.aq = entityhuman.aq;
         } else if (this.world.getGameRules().getBoolean("keepInventory")) {
             this.inventory.b(entityhuman.inventory);
             this.expLevel = entityhuman.expLevel;
@@ -1523,7 +1523,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         return i == 0 ? this.inventory.getItemInHand() : this.inventory.armor[i - 1];
     }
 
-    public ItemStack be() {
+    public ItemStack bd() {
         return this.inventory.getItemInHand();
     }
 
@@ -1535,7 +1535,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         return this.inventory.armor;
     }
 
-    public boolean aC() {
+    public boolean aB() {
         return !this.abilities.isFlying;
     }
 
@@ -1548,10 +1548,10 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
     }
 
     public IChatBaseComponent getScoreboardDisplayName() {
-        // CraftBukkit todo: fun
+        // CraftBukkit - todo: fun
         ChatComponentText chatcomponenttext = new ChatComponentText(ScoreboardTeam.getPlayerDisplayName(this.getScoreboardTeam(), this.getName()));
 
-        chatcomponenttext.b().a(new ChatClickable(EnumClickAction.SUGGEST_COMMAND, "/msg " + this.getName() + " "));
+        chatcomponenttext.getChatModifier().setChatClickable(new ChatClickable(EnumClickAction.SUGGEST_COMMAND, "/msg " + this.getName() + " "));
         return chatcomponenttext;
     }
 
@@ -1563,7 +1563,7 @@ public abstract class EntityHuman extends EntityLiving implements ICommandListen
         this.getDataWatcher().watch(17, Float.valueOf(f));
     }
 
-    public float bs() {
+    public float br() {
         return this.getDataWatcher().getFloat(17);
     }
 

@@ -17,7 +17,7 @@ public class PacketPlayInChat extends Packet {
     }
 
     public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
-        this.message = packetdataserializer.c(100);
+        this.message = org.apache.commons.lang.StringUtils.normalizeSpace( packetdataserializer.c( 100 ) ); // Spigot
     }
 
     public void b(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws

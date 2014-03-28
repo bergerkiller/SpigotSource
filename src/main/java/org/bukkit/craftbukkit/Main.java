@@ -100,6 +100,12 @@ public class Main {
                         .defaultsTo(new File("bukkit.yml"))
                         .describedAs("Yml file");
 
+                acceptsAll(asList("C", "commands-settings"), "File for command settings")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File("commands.yml"))
+                        .describedAs("Yml file");
+
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 
                 acceptsAll(asList("noconsole"), "Disables the console");
@@ -159,9 +165,10 @@ public class Main {
                         maxPermGen <<= 10 * ("kmg".indexOf( Character.toLowerCase( s.charAt( s.length() - 1 ) ) ) );
                     }
                 }
-                if ( maxPermGen < (128<<10) ) // 128mb
+                if ( Float.parseFloat( System.getProperty( "java.class.version" ) ) < 52 && maxPermGen < ( 128 << 10 ) ) // 128mb
                 {
                     System.out.println( "Warning, your max perm gen size is not set or less than 128mb. It is recommended you restart Java with the following argument: -XX:MaxPermSize=128M" );
+                    System.out.println( "Please see http://www.spigotmc.org/wiki/changing-permgen-size/ for more details and more in-depth instructions." );
                 }
                 // Spigot End
                 System.out.println("Loading libraries, please wait...");

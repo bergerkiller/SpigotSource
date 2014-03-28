@@ -29,10 +29,9 @@ class ThreadPlayerLookupUUID extends Thread {
                 LoginListener.a(this.a, EnumProtocolState.READY_TO_ACCEPT);
                 return;
             }
-            // Spigot End            
-            String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).I().getPublic(), LoginListener.c(this.a)))).toString(16);
-
-            LoginListener.a(this.a, LoginListener.b(this.a).as().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
+            // Spigot End
+            String s = (new BigInteger(MinecraftEncryption.a(LoginListener.a(this.a), LoginListener.b(this.a).J().getPublic(), LoginListener.c(this.a)))).toString(16);
+            LoginListener.a(this.a, LoginListener.b(this.a).at().hasJoinedServer(new GameProfile((String) null, LoginListener.d(this.a).getName()), s));
             if (LoginListener.d(this.a) != null) {
                 // Spigot Start
                 fireLoginEvents();
@@ -46,7 +45,7 @@ class ThreadPlayerLookupUUID extends Thread {
         } catch (AuthenticationUnavailableException authenticationunavailableexception) {
             this.a.disconnect("Authentication servers are down. Please try again later, sorry!");
             LoginListener.e().error("Couldn\'t verify username because servers are unavailable");
-            // CraftBukkit start
+            // CraftBukkit start - catch all exceptions
         } catch (Exception exception) {
             this.a.disconnect("Failed to verify username!");
             LoginListener.b(this.a).server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + LoginListener.d(this.a).getName(), exception);
@@ -56,8 +55,8 @@ class ThreadPlayerLookupUUID extends Thread {
 
     private void fireLoginEvents() throws Exception
     {
-        // CraftBukkit start
-        if (!this.a.networkManager.d()) {
+        // CraftBukkit start - fire PlayerPreLoginEvent
+        if (!this.a.networkManager.isConnected()) {
             return;
         }
 

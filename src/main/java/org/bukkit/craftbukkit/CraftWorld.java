@@ -159,7 +159,7 @@ public class CraftWorld implements World {
     }
 
     public boolean unloadChunkRequest(int x, int z, boolean safe) {
-        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!"); // Spigot
+        org.spigotmc.AsyncCatcher.catchOp( "chunk unload"); // Spigot
         if (safe && isChunkInUse(x, z)) {
             return false;
         }
@@ -170,7 +170,7 @@ public class CraftWorld implements World {
     }
 
     public boolean unloadChunk(int x, int z, boolean save, boolean safe) {
-        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk unload!"); // Spigot
+        org.spigotmc.AsyncCatcher.catchOp( "chunk unload"); // Spigot
         if (safe && isChunkInUse(x, z)) {
             return false;
         }
@@ -186,6 +186,14 @@ public class CraftWorld implements World {
             world.chunkProviderServer.saveChunk(chunk);
             world.chunkProviderServer.saveChunkNOP(chunk);
         }
+
+        // Spigot start - Remove the chunk from the cache if it is unloaded
+        net.minecraft.server.Chunk result = world.lastChunkAccessed;
+        if ( result != null && result.locX == chunk.locX && result.locZ == chunk.locZ )
+        {
+            world.lastChunkAccessed = null;
+        }
+        // Spigot end
 
         world.chunkProviderServer.unloadQueue.remove(x, z);
         world.chunkProviderServer.chunks.remove(LongHash.toLong(x, z));
@@ -238,7 +246,7 @@ public class CraftWorld implements World {
     }
 
     public boolean loadChunk(int x, int z, boolean generate) {
-        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous chunk load!"); // Spigot
+        org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
         chunkLoadCount++;
         if (generate) {
             // Use the default variant of loadChunk when generate == true.
@@ -320,7 +328,7 @@ public class CraftWorld implements World {
         Validate.notNull(velocity, "Can not spawn arrow with a null velocity");
 
         EntityArrow arrow = new EntityArrow(world);
-        arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), loc.getPitch(), loc.getYaw());
+        arrow.setPositionRotation(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         world.addEntity(arrow);
         return (Arrow) arrow.getBukkitEntity();
@@ -853,6 +861,9 @@ public class CraftWorld implements World {
             } else if (ThrownExpBottle.class.isAssignableFrom(clazz)) {
                 entity = new EntityThrownExpBottle(world);
                 entity.setPositionRotation(x, y, z, 0, 0);
+            } else if (EnderPearl.class.isAssignableFrom(clazz)) {
+                entity = new EntityEnderPearl(world);
+                entity.setPositionRotation(x, y, z, 0, 0);
             } else if (ThrownPotion.class.isAssignableFrom(clazz)) {
                 entity = new EntityPotion(world, x, y, z, CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.POTION, 1)));
             } else if (Fireball.class.isAssignableFrom(clazz)) {
@@ -964,7 +975,7 @@ public class CraftWorld implements World {
             }
 
             if (entity != null) {
-                entity.setLocation(x, y, z, pitch, yaw);
+                entity.setLocation(x, y, z, yaw, pitch);
             }
         } else if (Hanging.class.isAssignableFrom(clazz)) {
             Block block = getBlockAt(location);
@@ -1001,7 +1012,7 @@ public class CraftWorld implements World {
                 entity = new EntityItemFrame(world, (int) x, (int) y, (int) z, dir);
             } else if (LeashHitch.class.isAssignableFrom(clazz)) {
                 entity = new EntityLeash(world, (int) x, (int) y, (int) z);
-                entity.o = true;
+                entity.n = true;
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {
@@ -1013,13 +1024,10 @@ public class CraftWorld implements World {
             entity = new EntityExperienceOrb(world, x, y, z, 0);
         } else if (Weather.class.isAssignableFrom(clazz)) {
             // not sure what this can do
-            entity = new EntityLightning(world, x, y, z);
-        } else if (LightningStrike.class.isAssignableFrom(clazz)) {
-            // what is this, I don't even
-        } else if (Fish.class.isAssignableFrom(clazz)) {
-            // this is not a fish, it's a bobber, and it's probably useless
-            entity = new EntityFishingHook(world);
-            entity.setLocation(x, y, z, pitch, yaw);
+            if (LightningStrike.class.isAssignableFrom(clazz)) {
+                entity = new EntityLightning(world, x, y, z);
+                // what is this, I don't even
+            }
         } else if (Firework.class.isAssignableFrom(clazz)) {
             entity = new EntityFireworks(world, x, y, z, null);
         }
@@ -1325,6 +1333,22 @@ public class CraftWorld implements World {
         public void playEffect( Location location, Effect effect )
         {
             CraftWorld.this.playEffect( location, effect, 0 );
+        }
+
+        @Override
+        public LightningStrike strikeLightning(Location loc, boolean isSilent)
+        {
+            EntityLightning lightning = new EntityLightning( world, loc.getX(), loc.getY(), loc.getZ(), false, isSilent );
+            world.strikeLightning( lightning );
+            return new CraftLightningStrike( server, lightning );
+        }
+
+        @Override
+        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent)
+        {
+            EntityLightning lightning = new EntityLightning( world, loc.getX(), loc.getY(), loc.getZ(), true, isSilent );
+            world.strikeLightning( lightning );
+            return new CraftLightningStrike( server, lightning );
         }
     };
 

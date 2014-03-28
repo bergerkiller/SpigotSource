@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -23,6 +24,48 @@ import javax.imageio.ImageIO;
 
 import net.minecraft.server.BanEntry;
 import net.minecraft.server.ChunkCoordinates;
+import net.minecraft.server.CommandAchievement;
+import net.minecraft.server.CommandBan;
+import net.minecraft.server.CommandBanIp;
+import net.minecraft.server.CommandBanList;
+import net.minecraft.server.CommandClear;
+import net.minecraft.server.CommandDeop;
+import net.minecraft.server.CommandDifficulty;
+import net.minecraft.server.CommandEffect;
+import net.minecraft.server.CommandEnchant;
+import net.minecraft.server.CommandGamemode;
+import net.minecraft.server.CommandGamemodeDefault;
+import net.minecraft.server.CommandGamerule;
+import net.minecraft.server.CommandGive;
+import net.minecraft.server.CommandHelp;
+import net.minecraft.server.CommandIdleTimeout;
+import net.minecraft.server.CommandKick;
+import net.minecraft.server.CommandKill;
+import net.minecraft.server.CommandList;
+import net.minecraft.server.CommandMe;
+import net.minecraft.server.CommandNetstat;
+import net.minecraft.server.CommandOp;
+import net.minecraft.server.CommandPardon;
+import net.minecraft.server.CommandPardonIP;
+import net.minecraft.server.CommandPlaySound;
+import net.minecraft.server.CommandSay;
+import net.minecraft.server.CommandScoreboard;
+import net.minecraft.server.CommandSeed;
+import net.minecraft.server.CommandSetBlock;
+import net.minecraft.server.CommandSetWorldSpawn;
+import net.minecraft.server.CommandSpawnpoint;
+import net.minecraft.server.CommandSpreadPlayers;
+import net.minecraft.server.CommandSummon;
+import net.minecraft.server.CommandTell;
+import net.minecraft.server.CommandTellRaw;
+import net.minecraft.server.CommandTestFor;
+import net.minecraft.server.CommandTestForBlock;
+import net.minecraft.server.CommandTime;
+import net.minecraft.server.CommandToggleDownfall;
+import net.minecraft.server.CommandTp;
+import net.minecraft.server.CommandWeather;
+import net.minecraft.server.CommandWhitelist;
+import net.minecraft.server.CommandXp;
 import net.minecraft.server.Convertable;
 import net.minecraft.server.ConvertProgressUpdater;
 import net.minecraft.server.CraftingManager;
@@ -58,11 +101,13 @@ import net.minecraft.util.io.netty.buffer.ByteBufOutputStream;
 import net.minecraft.util.io.netty.buffer.Unpooled;
 import net.minecraft.util.io.netty.handler.codec.base64.Base64;
 
+import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.UnsafeValues;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
@@ -73,10 +118,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
+import org.bukkit.command.defaults.VanillaCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftFurnaceRecipe;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCustom;
@@ -95,6 +142,7 @@ import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.updater.AutoUpdater;
 import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.CraftIconCache;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.DatFileFilter;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
@@ -129,12 +177,11 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
-
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
-
 import org.apache.commons.lang.Validate;
+
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.avaje.ebean.config.dbplatform.SQLitePlatform;
@@ -148,6 +195,7 @@ public final class CraftServer implements Server {
     private final String serverName = "CraftBukkit";
     private final String serverVersion;
     private final String bukkitVersion = Versioning.getBukkitVersion();
+    private final Logger logger = Logger.getLogger("Minecraft");
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final CraftScheduler scheduler = new CraftScheduler();
     private final SimpleCommandMap commandMap = new SimpleCommandMap(this);
@@ -158,6 +206,7 @@ public final class CraftServer implements Server {
     protected final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
     private YamlConfiguration configuration;
+    private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private final AutoUpdater updater;
@@ -176,8 +225,8 @@ public final class CraftServer implements Server {
     public CraftScoreboardManager scoreboardManager;
     public boolean playerCommandState;
     private boolean printSaveWarning;
-    private Logger logger;
     private CraftIconCache icon;
+    private boolean overrideAllCommandBlockCommands = false;
 
     private final class BooleanWrapper {
         private boolean value = true;
@@ -189,7 +238,6 @@ public final class CraftServer implements Server {
     }
 
     public CraftServer(MinecraftServer console, PlayerList playerList) {
-        this.logger = Logger.getLogger("Minecraft");
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
@@ -213,7 +261,40 @@ public final class CraftServer implements Server {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         configuration.options().copyDefaults(true);
         configuration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml")));
+        ConfigurationSection legacyAlias = null;
+        if (!configuration.isString("aliases")) {
+            legacyAlias = configuration.getConfigurationSection("aliases");
+            configuration.set("aliases", "now-in-commands.yml");
+        }
         saveConfig();
+        if (getCommandsConfigFile().isFile()) {
+            legacyAlias = null;
+        }
+        commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
+        commandsConfiguration.options().copyDefaults(true);
+        commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml")));
+        saveCommandsConfig();
+
+        // Migrate aliases from old file and add previously implicit $1- to pass all arguments
+        if (legacyAlias != null) {
+            ConfigurationSection aliases = commandsConfiguration.createSection("aliases");
+            for (String key : legacyAlias.getKeys(false)) {
+                ArrayList<String> commands = new ArrayList<String>();
+
+                if (legacyAlias.isList(key)) {
+                    for (String command : legacyAlias.getStringList(key)) {
+                        commands.add(command + " $1-");
+                    }
+                } else {
+                    commands.add(legacyAlias.getString(key) + " $1-");
+                }
+
+                aliases.set(key, commands);
+            }
+        }
+
+        saveCommandsConfig();
+        overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
         ((SimplePluginManager) pluginManager).useTimings(configuration.getBoolean("settings.plugin-profiling"));
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
@@ -238,8 +319,16 @@ public final class CraftServer implements Server {
         // Spigot End
     }
 
+    public boolean getCommandBlockOverride(String command) {
+        return overrideAllCommandBlockCommands || commandsConfiguration.getStringList("command-block-overrides").contains(command);
+    }
+
     private File getConfigFile() {
         return (File) console.options.valueOf("bukkit-settings");
+    }
+
+    private File getCommandsConfigFile() {
+        return (File) console.options.valueOf("commands-settings");
     }
 
     private void saveConfig() {
@@ -247,6 +336,14 @@ public final class CraftServer implements Server {
             configuration.save(getConfigFile());
         } catch (IOException ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getConfigFile(), ex);
+        }
+    }
+
+    private void saveCommandsConfig() {
+        try {
+            commandsConfiguration.save(getCommandsConfigFile());
+        } catch (IOException ex) {
+            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getCommandsConfigFile(), ex);
         }
     }
 
@@ -286,6 +383,11 @@ public final class CraftServer implements Server {
         }
 
         if (type == PluginLoadOrder.POSTWORLD) {
+            // Spigot start - Allow vanilla commands to be forced to be the main command
+            setVanillaCommands(true);
+            commandMap.setFallbackCommands();
+            setVanillaCommands(false);
+            // Spigot end
             commandMap.registerServerAliases();
             loadCustomPermissions();
             DefaultPermissions.registerCorePermissions();
@@ -296,6 +398,65 @@ public final class CraftServer implements Server {
     public void disablePlugins() {
         pluginManager.disablePlugins();
     }
+
+    // Spigot start
+    private void tryRegister(VanillaCommandWrapper commandWrapper, boolean first) {
+        if (org.spigotmc.SpigotConfig.replaceCommands.contains( commandWrapper.getName() ) ) {
+            if (first) {
+                commandMap.register( "minecraft", commandWrapper );
+            }
+        } else if (!first) {
+            commandMap.register( "minecraft", commandWrapper );
+        }
+    }
+
+    private void setVanillaCommands(boolean first)
+    {
+        tryRegister( new VanillaCommandWrapper( new CommandAchievement(), "/achievement give <stat_name> [player]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandBan(), "/ban <playername> [reason]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandBanIp(), "/ban-ip <ip-address|playername>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandBanList(), "/banlist [ips]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandClear(), "/clear <playername> [item] [metadata]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandGamemodeDefault(), "/defaultgamemode <mode>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandDeop(), "/deop <playername>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandDifficulty(), "/difficulty <new difficulty>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandEffect(), "/effect <player> <effect|clear> [seconds] [amplifier]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandEnchant(), "/enchant <playername> <enchantment ID> [enchantment level]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandGamemode(), "/gamemode <mode> [player]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandGamerule(), "/gamerule <rulename> [true|false]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandGive(), "/give <playername> <item> [amount] [metadata] [dataTag]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandHelp(), "/help [page|commandname]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandIdleTimeout(), "/setidletimeout <Minutes until kick>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandKick(), "/kick <playername> [reason]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandKill(), "/kill [playername]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandList(), "/list" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandMe(), "/me <actiontext>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandOp(), "/op <playername>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandPardon(), "/pardon <playername>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandPardonIP(), "/pardon-ip <ip-address>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandPlaySound(), "/playsound <sound> <playername> [x] [y] [z] [volume] [pitch] [minimumVolume]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSay(), "/say <message>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandScoreboard(), "/scoreboard" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSeed(), "/seed" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSetBlock(), "/setblock <x> <y> <z> <tilename> [datavalue] [oldblockHandling] [dataTag]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSetWorldSpawn(), "/setworldspawn [x] [y] [z]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSpawnpoint(), "/spawnpoint <playername> [x] [y] [z]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSpreadPlayers(), "/spreadplayers <x> <z> [spreadDistance] [maxRange] [respectTeams] <playernames>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandSummon(), "/summon <EntityName> [x] [y] [z] [dataTag]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTp(), "/tp [player] <target>\n/tp [player] <x> <y> <z>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTell(), "/tell <playername> <message>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTellRaw(), "/tellraw <playername> <raw message>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTestFor(), "/testfor <playername | selector> [dataTag]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTestForBlock(), "/testforblock <x> <y> <z> <tilename> [datavalue] [dataTag]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandTime(), "/time set <value>\n/time add <value>" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandToggleDownfall(), "/toggledownfall" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandWeather(), "/weather <clear/rain/thunder> [duration in seconds]" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandWhitelist(), "/whitelist (add|remove) <player>\n/whitelist (on|off|list|reload)" ), first );
+        tryRegister( new VanillaCommandWrapper( new CommandXp(), "/xp <amount> [player]\n/xp <amount>L [player]" ), first );
+        // This is what is in the lang file, I swear.
+        tryRegister( new VanillaCommandWrapper(new CommandNetstat(), "/list"), first );
+    }
+    // Spigot end
 
     private void loadPlugin(Plugin plugin) {
         try {
@@ -342,6 +503,13 @@ public final class CraftServer implements Server {
     public Player getPlayer(final String name) {
         Validate.notNull(name, "Name cannot be null");
 
+        // Spigot End
+        Player directLookup = getPlayerExact( name );
+        if ( directLookup != null )
+        {
+            return directLookup;
+        }
+        // Spigot End
         Player[] players = getOnlinePlayers();
 
         Player found = null;
@@ -363,15 +531,10 @@ public final class CraftServer implements Server {
     public Player getPlayerExact(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        String lname = name.toLowerCase();
-
-        for (Player player : getOnlinePlayers()) {
-            if (player.getName().equalsIgnoreCase(lname)) {
-                return player;
-            }
-        }
-
-        return null;
+        // Spigot Start
+        EntityPlayer entityPlayer = playerList.getPlayer( name );
+        return ( entityPlayer != null ) ? entityPlayer.getBukkitEntity() : null;
+        // Spigot End
     }
 
     public int broadcastMessage(String message) {
@@ -546,12 +709,6 @@ public final class CraftServer implements Server {
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
         }
-        // Spigot Start - Try vanilla commands
-        if ( org.spigotmc.VanillaCommandWrapper.dispatch( sender, commandLine ) != -1 )
-        {
-            return true;
-        }
-        // Spigot End
 
         sender.sendMessage(org.spigotmc.SpigotConfig.unknownCommandMessage);
 
@@ -560,6 +717,7 @@ public final class CraftServer implements Server {
 
     public void reload() {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
+        commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
         PropertyManager config = new PropertyManager(console.options);
 
         ((DedicatedServer) console).propertyManager = config;
@@ -609,6 +767,8 @@ public final class CraftServer implements Server {
         commandMap.clearCommands();
         resetRecipes();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+
+        overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
 
         int pollCount = 0;
 
@@ -1004,7 +1164,7 @@ public final class CraftServer implements Server {
     }
 
     public Map<String, String[]> getCommandAliases() {
-        ConfigurationSection section = configuration.getConfigurationSection("aliases");
+        ConfigurationSection section = commandsConfiguration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<String, String[]>();
 
         if (section != null) {
@@ -1171,20 +1331,19 @@ public final class CraftServer implements Server {
 
     @SuppressWarnings("unchecked")
     public Set<String> getIPBans() {
-        return playerList.getIPBans().getEntries().keySet();
+        return new HashSet<String>(playerList.getIPBans().getEntries().keySet());
     }
 
     public void banIP(String address) {
         Validate.notNull(address, "Address cannot be null.");
 
-        BanEntry entry = new BanEntry(address);
-        playerList.getIPBans().add(entry);
-        playerList.getIPBans().save();
+        this.getBanList(org.bukkit.BanList.Type.IP).addBan(address, null, null, null);
     }
 
     public void unbanIP(String address) {
-        playerList.getIPBans().remove(address);
-        playerList.getIPBans().save();
+        Validate.notNull(address, "Address cannot be null.");
+
+        this.getBanList(org.bukkit.BanList.Type.IP).pardon(address);
     }
 
     public Set<OfflinePlayer> getBannedPlayers() {
@@ -1195,6 +1354,19 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    @Override
+    public BanList getBanList(BanList.Type type){
+        Validate.notNull(type, "Type cannot be null");
+
+        switch(type){
+        case IP:
+            return new CraftBanList(playerList.getIPBans());
+        case NAME:
+        default: // Fall through as a player name list for safety
+            return new CraftBanList(playerList.getNameBans());
+        }
     }
 
     public void setWhitelist(boolean value) {
@@ -1401,29 +1573,21 @@ public final class CraftServer implements Server {
 
     public List<String> tabCompleteCommand(Player player, String message) {
         // Spigot Start
-        if ( !org.spigotmc.SpigotConfig.tabComplete )
+        if ( !org.spigotmc.SpigotConfig.tabComplete && !message.contains( " " ) )
         {
             return ImmutableList.of();
         }
         // Spigot End
 
-        // Spigot Start
-        List<String> completions = new ArrayList<String>();
+        List<String> completions = null;
         try {
-            message = message.substring( 1 );
-            List<String> bukkitCompletions = getCommandMap().tabComplete( player, message );
-            if ( bukkitCompletions != null )
-            {
-                completions.addAll( bukkitCompletions );
-            }
-            completions.addAll( org.spigotmc.VanillaCommandWrapper.complete( player, message ) );
-            // Spigot End
+            completions = getCommandMap().tabComplete(player, message.substring(1));
         } catch (CommandException ex) {
             player.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
             getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
         }
 
-        return completions; // Spigot
+        return completions == null ? ImmutableList.<String>of() : completions;
     }
 
     public List<String> tabCompleteChat(Player player, String message) {
@@ -1499,5 +1663,19 @@ public final class CraftServer implements Server {
         ByteBuf bytebuf1 = Base64.encode(bytebuf);
 
         return new CraftIconCache("data:image/png;base64," + bytebuf1.toString(Charsets.UTF_8));
+    }
+
+    public void setIdleTimeout(int threshold) {
+        console.setIdleTimeout(threshold);
+    }
+
+    public int getIdleTimeout() {
+        return console.getIdleTimeout();
+    }
+
+    @Deprecated
+    @Override
+    public UnsafeValues getUnsafe() {
+        return CraftMagicNumbers.INSTANCE;
     }
 }

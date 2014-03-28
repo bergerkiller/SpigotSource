@@ -3,12 +3,9 @@ package org.spigotmc;
 import java.io.File;
 import java.util.List;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PacketPlayOutKickDisconnect;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class RestartCommand extends Command
 {
@@ -33,6 +30,7 @@ public class RestartCommand extends Command
 
     public static void restart()
     {
+        AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
         try
         {
             final File file = new File( SpigotConfig.restartScript );
@@ -44,7 +42,6 @@ public class RestartCommand extends Command
                 for ( EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players )
                 {
                     p.playerConnection.disconnect(SpigotConfig.restartMessage);
-                    p.playerConnection.networkManager.d();
                 }
                 // Give the socket a chance to send the packets
                 try
@@ -54,7 +51,7 @@ public class RestartCommand extends Command
                 {
                 }
                 // Close the socket so we can rebind with the new process
-                MinecraftServer.getServer().ag().b();
+                MinecraftServer.getServer().ah().b();
 
                 // Give time for it to kick in
                 try

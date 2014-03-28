@@ -1,11 +1,11 @@
-CraftBukkit
+Spigot
 ===========
 
-A Bukkit (Minecraft Server API) implementation
+A Spigot-API and Bukkit implementation
 
-Website: [http://bukkit.org](http://bukkit.org)  
-Bugs/Suggestions: [http://leaky.bukkit.org](http://leaky.bukkit.org)  
-Contributing Guidelines: [CONTRIBUTING.md](https://github.com/Bukkit/CraftBukkit/blob/master/CONTRIBUTING.md)
+Website: [http://spigotmc.org](http://spigotmc.org)  
+Bugs/Suggestions: [http://www.spigotmc.org/forums/bugs-feature-requests.8/](http://www.spigotmc.org/forums/bugs-feature-requests.8/)  
+Contributing Guidelines: [CONTRIBUTING.md](https://github.com/SpigotMC/Spigot-API/blob/master/CONTRIBUTING.md)
 
 Compilation
 -----------
@@ -13,6 +13,6 @@ Compilation
 We use maven to handle our dependencies.
 
 * Install [Maven 3](http://maven.apache.org/download.html)
-* Check out and install [Bukkit](http://github.com/Bukkit/Bukkit)
-    * *Note*: this is not needed as the repository we use has Bukkit too, but you might have a newer one (with your own changes :D)
+* Check out and install [Spigot-API](http://github.com/SpigotMC/Spigot)
+    * *Note*: this is not needed as the repository we use has Spigot-API too, but you might have a newer one (with your own changes :D)
 * Check out this repo and: `mvn clean package`

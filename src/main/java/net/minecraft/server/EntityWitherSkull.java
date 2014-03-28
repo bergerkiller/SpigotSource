@@ -35,15 +35,19 @@ public class EntityWitherSkull extends EntityFireball {
     protected void a(MovingObjectPosition movingobjectposition) {
         if (!this.world.isStatic) {
             if (movingobjectposition.entity != null) {
+                // Spigot start
+                boolean didDamage = false;         	
                 if (this.shooter != null) {
-                    if (movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F) && !movingobjectposition.entity.isAlive()) {
+                    didDamage = movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F);
+                    if (didDamage && !movingobjectposition.entity.isAlive()) {
                         this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
                     }
                 } else {
-                    movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5.0F);
+                    didDamage = movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5.0F);
                 }
 
-                if (movingobjectposition.entity instanceof EntityLiving) {
+                if (didDamage && movingobjectposition.entity instanceof EntityLiving) {
+                // Spigot end
                     byte b0 = 0;
 
                     if (this.world.difficulty == EnumDifficulty.NORMAL) {
@@ -71,7 +75,7 @@ public class EntityWitherSkull extends EntityFireball {
         }
     }
 
-    public boolean R() {
+    public boolean Q() {
         return false;
     }
 

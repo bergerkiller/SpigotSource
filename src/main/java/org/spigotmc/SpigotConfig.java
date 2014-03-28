@@ -8,16 +8,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
+
+import gnu.trove.map.hash.TObjectIntHashMap;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.SimpleCommandMap;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.command.TicksPerSecondCommand;
 
 public class SpigotConfig
 {
@@ -135,11 +138,6 @@ public class SpigotConfig
         return config.getString( path, config.getString( path ) );
     }
 
-    private static void tpsCommand()
-    {
-        commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
-    }
-
     public static boolean logCommands;
     private static void logCommands()
     {
@@ -163,7 +161,7 @@ public class SpigotConfig
     }
     private static void messages()
     {
-        if (version < 4) 
+        if (version < 4)
         {
             set( "messages.outdated-client", outdatedClientMessage );
             set( "messages.outdated-server", outdatedServerMessage );
@@ -207,17 +205,86 @@ public class SpigotConfig
         Bukkit.getLogger().log( Level.INFO, "Using {0} threads for Netty based IO", count );
     }
 
-    private static void replaceCommands()
-    {
-        for ( String command : (List<String>) getList( "replace-commands", Arrays.asList( "setblock", "summon", "testforblock" ) ) )
-        {
-            SimpleCommandMap.removeFallback( command );
-            VanillaCommandWrapper.allowedCommands.add( command );
-        }
-    }
-
     public static boolean lateBind;
     private static void lateBind() {
         lateBind = getBoolean( "settings.late-bind", false );
+    }
+
+    public static boolean disableStatSaving;
+    public static TObjectIntHashMap<String> forcedStats = new TObjectIntHashMap<String>();
+    private static void stats()
+    {
+        disableStatSaving = getBoolean( "stats.disable-saving", false );
+
+        if ( !config.contains( "stats.forced-stats" ) ) {
+            config.createSection( "stats.forced-stats" );
+        }
+
+        ConfigurationSection section = config.getConfigurationSection( "stats.forced-stats" );
+        for ( String name : section.getKeys( true ) )
+        {
+            if ( section.isInt( name ) )
+            {
+                forcedStats.put( name, section.getInt( name ) );
+            }
+        }
+
+        if ( disableStatSaving && section.getInt( "achievement.openInventory", 0 ) < 1 )
+        {
+            Bukkit.getLogger().warning( "*** WARNING *** stats.disable-saving is true but stats.forced-stats.achievement.openInventory" +
+                    " isn't set to 1. Disabling stat saving without forcing the achievement may cause it to get stuck on the player's " +
+                    "screen." );
+        }
+    }
+
+    private static void tpsCommand()
+    {
+        commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
+    }
+
+    public static int playerSample;
+    private static void playerSample()
+    {
+        playerSample = getInt( "settings.sample-count", 12 );
+        System.out.println( "Server Ping Player Sample Count: " + playerSample );
+    }
+
+    public static int playerShuffle;
+    private static void playerShuffle()
+    {
+        playerShuffle = getInt( "settings.player-shuffle", 0 );
+    }
+
+    public static List<String> spamExclusions;
+    private static void spamExclusions()
+    {
+        spamExclusions = getList( "commands.spam-exclusions", Arrays.asList( new String[]
+        {
+                "/skill"
+        } ) );
+    }
+
+    public static boolean silentCommandBlocks;
+    private static void silentCommandBlocks()
+    {
+        silentCommandBlocks = getBoolean( "commands.silent-commandblock-console", false );
+    }
+
+    public static boolean filterCreativeItems;
+    private static void filterCreativeItems()
+    {
+        filterCreativeItems = getBoolean( "settings.filter-creative-items", true );
+    }
+
+    public static Set<String> replaceCommands;
+    private static void replaceCommands()
+    {
+        if ( config.contains( "replace-commands" ) )
+        {
+            set( "commands.replace-commands", config.getStringList( "replace-commands" ) );
+            config.set( "replace-commands", null );
+        }
+        replaceCommands = new HashSet<String>( (List<String>) getList( "commands.replace-commands",
+                Arrays.asList( "setblock", "summon", "testforblock", "tellraw" ) ) );
     }
 }

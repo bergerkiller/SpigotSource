@@ -78,7 +78,7 @@ public final class ItemStack {
         boolean flag = this.getItem().interactWith(this, entityhuman, world, i, j, k, l, f, f1, f2);
 
         if (flag) {
-            entityhuman.a(StatisticList.E[Item.b(this.item)], 1);
+            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
         }
 
         return flag;
@@ -130,7 +130,13 @@ public final class ItemStack {
     }
 
     public boolean g() {
-        return this.item.getMaxDurability() <= 0 ? false : !this.hasTag() || !this.getTag().getBoolean("Unbreakable");
+        // Spigot Start
+        if ( this.item.getMaxDurability() <= 0 )
+        {
+            return false;
+        }
+        return ( !hasTag() ) || ( !getTag().getBoolean( "Unbreakable" ) );
+        // Spigot End
     }
 
     public boolean usesData() {
@@ -219,15 +225,15 @@ public final class ItemStack {
     public void damage(int i, EntityLiving entityliving) {
         if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
             if (this.g()) {
-                if (this.isDamaged(i, entityliving.aI(), entityliving)) {
+                if (this.isDamaged(i, entityliving.aH(), entityliving)) {
                     entityliving.a(this);
                     --this.count;
                     if (entityliving instanceof EntityHuman) {
                         EntityHuman entityhuman = (EntityHuman) entityliving;
 
-                        entityhuman.a(StatisticList.F[Item.b(this.item)], 1);
+                        entityhuman.a(StatisticList.BREAK_ITEM_COUNT[Item.b(this.item)], 1);
                         if (this.count == 0 && this.getItem() instanceof ItemBow) {
-                            entityhuman.bE();
+                            entityhuman.bF();
                         }
                     }
 
@@ -251,7 +257,7 @@ public final class ItemStack {
         boolean flag = this.item.a(this, entityliving, (EntityLiving) entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.E[Item.b(this.item)], 1);
+            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
         }
     }
 
@@ -259,7 +265,7 @@ public final class ItemStack {
         boolean flag = this.item.a(this, world, block, i, j, k, entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.E[Item.b(this.item)], 1);
+            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
         }
     }
 
@@ -318,7 +324,7 @@ public final class ItemStack {
     }
 
     public void a(World world, EntityHuman entityhuman, int i) {
-        entityhuman.a(StatisticList.D[Item.b(this.item)], i);
+        entityhuman.a(StatisticList.CRAFT_BLOCK_COUNT[Item.b(this.item)], i);
         this.item.d(this, world, entityhuman);
     }
 
@@ -495,8 +501,8 @@ public final class ItemStack {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
 
             this.save(nbttagcompound);
-            ichatbasecomponent.b().a(new ChatHoverable(EnumHoverAction.SHOW_ITEM, new ChatComponentText(nbttagcompound.toString())));
-            ichatbasecomponent.b().setColor(this.w().e);
+            ichatbasecomponent.getChatModifier().a(new ChatHoverable(EnumHoverAction.SHOW_ITEM, new ChatComponentText(nbttagcompound.toString())));
+            ichatbasecomponent.getChatModifier().setColor(this.w().e);
         }
 
         return ichatbasecomponent;

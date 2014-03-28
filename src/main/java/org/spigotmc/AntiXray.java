@@ -103,6 +103,7 @@ public class AntiXray
                                 // For some reason we can get too far ahead of ourselves (concurrent modification on bulk chunks?) so if we do, just abort and move on
                                 if ( index >= buffer.length )
                                 {
+                                    index++;
                                     continue;
                                 }
                                 // Grab the block ID in the buffer.
@@ -111,13 +112,14 @@ public class AntiXray
                                 // Check if the block should be obfuscated
                                 if ( obfuscateBlocks[blockId] )
                                 {
-                                    // TODO: Don't really understand this, but if radius is not 0 and the world isn't loaded, bail out
-                                    if ( initialRadius != 0 && !isLoaded( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
+                                    // The world isn't loaded, bail out
+                                    if ( !isLoaded( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
                                     {
+                                        index++;
                                         continue;
                                     }
                                     // On the otherhand, if radius is 0, or the nearby blocks are all non air, we can obfuscate
-                                    if ( initialRadius == 0 || !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
+                                    if ( !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
                                     {
                                         switch ( world.spigotConfig.engineMode )
                                         {
@@ -177,13 +179,13 @@ public class AntiXray
     private static boolean isLoaded(World world, int x, int y, int z, int radius)
     {
         return world.isLoaded( x, y, z )
-                || ( radius > 0
-                && ( isLoaded( world, x + 1, y, z, radius - 1 )
-                || isLoaded( world, x - 1, y, z, radius - 1 )
-                || isLoaded( world, x, y + 1, z, radius - 1 )
-                || isLoaded( world, x, y - 1, z, radius - 1 )
-                || isLoaded( world, x, y, z + 1, radius - 1 )
-                || isLoaded( world, x, y, z - 1, radius - 1 ) ) );
+                && ( radius == 0 ||
+                ( isLoaded( world, x + 1, y, z, radius - 1 )
+                && isLoaded( world, x - 1, y, z, radius - 1 )
+                && isLoaded( world, x, y + 1, z, radius - 1 )
+                && isLoaded( world, x, y - 1, z, radius - 1 )
+                && isLoaded( world, x, y, z + 1, radius - 1 )
+                && isLoaded( world, x, y, z - 1, radius - 1 ) ) );
     }
 
     private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)

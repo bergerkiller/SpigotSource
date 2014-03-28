@@ -31,7 +31,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
     public void e() {
         super.e();
-        if (this.a.aI().nextInt(20) == 0) {
+        if (this.a.aH().nextInt(20) == 0) {
             this.a.world.triggerEffect(1010, this.b, this.c, this.d, 0);
         }
 
@@ -46,7 +46,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         if (this.i == 240 && this.a.world.difficulty == EnumDifficulty.HARD) {
             // CraftBukkit start
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.a, this.b, this.c, this.d).isCancelled()) {
-                this.e();
+                this.c();
                 return;
             }
             // CraftBukkit end

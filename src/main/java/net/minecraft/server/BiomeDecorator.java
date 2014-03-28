@@ -1,10 +1,5 @@
 package net.minecraft.server;
 
-// Spigot Start
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-// Spigot End
 import java.util.Random;
 
 public class BiomeDecorator {
@@ -44,7 +39,6 @@ public class BiomeDecorator {
     protected int G;
     protected int H;
     public boolean I;
-    private final List<Chunk> chunksToUnload = new ArrayList<Chunk>(); // Spigot
 
     public BiomeDecorator() {
         this.f = new WorldGenSand(Blocks.SAND, 7);
@@ -162,15 +156,15 @@ public class BiomeDecorator {
         for (j = 0; j < this.A; ++j) {
             k = this.c + this.b.nextInt(16) + 8;
             l = this.d + this.b.nextInt(16) + 8;
-            i1 = this.b.nextInt(this.getHighestBlockYAt(k, l) * 2);
-            (new WorldGenDeadBush(Blocks.DEAD_BUSH)).a(this.a, this.b, k, i1, l); // Spigot
+            i1 = this.b.nextInt(this.getHighestBlockYAt(k, l) * 2); // Spigot
+            (new WorldGenDeadBush(Blocks.DEAD_BUSH)).a(this.a, this.b, k, i1, l);
         }
 
         for (j = 0; j < this.w; ++j) {
             k = this.c + this.b.nextInt(16) + 8;
             l = this.d + this.b.nextInt(16) + 8;
 
-            for (i1 = this.b.nextInt(this.getHighestBlockYAt(k, l) * 2); i1 > 0 && this.a.isEmpty(k, i1 - 1, l); --i1) {  // Spigot
+            for (i1 = this.b.nextInt(this.getHighestBlockYAt(k, l) * 2); i1 > 0 && this.a.isEmpty(k, i1 - 1, l); --i1) { // Spigot
                 ;
             }
 
@@ -181,7 +175,7 @@ public class BiomeDecorator {
             if (this.b.nextInt(4) == 0) {
                 k = this.c + this.b.nextInt(16) + 8;
                 l = this.d + this.b.nextInt(16) + 8;
-                i1 = this.getHighestBlockYAt(k, l); // Spigot
+                i1 = this.a.getHighestBlockYAt(k, l);
                 this.q.a(this.a, this.b, k, i1, l);
             }
 
@@ -250,7 +244,6 @@ public class BiomeDecorator {
                 (new WorldGenLiquids(Blocks.LAVA)).a(this.a, this.b, k, l, i1);
             }
         }
-        this.unloadChunks(); // Spigot - unload chunks we force loaded
     }
 
     protected void a(int i, WorldGenerator worldgenerator, int j, int k) {
@@ -284,27 +277,10 @@ public class BiomeDecorator {
         this.b(1, this.o, 16, 16);
     }
 
-    // Spigot start - force load chunks
-    private int getHighestBlockYAt(int i, int j)
+    // Spigot Start
+    private int getHighestBlockYAt(int x, int z)
     {
-        // Make sure the chunk is loaded
-        if ( !this.a.isChunkLoaded( i >> 4, j >> 4 ) )
-        {
-            // If not, load it, then add it to our unload list
-            this.chunksToUnload.add( this.a.getChunkAt( i >> 4, j >> 4 ) );
-        }
-
-        return this.a.getHighestBlockYAt( i, j );
+        return Math.max( 1, this.a.getHighestBlockYAt( x, z ) );
     }
-
-    private void unloadChunks()
-    {
-        Iterator<Chunk> iter = this.chunksToUnload.iterator();
-        while ( iter.hasNext() )
-        {
-            this.a.getWorld().unloadChunk( iter.next().bukkitChunk );
-            iter.remove();
-        }
-    }
-    // Spigot end
+    // Spigot End
 }

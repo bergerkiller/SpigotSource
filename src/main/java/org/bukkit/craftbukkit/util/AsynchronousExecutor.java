@@ -24,7 +24,7 @@ import org.apache.commons.lang.Validate;
  * @param <T> The type of object you provide. This is created in stage 1, and passed to stage 2, 3, and returned if get() is called.
  * @param <C> The type of callback you provide. You may register many of these to be passed to the provider in stage 3, one at a time.
  * @param <E> A type of exception you may throw and expect to be handled by the main thread
- * @author Wesley Wolfe (c) 2012
+ * @author Wesley Wolfe (c) 2012, 2014
  */
 public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
 
@@ -153,8 +153,14 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
             }
         }
 
+        @SuppressWarnings("unchecked")
         T get() throws E {
             initSync();
+            if (callbacks.isEmpty()) {
+                // 'this' is a placeholder to prevent callbacks from being empty during finish call
+                // See get method below
+                callbacks.add((C) this);
+            }
             finish();
             return object;
         }
@@ -171,6 +177,9 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
                         if (t != null) {
                             throw t;
                         }
+                        if (callbacks.isEmpty()) {
+                            return;
+                        }
 
                         final CallBackProvider<P, T, C, E> provider = AsynchronousExecutor.this.provider;
                         final P parameter = this.parameter;
@@ -178,6 +187,11 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
 
                         provider.callStage2(parameter, object);
                         for (C callback : callbacks) {
+                            if (callback == this) {
+                                // 'this' is a placeholder to prevent callbacks from being empty on a get() call
+                                // See get method above
+                                continue;
+                            }
                             provider.callStage3(parameter, object, callback);
                         }
                     } finally {
@@ -185,6 +199,17 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
                         state = FINISHED;
                     }
                 case FINISHED:
+            }
+        }
+
+        boolean drop() {
+            if (set(this, PENDING, FINISHED)) {
+                // If we succeed that variable switch, good as forgotten
+                tasks.remove(parameter);
+                return true;
+            } else {
+                // We need the async thread to finish normally to properly dispose of the task
+                return false;
             }
         }
     }
@@ -208,6 +233,7 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
 
     /**
      * Adds a callback to the parameter provided, adding parameter to the queue if needed.
+     * <p>
      * This should always be synchronous.
      */
     public void add(P parameter, C callback) {
@@ -220,7 +246,37 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
     }
 
     /**
+     * This removes a particular callback from the specified parameter.
+     * <p>
+     * If no callbacks remain for a given parameter, then the {@link CallBackProvider CallBackProvider's} stages may be omitted from execution.
+     * Stage 3 will have no callbacks, stage 2 will be skipped unless a {@link #get(Object)} is used, and stage 1 will be avoided on a best-effort basis.
+     * <p>
+     * Subsequent calls to {@link #getSkipQueue(Object)} will always work.
+     * <p>
+     * Subsequent calls to {@link #get(Object)} might work.
+     * <p>
+     * This should always be synchronous
+     * @return true if no further execution for the parameter is possible, such that, no exceptions will be thrown in {@link #finishActive()} for the parameter, and {@link #get(Object)} will throw an {@link IllegalStateException}, false otherwise
+     * @throws IllegalStateException if parameter is not in the queue anymore
+     * @throws IllegalStateException if the callback was not specified for given parameter
+     */
+    public boolean drop(P parameter, C callback) throws IllegalStateException {
+        final Task task = tasks.get(parameter);
+        if (task == null) {
+            throw new IllegalStateException("Unknown " + parameter);
+        }
+        if (!task.callbacks.remove(callback)) {
+            throw new IllegalStateException("Unknown " + callback + " for " + parameter);
+        }
+        if (task.callbacks.isEmpty()) {
+            return task.drop();
+        }
+        return false;
+    }
+
+    /**
      * This method attempts to skip the waiting period for said parameter.
+     * <p>
      * This should always be synchronous.
      * @throws IllegalStateException if the parameter is not in the queue anymore, or sometimes if called from asynchronous thread
      */
@@ -236,14 +292,14 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
      * Processes a parameter as if it was in the queue, without ever passing to another thread.
      */
     public T getSkipQueue(P parameter) throws E {
-        return skipQueue(provider, parameter);
+        return skipQueue(parameter);
     }
 
     /**
      * Processes a parameter as if it was in the queue, without ever passing to another thread.
      */
     public T getSkipQueue(P parameter, C callback) throws E {
-        final T object = skipQueue(provider, parameter);
+        final T object = skipQueue(parameter);
         provider.callStage3(parameter, object, callback);
         return object;
     }
@@ -253,7 +309,7 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
      */
     public T getSkipQueue(P parameter, C...callbacks) throws E {
         final CallBackProvider<P, T, C, E> provider = this.provider;
-        final T object = skipQueue(provider, parameter);
+        final T object = skipQueue(parameter);
         for (C callback : callbacks) {
             provider.callStage3(parameter, object, callback);
         }
@@ -265,14 +321,18 @@ public final class AsynchronousExecutor<P, T, C, E extends Throwable> {
      */
     public T getSkipQueue(P parameter, Iterable<C> callbacks) throws E {
         final CallBackProvider<P, T, C, E> provider = this.provider;
-        final T object = skipQueue(provider, parameter);
+        final T object = skipQueue(parameter);
         for (C callback : callbacks) {
             provider.callStage3(parameter, object, callback);
         }
         return object;
     }
 
-    private static <T, P, E extends Throwable> T skipQueue(CallBackProvider<P, T, ?, E> provider, P parameter) throws E {
+    private T skipQueue(P parameter) throws E {
+        Task task = tasks.get(parameter);
+        if (task != null) {
+            return task.get();
+        }
         T object = provider.callStage1(parameter);
         provider.callStage2(parameter, object);
         return object;

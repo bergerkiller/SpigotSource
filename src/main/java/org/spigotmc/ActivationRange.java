@@ -241,7 +241,7 @@ public class ActivationRange
             if ( entity instanceof EntityAnimal )
             {
                 EntityAnimal animal = (EntityAnimal) entity;
-                if ( animal.isBaby() || animal.cc() /*love*/ )
+                if ( animal.isBaby() || animal.ce() /*love*/ )
                 {
                     return true;
                 }

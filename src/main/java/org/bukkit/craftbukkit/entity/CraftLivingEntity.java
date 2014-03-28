@@ -11,6 +11,9 @@ import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityEnderPearl;
+import net.minecraft.server.EntityFishingHook;
+import net.minecraft.server.EntityHuman;
+import net.minecraft.server.EntityFireball;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EntityLargeFireball;
 import net.minecraft.server.EntityLiving;
@@ -18,6 +21,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntitySmallFireball;
 import net.minecraft.server.EntitySnowball;
+import net.minecraft.server.EntityThrownExpBottle;
 import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.GenericAttributes;
@@ -38,12 +42,14 @@ import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.Fish;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Snowball;
+import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -274,7 +280,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public void removePotionEffect(PotionEffectType type) {
-        getHandle().m(type.getId()); // Should be removeEffect.
+        getHandle().removeEffect(type.getId());
     }
 
     public Collection<PotionEffect> getActivePotionEffects() {
@@ -288,8 +294,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return effects;
     }
 
-    @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
+        return launchProjectile(projectile, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
         net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
         net.minecraft.server.Entity launch = null;
 
@@ -303,6 +313,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             launch = new EntityArrow(world, getHandle(), 1);
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             launch = new EntityPotion(world, getHandle(), CraftItemStack.asNMSCopy(new ItemStack(Material.POTION, 1)));
+        } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
+            launch = new EntityThrownExpBottle(world, getHandle());
+        } else if (Fish.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
+            launch = new EntityFishingHook(world, (EntityHuman) getHandle());
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             Location location = getEyeLocation();
             Vector direction = location.getDirection().multiply(10);
@@ -315,10 +329,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new EntityLargeFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
             }
 
+            ((EntityFireball) launch).projectileSource = this;
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 
         Validate.notNull(launch, "Projectile not supported");
+
+        if (velocity != null) {
+            ((T) launch.getBukkitEntity()).setVelocity(velocity);
+        }
 
         world.addEntity(launch);
         return (T) launch.getBukkitEntity();
@@ -329,7 +348,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public boolean hasLineOfSight(Entity other) {
-        return getHandle().o(((CraftEntity) other).getHandle());
+        return getHandle().p(((CraftEntity) other).getHandle());
     }
 
     public boolean getRemoveWhenFarAway() {

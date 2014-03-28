@@ -11,9 +11,9 @@ final class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
         EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
-        double d0 = isourceblock.getX() + (double) enumfacing.c();
+        double d0 = isourceblock.getX() + (double) enumfacing.getAdjacentX();
         double d1 = (double) ((float) isourceblock.getBlockY() + 0.2F);
-        double d2 = isourceblock.getZ() + (double) enumfacing.e();
+        double d2 = isourceblock.getZ() + (double) enumfacing.getAdjacentZ();
 
         // CraftBukkit start
         World world = isourceblock.k();
@@ -35,7 +35,7 @@ final class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
             itemstack.count++;
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.a(eventStack.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;
@@ -44,7 +44,7 @@ final class DispenseBehaviorMonsterEgg extends DispenseBehaviorItem {
 
         itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
 
-        Entity entity = ItemMonsterEgg.a(isourceblock.k(), itemstack.getData(), event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
+        Entity entity = ItemMonsterEgg.spawnCreature(isourceblock.k(), itemstack.getData(), event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG);
 
         if (entity instanceof EntityLiving && itemstack.hasName()) {
             ((EntityInsentient) entity).setCustomName(itemstack.getName());

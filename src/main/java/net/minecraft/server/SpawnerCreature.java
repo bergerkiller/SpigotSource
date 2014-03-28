@@ -22,7 +22,7 @@ public final class SpawnerCreature {
         Chunk chunk = world.getChunkAt(i, j);
         int k = i * 16 + world.random.nextInt(16);
         int l = j * 16 + world.random.nextInt(16);
-        int i1 = world.random.nextInt(chunk == null ? world.R() : chunk.h() + 16 - 1);
+        int i1 = world.random.nextInt(chunk == null ? world.S() : chunk.h() + 16 - 1);
 
         return new ChunkPosition(k, i1, l);
     }
@@ -69,7 +69,7 @@ public final class SpawnerCreature {
                     for (int i1 = -b0; i1 <= b0; ++i1) {
                         boolean flag3 = l == -b0 || l == b0 || i1 == -b0 || i1 == b0;
 
-                        // CraftBukkit start
+                        // CraftBukkit start - use LongHash and LongObjectHashMap
                         long chunkCoords = LongHash.toLong(l + k, i1 + j);
 
                         if (!flag3) {
@@ -120,7 +120,7 @@ public final class SpawnerCreature {
                     int moblimit = (limit * this.a.size() / 256) - mobcnt + 1; // Spigot - up to 1 more than limit
                     label110:
                     while (iterator.hasNext() && (moblimit > 0)) { // Spigot - while more allowed
-                        // CraftBukkit start
+                        // CraftBukkit start = use LongHash and LongObjectHashMap
                         long key = ((Long) iterator.next()).longValue();
 
                         if (!this.a.get(key)) {
@@ -191,7 +191,7 @@ public final class SpawnerCreature {
                                                                     continue label110;
                                                                 }
                                                                 // Spigot end
-                                                                if (j2 >= entityinsentient.bz()) {
+                                                                if (j2 >= entityinsentient.bB()) {
                                                                     continue label110;
                                                                 }
                                                             }

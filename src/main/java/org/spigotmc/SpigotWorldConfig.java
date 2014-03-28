@@ -71,10 +71,14 @@ public class SpigotWorldConfig
     }
 
     public int chunksPerTick;
+    public boolean clearChunksOnTick;
     private void chunksPerTick()
     {
         chunksPerTick = getInt( "chunks-per-tick", 650 );
         log( "Chunks to Grow per Tick: " + chunksPerTick );
+
+        clearChunksOnTick = getBoolean( "clear-tick-list", false );
+        log( "Clear tick list: " + clearChunksOnTick );
     }
 
     // Crop growth rates
@@ -151,15 +155,15 @@ public class SpigotWorldConfig
     public int animalTrackingRange = 48;
     public int monsterTrackingRange = 48;
     public int miscTrackingRange = 32;
-    public int maxTrackingRange = 64;
+    public int otherTrackingRange = 64;
     private void trackingRange()
     {
         playerTrackingRange = getInt( "entity-tracking-range.players", playerTrackingRange );
         animalTrackingRange = getInt( "entity-tracking-range.animals", animalTrackingRange );
         monsterTrackingRange = getInt( "entity-tracking-range.monsters", monsterTrackingRange );
         miscTrackingRange = getInt( "entity-tracking-range.misc", miscTrackingRange );
-        maxTrackingRange = getInt( "entity-tracking-range.other", maxTrackingRange );
-        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + maxTrackingRange );
+        otherTrackingRange = getInt( "entity-tracking-range.other", otherTrackingRange );
+        log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
 
     public int hopperTransfer = 8;
@@ -235,7 +239,7 @@ public class SpigotWorldConfig
         {
             1, 5
         } ) );
-        log( "\tReplace Blocks: " + hiddenBlocks );
+        log( "\tReplace Blocks: " + replaceBlocks );
 
         antiXrayInstance = new AntiXray( this );
     }
@@ -251,6 +255,27 @@ public class SpigotWorldConfig
     private void nerfSpawnerMobs()
     {
         nerfSpawnerMobs = getBoolean( "nerf-spawner-mobs", false );
-        log( "Nerfing mobs spawned from spawners " + nerfSpawnerMobs );
+        log( "Nerfing mobs spawned from spawners: " + nerfSpawnerMobs );
+    }
+
+    public boolean enableZombiePigmenPortalSpawns;
+    private void enableZombiePigmenPortalSpawns()
+    {
+        enableZombiePigmenPortalSpawns = getBoolean( "enable-zombie-pigmen-portal-spawns", true );
+        log( "Allow Zombie Pigmen to spawn from portal blocks: " + enableZombiePigmenPortalSpawns );
+    }
+
+    public int maxBulkChunk;
+    private void bulkChunkCount()
+    {
+        maxBulkChunk = getInt( "max-bulk-chunks", 5 );
+        log( "Sending up to " + maxBulkChunk + " chunks per packet" );
+    }
+
+    public int maxCollisionsPerEntity;
+    private void maxEntityCollision()
+    {
+        maxCollisionsPerEntity = getInt( "max-entity-collisions", 8 );
+        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
     }
 }

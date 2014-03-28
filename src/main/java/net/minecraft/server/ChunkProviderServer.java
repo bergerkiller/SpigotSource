@@ -2,10 +2,11 @@ package net.minecraft.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Random;
 
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.craftbukkit.util.LongHashSet;
 import org.bukkit.craftbukkit.util.LongObjectHashMap;
@@ -42,6 +44,13 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean isChunkLoaded(int i, int j) {
         return this.chunks.containsKey(LongHash.toLong(i, j)); // CraftBukkit
+    }
+
+    // CraftBukkit start - Change return type to Collection and return the values of our chunk map
+    public java.util.Collection a() {
+        // return this.chunkList;
+        return this.chunks.values();
+        // CraftBukkit end
     }
 
     public void queueUnload(int i, int j) {
@@ -73,7 +82,7 @@ public class ChunkProviderServer implements IChunkProvider {
         }
     }
 
-    public void a() {
+    public void b() {
         Iterator iterator = this.chunks.values().iterator(); // CraftBukkit
 
         while (iterator.hasNext()) {
@@ -90,20 +99,37 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public Chunk getChunkAt(int i, int j, Runnable runnable) {
         this.unloadQueue.remove(i, j);
-        Chunk chunk = (Chunk) this.chunks.get(LongHash.toLong(i, j));
-        boolean newChunk = false;
+        Chunk chunk = this.chunks.get(LongHash.toLong(i, j));
         ChunkRegionLoader loader = null;
 
         if (this.f instanceof ChunkRegionLoader) {
             loader = (ChunkRegionLoader) this.f;
         }
 
-        // If the chunk exists but isn't loaded do it async
-        if (chunk == null && runnable != null && loader != null && loader.chunkExists(this.world, i, j)) {
-            org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.queueChunkLoad(this.world, loader, this, i, j, runnable);
-            return null;
+        // We can only use the queue for already generated chunks
+        if (chunk == null && loader != null && loader.chunkExists(this.world, i, j)) {
+            if (runnable != null) {
+                ChunkIOExecutor.queueChunkLoad(this.world, loader, this, i, j, runnable);
+                return null;
+            } else {
+                chunk = ChunkIOExecutor.syncChunkLoad(this.world, loader, this, i, j);
+            }
+        } else if (chunk == null) {
+            chunk = this.originalGetChunkAt(i, j);
         }
-        // CraftBukkit end
+
+        // If we didn't load the chunk async and have a callback run it now
+        if (runnable != null) {
+            runnable.run();
+        }
+
+        return chunk;
+    }
+
+    public Chunk originalGetChunkAt(int i, int j) {
+        this.unloadQueue.remove(i, j);
+        Chunk chunk = (Chunk) this.chunks.get(LongHash.toLong(i, j));
+        boolean newChunk = false;
 
         if (chunk == null) {
             org.bukkit.craftbukkit.SpigotTimings.syncChunkLoadTimer.startTiming(); // Spigot
@@ -144,12 +170,6 @@ public class ChunkProviderServer implements IChunkProvider {
             chunk.a(this, this, i, j);
             org.bukkit.craftbukkit.SpigotTimings.syncChunkLoadTimer.stopTiming(); // Spigot
         }
-
-        // CraftBukkit start - If we didn't need to load the chunk run the callback now
-        if (runnable != null) {
-            runnable.run();
-        }
-        // CraftBukkit end
 
         return chunk;
     }
@@ -281,7 +301,7 @@ public class ChunkProviderServer implements IChunkProvider {
         return true;
     }
 
-    public void b() {
+    public void c() {
         if (this.f != null) {
             this.f.b();
         }
@@ -295,6 +315,13 @@ public class ChunkProviderServer implements IChunkProvider {
                 long chunkcoordinates = this.unloadQueue.popFirst();
                 Chunk chunk = this.chunks.get(chunkcoordinates);
                 if (chunk == null) continue;
+                // Spigot start - Remove the chunk from the cache if it is unloaded
+                Chunk result = world.lastChunkAccessed;
+                if ( result != null && result.locX == chunk.locX && result.locZ == chunk.locZ )
+                {
+                    world.lastChunkAccessed = null;
+                }
+                // Spigot end
 
                 ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk);
                 server.getPluginManager().callEvent(event);

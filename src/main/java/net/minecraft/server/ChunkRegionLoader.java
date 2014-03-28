@@ -126,7 +126,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
     public void a(World world, Chunk chunk) {
         // CraftBukkit start - "handle" exception
         try {
-            world.F();
+            world.G();
         } catch (ExceptionWorldConflict ex) {
             ex.printStackTrace();
         }

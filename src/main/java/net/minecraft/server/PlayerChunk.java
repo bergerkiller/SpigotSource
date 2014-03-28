@@ -3,6 +3,11 @@ package net.minecraft.server;
 import java.util.ArrayList;
 import java.util.List;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
+import java.util.HashMap;
+// CraftBukkit end
+
 class PlayerChunk {
 
     private final List b;
@@ -12,53 +17,78 @@ class PlayerChunk {
     private int f;
     private long g;
     final PlayerChunkMap playerChunkMap;
-    private boolean loaded = false; // CraftBukkit
+    // CraftBukkit start - add fields
+    private final HashMap<EntityPlayer, Runnable> players = new HashMap<EntityPlayer, Runnable>();
+    private boolean loaded = false;
+    private Runnable loadedRunnable = new Runnable() {
+        public void run() {
+            PlayerChunk.this.loaded = true;
+        }
+    };
+    // CraftBukkit end
 
     public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
         this.playerChunkMap = playerchunkmap;
         this.b = new ArrayList();
         this.dirtyBlocks = new short[64];
         this.location = new ChunkCoordIntPair(i, j);
-        // CraftBukkit start
-        playerchunkmap.a().chunkProviderServer.getChunkAt(i, j, new Runnable() {
-            public void run() {
-                PlayerChunk.this.loaded = true;
-            }
-        });
-        // CraftBukkit end
+        playerchunkmap.a().chunkProviderServer.getChunkAt(i, j, this.loadedRunnable); // CraftBukkit
     }
 
     public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument
         if (this.b.contains(entityplayer)) {
-            throw new IllegalStateException("Failed to add player. " + entityplayer + " already is in chunk " + this.location.x + ", " + this.location.z);
+            PlayerChunkMap.c().debug("Failed to add player. {} already is in chunk {}, {}", new Object[] { entityplayer, Integer.valueOf(this.location.x), Integer.valueOf(this.location.z)});
         } else {
             if (this.b.isEmpty()) {
                 this.g = PlayerChunkMap.a(this.playerChunkMap).getTime();
             }
 
             this.b.add(entityplayer);
-            // CraftBukkit start
+            // CraftBukkit start - use async chunk io
+            Runnable playerRunnable;
             if (this.loaded) {
+                playerRunnable = null;
                 entityplayer.chunkCoordIntPairQueue.add(this.location);
             } else {
-                this.playerChunkMap.a().chunkProviderServer.getChunkAt(this.location.x, this.location.z, new Runnable() {
+                playerRunnable = new Runnable() {
                     public void run() {
                         entityplayer.chunkCoordIntPairQueue.add(PlayerChunk.this.location);
                     }
-                });
+                };
+                this.playerChunkMap.a().chunkProviderServer.getChunkAt(this.location.x, this.location.z, playerRunnable);
             }
+
+            this.players.put(entityplayer, playerRunnable);
             // CraftBukkit end
         }
     }
 
     public void b(EntityPlayer entityplayer) {
         if (this.b.contains(entityplayer)) {
+            // CraftBukkit start - If we haven't loaded yet don't load the chunk just so we can clean it up
+            if (!this.loaded) {
+                ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.a(), this.location.x, this.location.z, this.players.get(entityplayer));
+                this.b.remove(entityplayer);
+                this.players.remove(entityplayer);
+
+                if (this.b.isEmpty()) {
+                    ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.a(), this.location.x, this.location.z, this.loadedRunnable);
+                    long i = (long) this.location.x + 2147483647L | (long) this.location.z + 2147483647L << 32;
+                    PlayerChunkMap.b(this.playerChunkMap).remove(i);
+                    PlayerChunkMap.c(this.playerChunkMap).remove(this);
+                }
+
+                return;
+            }
+            // CraftBukkit end
+
             Chunk chunk = PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z);
 
             if (chunk.k()) {
                 entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(chunk, true, 0));
             }
 
+            this.players.remove(entityplayer); // CraftBukkit
             this.b.remove(entityplayer);
             entityplayer.chunkCoordIntPairQueue.remove(this.location);
             if (this.b.isEmpty()) {

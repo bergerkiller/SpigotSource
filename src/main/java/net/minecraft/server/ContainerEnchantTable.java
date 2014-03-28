@@ -152,6 +152,11 @@ public class ContainerEnchantTable extends Container {
         if (this.costs[i] > 0 && itemstack != null && (entityhuman.expLevel >= this.costs[i] || entityhuman.abilities.canInstantlyBuild)) {
             if (!this.world.isStatic) {
                 List list = EnchantmentManager.b(this.l, itemstack, this.costs[i]);
+                // Spigot - Provide an empty enchantment list
+                if (list == null) {
+                    list = new java.util.ArrayList<EnchantmentInstance>();
+                }
+                // Spigot End
                 boolean flag = itemstack.getItem() == Items.BOOK;
 
                 if (list != null) {
@@ -167,11 +172,14 @@ public class ContainerEnchantTable extends Container {
                     this.world.getServer().getPluginManager().callEvent(event);
 
                     int level = event.getExpLevelCost();
-                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || enchants.isEmpty()) {
+                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || event.getEnchantsToAdd().isEmpty()) {
                         return false;
                     }
 
-                    boolean applied = !flag;
+                    if (flag) {
+                        itemstack.setItem(Items.ENCHANTED_BOOK);
+                    }
+
                     for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
                         try {
                             if (flag) {
@@ -182,21 +190,15 @@ public class ContainerEnchantTable extends Container {
 
                                 EnchantmentInstance enchantment = new EnchantmentInstance(enchantId, entry.getValue());
                                 Items.ENCHANTED_BOOK.a(itemstack, enchantment);
-                                applied = true;
-                                itemstack.setItem((Item) Items.ENCHANTED_BOOK);
-                                break;
                             } else {
-                                item.addEnchantment(entry.getKey(), entry.getValue());
+                                item.addUnsafeEnchantment(entry.getKey(), entry.getValue()); // Spigot addEnchantment -> addUnsafeEnchantment
                             }
                         } catch (IllegalArgumentException e) {
                             /* Just swallow invalid enchantments */
                         }
                     }
 
-                    // Only down level if we've applied the enchantments
-                    if (applied) {
-                        entityhuman.levelDown(-level);
-                    }
+                    entityhuman.levelDown(-level);
                     // CraftBukkit end
 
                     this.a(this.enchantSlots);
@@ -229,7 +231,7 @@ public class ContainerEnchantTable extends Container {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
 
-        if (slot != null && slot.e()) {
+        if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
 
             itemstack = itemstack1.cloneItemStack();
@@ -238,7 +240,7 @@ public class ContainerEnchantTable extends Container {
                     return null;
                 }
             } else {
-                if (((Slot) this.c.get(0)).e() || !((Slot) this.c.get(0)).isAllowed(itemstack1)) {
+                if (((Slot) this.c.get(0)).hasItem() || !((Slot) this.c.get(0)).isAllowed(itemstack1)) {
                     return null;
                 }
 

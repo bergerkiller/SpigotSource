@@ -22,24 +22,30 @@ public class TrackingRange
     public static int getEntityTrackingRange(Entity entity, int defaultRange)
     {
         SpigotWorldConfig config = entity.world.spigotConfig;
-        int range = defaultRange;
         if ( entity instanceof EntityPlayer )
         {
-            range = config.playerTrackingRange;
-        } else if ( entity.defaultActivationState || entity instanceof EntityGhast )
+            return config.playerTrackingRange;
+        }  else if ( entity.activationType == 1 )
         {
-            range = defaultRange;
-        } else if ( entity.activationType == 1 )
+            return config.monsterTrackingRange;
+        } else if ( entity instanceof EntityGhast )
         {
-            range = config.monsterTrackingRange;
+            if ( config.monsterTrackingRange > config.monsterActivationRange )
+            {
+                return config.monsterTrackingRange;
+            } else
+            {
+                return config.monsterActivationRange;
+            }
         } else if ( entity.activationType == 2 )
         {
-            range = config.animalTrackingRange;
+            return config.animalTrackingRange;
         } else if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
         {
-            range = config.miscTrackingRange;
+            return config.miscTrackingRange;
+        } else 
+        {
+            return config.otherTrackingRange;
         }
-
-        return Math.min( config.maxTrackingRange, range );
     }
 }

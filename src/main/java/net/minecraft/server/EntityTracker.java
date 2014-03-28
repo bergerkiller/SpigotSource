@@ -91,7 +91,7 @@ public class EntityTracker {
     }
 
     public void addEntity(Entity entity, int i, int j, boolean flag) {
-        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity track!"); // Spigot
+        org.spigotmc.AsyncCatcher.catchOp( "entity track"); // Spigot
         i = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, i); // Spigot
         if (i > this.e) {
             i = this.e;
@@ -127,7 +127,7 @@ public class EntityTracker {
     }
 
     public void untrackEntity(Entity entity) {
-        if (Thread.currentThread() != MinecraftServer.getServer().primaryThread) throw new IllegalStateException("Asynchronous entity untrack!"); // Spigot
+        org.spigotmc.AsyncCatcher.catchOp( "entity untrack"); // Spigot
         if (entity instanceof EntityPlayer) {
             EntityPlayer entityplayer = (EntityPlayer) entity;
             Iterator iterator = this.c.iterator();
@@ -206,7 +206,7 @@ public class EntityTracker {
         while (iterator.hasNext()) {
             EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) iterator.next();
 
-            if (entitytrackerentry.tracker != entityplayer && entitytrackerentry.tracker.ai == chunk.locX && entitytrackerentry.tracker.ak == chunk.locZ) {
+            if (entitytrackerentry.tracker != entityplayer && entitytrackerentry.tracker.ah == chunk.locX && entitytrackerentry.tracker.aj == chunk.locZ) {
                 entitytrackerentry.updatePlayer(entityplayer);
             }
         }
