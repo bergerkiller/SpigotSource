@@ -3,6 +3,7 @@ package org.spigotmc;
 import gnu.trove.set.TByteSet;
 import gnu.trove.set.hash.TByteHashSet;
 import net.minecraft.server.Block;
+import net.minecraft.server.Blocks;
 import net.minecraft.server.World;
 
 public class AntiXray
@@ -190,7 +191,7 @@ public class AntiXray
 
     private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
     {
-        return !world.getType(x, y, z).r() /* isSolidBlock */
+        return !isSolidBlock(world.getType(x, y, z)) /* isSolidBlock */
                 || ( radius > 0
                 && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
                 || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )
@@ -198,5 +199,14 @@ public class AntiXray
                 || hasTransparentBlockAdjacent( world, x, y - 1, z, radius - 1 )
                 || hasTransparentBlockAdjacent( world, x, y, z + 1, radius - 1 )
                 || hasTransparentBlockAdjacent( world, x, y, z - 1, radius - 1 ) ) );
+    }
+
+    private static boolean isSolidBlock(Block block) {
+        // Mob spawners are treated as solid blocks as far as the
+        // game is concerned for lighting and other tasks but for
+        // rendering they can be seen through therefor we special
+        // case them so that the antixray doesn't show the fake
+        // blocks around them.
+        return block.r() && block != Blocks.MOB_SPAWNER;
     }
 }

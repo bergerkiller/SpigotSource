@@ -550,7 +550,14 @@ public class EntityEnderDragon extends EntityInsentient implements IComplex, IMo
             }
 
             if (this.bB == 1) {
-                this.world.b(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                // Spigot start
+                if(this.world.spigotConfig.dragonDeathSoundRadius > 0){
+                    this.world.getServer().getHandle().sendPacketNearby((int) this.locX, (int) this.locY, (int) this.locZ, this.world.spigotConfig.dragonDeathSoundRadius, this.dimension, new PacketPlayOutWorldEvent(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0, true));
+                }
+                else {
+                    this.world.b(1018, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                }
+                // Spigot end
             }
         }
 

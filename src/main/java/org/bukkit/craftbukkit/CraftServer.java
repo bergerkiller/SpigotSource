@@ -14,15 +14,14 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
-import net.minecraft.server.BanEntry;
 import net.minecraft.server.ChunkCoordinates;
 import net.minecraft.server.CommandAchievement;
 import net.minecraft.server.CommandBan;
@@ -77,7 +76,10 @@ import net.minecraft.server.EntityTracker;
 import net.minecraft.server.EnumDifficulty;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.ExceptionWorldConflict;
+import net.minecraft.server.GameProfileBanEntry;
+import net.minecraft.server.GameProfileBanList;
 import net.minecraft.server.Items;
+import net.minecraft.server.JsonListEntry;
 import net.minecraft.server.PlayerList;
 import net.minecraft.server.RecipesFurnace;
 import net.minecraft.server.MinecraftServer;
@@ -96,6 +98,7 @@ import net.minecraft.server.WorldServer;
 import net.minecraft.server.WorldSettings;
 import net.minecraft.server.WorldType;
 import net.minecraft.util.com.google.common.base.Charsets;
+import net.minecraft.util.com.mojang.authlib.GameProfile;
 import net.minecraft.util.io.netty.buffer.ByteBuf;
 import net.minecraft.util.io.netty.buffer.ByteBufOutputStream;
 import net.minecraft.util.io.netty.buffer.Unpooled;
@@ -144,6 +147,7 @@ import org.bukkit.craftbukkit.updater.BukkitDLUpdaterService;
 import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.DatFileFilter;
+import org.bukkit.craftbukkit.util.MojangNameLookup;
 import org.bukkit.craftbukkit.util.Versioning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -208,7 +212,7 @@ public final class CraftServer implements Server {
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor());
-    private final Map<String, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
+    private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
     private final AutoUpdater updater;
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
@@ -503,13 +507,6 @@ public final class CraftServer implements Server {
     public Player getPlayer(final String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        // Spigot End
-        Player directLookup = getPlayerExact( name );
-        if ( directLookup != null )
-        {
-            return directLookup;
-        }
-        // Spigot End
         Player[] players = getOnlinePlayers();
 
         Player found = null;
@@ -531,10 +528,26 @@ public final class CraftServer implements Server {
     public Player getPlayerExact(String name) {
         Validate.notNull(name, "Name cannot be null");
 
-        // Spigot Start
-        EntityPlayer entityPlayer = playerList.getPlayer( name );
-        return ( entityPlayer != null ) ? entityPlayer.getBukkitEntity() : null;
-        // Spigot End
+        String lname = name.toLowerCase();
+
+        for (Player player : getOnlinePlayers()) {
+            if (player.getName().equalsIgnoreCase(lname)) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    // TODO: In 1.8+ this should use the server's UUID->EntityPlayer map
+    public Player getPlayer(UUID id) {
+        for (Player player : getOnlinePlayers()) {
+            if (player.getUniqueId().equals(id)) {
+                return player;
+            }
+        }
+
+        return null;
     }
 
     public int broadcastMessage(String message) {
@@ -742,8 +755,16 @@ public final class CraftServer implements Server {
         chunkGCLoadThresh = configuration.getInt("chunk-gc.load-threshold");
         loadIcon();
 
-        playerList.getIPBans().load();
-        playerList.getNameBans().load();
+        try {
+            playerList.getIPBans().load();
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to load banned-ips.json, " + ex.getMessage());
+        }
+        try {
+            playerList.getProfileBans().load();
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
+        }
 
         org.spigotmc.SpigotConfig.init(); // Spigot
         for (WorldServer world : console.worlds) {
@@ -1295,43 +1316,53 @@ public final class CraftServer implements Server {
     }
 
     public OfflinePlayer getOfflinePlayer(String name) {
-        return getOfflinePlayer(name, false); // Spigot
-    }
-
-    public OfflinePlayer getOfflinePlayer(String name, boolean search) {
         Validate.notNull(name, "Name cannot be null");
+        com.google.common.base.Preconditions.checkArgument( !org.apache.commons.lang.StringUtils.isBlank( name ), "Name cannot be blank" ); // Spigot
 
         OfflinePlayer result = getPlayerExact(name);
-        String lname = name.toLowerCase();
-
         if (result == null) {
-            result = offlinePlayers.get(lname);
-
-            if (result == null) {
-                if (search) {
-                    WorldNBTStorage storage = (WorldNBTStorage) console.worlds.get(0).getDataManager();
-                    for (String dat : storage.getPlayerDir().list(new DatFileFilter())) {
-                        String datName = dat.substring(0, dat.length() - 4);
-                        if (datName.equalsIgnoreCase(name)) {
-                            name = datName;
-                            break;
-                        }
-                    }
-                }
-
-                result = new CraftOfflinePlayer(this, name);
-                offlinePlayers.put(lname, result);
+            // This is potentially blocking :(
+            GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
+            if (profile == null) {
+                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
+                result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
+            } else {
+                // Use the GameProfile even when we get a UUID so we ensure we still have a name
+                result = getOfflinePlayer(profile);
             }
         } else {
-            offlinePlayers.remove(lname);
+            offlinePlayers.remove(result.getUniqueId());
         }
 
         return result;
     }
 
+    public OfflinePlayer getOfflinePlayer(UUID id) {
+        Validate.notNull(id, "UUID cannot be null");
+
+        OfflinePlayer result = getPlayer(id);
+        if (result == null) {
+            result = offlinePlayers.get(id);
+            if (result == null) {
+                result = new CraftOfflinePlayer(this, new GameProfile(id, null));
+                offlinePlayers.put(id, result);
+            }
+        } else {
+            offlinePlayers.remove(id);
+        }
+
+        return result;
+    }
+
+    public OfflinePlayer getOfflinePlayer(GameProfile profile) {
+        OfflinePlayer player = new CraftOfflinePlayer(this, profile);
+        offlinePlayers.put(profile.getId(), player);
+        return player;
+    }
+
     @SuppressWarnings("unchecked")
     public Set<String> getIPBans() {
-        return new HashSet<String>(playerList.getIPBans().getEntries().keySet());
+        return new HashSet<String>(Arrays.asList(playerList.getIPBans().getEntries()));
     }
 
     public void banIP(String address) {
@@ -1349,39 +1380,36 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getBannedPlayers() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getNameBans().getEntries().keySet()) {
-            result.add(getOfflinePlayer((String) name));
+        for (JsonListEntry entry : playerList.getProfileBans().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;
     }
 
     @Override
-    public BanList getBanList(BanList.Type type){
+    public BanList getBanList(BanList.Type type) {
         Validate.notNull(type, "Type cannot be null");
 
         switch(type){
         case IP:
-            return new CraftBanList(playerList.getIPBans());
+            return new CraftIpBanList(playerList.getIPBans());
         case NAME:
-        default: // Fall through as a player name list for safety
-            return new CraftBanList(playerList.getNameBans());
+        default:
+            return new CraftProfileBanList(playerList.getProfileBans());
         }
     }
 
     public void setWhitelist(boolean value) {
-        playerList.hasWhitelist = value;
+        playerList.setHasWhitelist(value);
         console.getPropertyManager().a("white-list", value);
     }
 
     public Set<OfflinePlayer> getWhitelistedPlayers() {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getWhitelisted()) {
-            if (((String)name).length() == 0 || ((String)name).startsWith("#")) {
-                continue;
-            }
-            result.add(getOfflinePlayer((String) name));
+        for (JsonListEntry entry : playerList.getWhitelist().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;
@@ -1390,8 +1418,8 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getOperators() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (Object name : playerList.getOPs()) {
-            result.add(getOfflinePlayer((String) name));
+        for (JsonListEntry entry : playerList.getOPs().getValues()) {
+            result.add(getOfflinePlayer((GameProfile) entry.f())); // Should be getKey
         }
 
         return result;
@@ -1468,8 +1496,13 @@ public final class CraftServer implements Server {
         Set<OfflinePlayer> players = new HashSet<OfflinePlayer>();
 
         for (String file : files) {
-            players.add(getOfflinePlayer(file.substring(0, file.length() - 4), false));
+            try {
+                players.add(getOfflinePlayer(UUID.fromString(file.substring(0, file.length() - 4))));
+            } catch (IllegalArgumentException ex) {
+                // Who knows what is in this directory, just ignore invalid files
+            }
         }
+
         players.addAll(Arrays.asList(getOnlinePlayers()));
 
         return players.toArray(new OfflinePlayer[players.size()]);
@@ -1573,7 +1606,7 @@ public final class CraftServer implements Server {
 
     public List<String> tabCompleteCommand(Player player, String message) {
         // Spigot Start
-        if ( !org.spigotmc.SpigotConfig.tabComplete && !message.contains( " " ) )
+		if ( (org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains( " " ) )
         {
             return ImmutableList.of();
         }

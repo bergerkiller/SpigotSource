@@ -82,7 +82,7 @@ public abstract class EntityLiving extends Entity {
     public void inactiveTick()
     {
         super.inactiveTick();
-        ++this.aV;
+        ++this.aU; // Above all the floats
     }
     // Spigot end
 

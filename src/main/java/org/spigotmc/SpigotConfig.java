@@ -52,8 +52,8 @@ public class SpigotConfig
 
         commands = new HashMap<String, Command>();
 
-        version = getInt( "config-version", 5 );
-        set( "config-version", 5 );
+        version = getInt( "config-version", 6 );
+        set( "config-version", 6 );
         readConfig( SpigotConfig.class, null );
     }
 
@@ -144,10 +144,21 @@ public class SpigotConfig
         logCommands = getBoolean( "commands.log", true );
     }
 
-    public static boolean tabComplete;
+    public static int tabComplete;
     private static void tabComplete()
     {
-        tabComplete = getBoolean( "commands.tab-complete", true );
+        if ( version < 6 )
+        {
+            boolean oldValue = getBoolean( "commands.tab-complete", true );
+            if ( oldValue )
+            {
+                set( "commands.tab-complete", 0 );
+            } else
+            {
+                set( "commands.tab-complete", -1 );
+            }
+        }
+        tabComplete = getInt( "commands.tab-complete", 0 );
     }
 
     public static String whitelistMessage;

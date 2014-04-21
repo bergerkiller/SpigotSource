@@ -187,14 +187,6 @@ public class CraftWorld implements World {
             world.chunkProviderServer.saveChunkNOP(chunk);
         }
 
-        // Spigot start - Remove the chunk from the cache if it is unloaded
-        net.minecraft.server.Chunk result = world.lastChunkAccessed;
-        if ( result != null && result.locX == chunk.locX && result.locZ == chunk.locZ )
-        {
-            world.lastChunkAccessed = null;
-        }
-        // Spigot end
-
         world.chunkProviderServer.unloadQueue.remove(x, z);
         world.chunkProviderServer.chunks.remove(LongHash.toLong(x, z));
 
@@ -1033,6 +1025,10 @@ public class CraftWorld implements World {
         }
 
         if (entity != null) {
+            if (entity instanceof EntityInsentient) {
+                ((EntityInsentient) entity).a((GroupDataEntity) null); // Should be prepare?
+            }
+
             world.addEntity(entity, reason);
             return (T) entity.getBukkitEntity();
         }

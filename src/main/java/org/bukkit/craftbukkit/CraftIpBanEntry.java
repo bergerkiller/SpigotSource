@@ -1,21 +1,23 @@
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.IpBanEntry;
+import net.minecraft.server.IpBanList;
+import net.minecraft.server.MinecraftServer;
+
+import java.io.IOException;
 import java.util.Date;
 
-import net.minecraft.server.BanEntry;
-import net.minecraft.server.BanList;
-
-public final class CraftBanEntry implements org.bukkit.BanEntry {
-    private final BanList list;
-    private final String name;
+public final class CraftIpBanEntry implements org.bukkit.BanEntry {
+    private final IpBanList list;
+    private final String target;
     private Date created;
     private String source;
     private Date expiration;
     private String reason;
 
-    public CraftBanEntry(BanEntry entry, BanList list) {
+    public CraftIpBanEntry(String target, IpBanEntry entry, IpBanList list) {
         this.list = list;
-        this.name = entry.getName();
+        this.target = target;
         this.created = entry.getCreated() != null ? new Date(entry.getCreated().getTime()) : null;
         this.source = entry.getSource();
         this.expiration = entry.getExpires() != null ? new Date(entry.getExpires().getTime()) : null;
@@ -24,7 +26,7 @@ public final class CraftBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public String getTarget() {
-        return this.name;
+        return this.target;
     }
 
     @Override
@@ -73,14 +75,12 @@ public final class CraftBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void save() {
-        BanEntry entry = new BanEntry(this.name);
-        entry.setCreated(this.created);
-        entry.setSource(this.source);
-        entry.setExpires(this.expiration);
-        entry.setReason(this.reason);
-
+        IpBanEntry entry = new IpBanEntry(target, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
-        this.list.save();
+        try {
+            this.list.save();
+        } catch (IOException ex) {
+            MinecraftServer.getLogger().error("Failed to save banned-ips.json, " + ex.getMessage());
+        }
     }
-
 }

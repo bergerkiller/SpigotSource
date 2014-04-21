@@ -23,10 +23,11 @@ public class NBTTagIntArray extends NBTBase {
         }
     }
 
-    void load(DataInput datainput, int i) throws IOException {
+    void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException {
         int j = datainput.readInt();
         com.google.common.base.Preconditions.checkArgument( j < 1 << 24);
 
+        nbtreadlimiter.a((long) (32 * j));
         this.data = new int[j];
 
         for (int k = 0; k < j; ++k) {

@@ -10,7 +10,7 @@ public abstract class NBTBase {
 
     abstract void write(DataOutput dataoutput) throws IOException;
 
-    abstract void load(DataInput datainput, int i) throws IOException;
+    abstract void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException;
 
     public abstract String toString();
 

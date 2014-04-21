@@ -150,7 +150,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
     }
 
     public int getMaxStackSize() {
-        return 64;
+        return maxStack; // CraftBukkit
     }
 
     public boolean a(EntityHuman entityhuman) {
@@ -252,7 +252,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
                     if (this.getItem(j) != null) {
                         ItemStack itemstack = this.getItem(j).cloneItemStack();
                         // CraftBukkit start - Call event when pushing items into other inventories
-                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(j, 1));
+                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(this.splitStack(j, world.spigotConfig.hopperAmount)); // Spigot
 
                         Inventory destinationInventory;
                         // Have to special case large chests as they work oddly
@@ -385,7 +385,7 @@ public class TileEntityHopper extends TileEntity implements IHopper {
         if (itemstack != null && canTakeItemFromInventory(iinventory, itemstack, i, j)) {
             ItemStack itemstack1 = itemstack.cloneItemStack();
             // CraftBukkit start - Call event on collection of items from inventories into the hopper
-            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, 1));
+            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.splitStack(i, ihopper.getWorld().spigotConfig.hopperAmount)); // Spigot
 
             Inventory sourceInventory;
             // Have to special case large chests as they work oddly

@@ -11,11 +11,13 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.TravelAgent;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Hanging;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Vehicle;
 import org.spigotmc.CustomTimingsHandler; // Spigot
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.painting.PaintingBreakByEntityEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
@@ -1621,11 +1623,22 @@ public abstract class Entity {
         final org.bukkit.entity.Entity stormBukkitEntity = entitylightning.getBukkitEntity();
         final PluginManager pluginManager = Bukkit.getPluginManager();
 
-        if (thisBukkitEntity instanceof Painting) {
-            PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity);
-            pluginManager.callEvent(event);
+        if (thisBukkitEntity instanceof Hanging) {
+            HangingBreakByEntityEvent hangingEvent = new HangingBreakByEntityEvent((Hanging) thisBukkitEntity, stormBukkitEntity);
+            PaintingBreakByEntityEvent paintingEvent = null;
 
-            if (event.isCancelled()) {
+            if (thisBukkitEntity instanceof Painting) {
+                paintingEvent = new PaintingBreakByEntityEvent((Painting) thisBukkitEntity, stormBukkitEntity);
+            }
+
+            pluginManager.callEvent(hangingEvent);
+
+            if (paintingEvent != null) {
+                paintingEvent.setCancelled(hangingEvent.isCancelled());
+                pluginManager.callEvent(paintingEvent);
+            }
+
+            if (hangingEvent.isCancelled() || (paintingEvent != null && paintingEvent.isCancelled())) {
                 return;
             }
         }

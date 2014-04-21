@@ -166,17 +166,19 @@ public class SpigotWorldConfig
         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
 
-    public int hopperTransfer = 8;
-    public int hopperCheck = 8;
+    public int hopperTransfer;
+    public int hopperCheck;
+    public int hopperAmount;
     private void hoppers()
     {
         // Set the tick delay between hopper item movements
-        hopperTransfer = getInt( "ticks-per.hopper-transfer", hopperTransfer );
+        hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
         // Set the tick delay between checking for items after the associated
         // container is empty. Default to the hopperTransfer value to prevent
         // hopper sorting machines from becoming out of sync.
         hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
-        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck );
+        hopperAmount = getInt( "hopper-amount", 1 );
+        log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
     }
 
     public boolean randomLightUpdates;
@@ -277,5 +279,17 @@ public class SpigotWorldConfig
     {
         maxCollisionsPerEntity = getInt( "max-entity-collisions", 8 );
         log( "Max Entity Collisions: " + maxCollisionsPerEntity );
+    }
+
+    public int dragonDeathSoundRadius;
+    private void keepDragonDeathPerWorld()
+    {
+        dragonDeathSoundRadius = getInt( "dragon-death-sound-radius", 0 );
+    }
+
+    public int witherSpawnSoundRadius;
+    private void witherSpawnSoundRadius()
+    {
+        witherSpawnSoundRadius = getInt( "wither-spawn-sound-radius", 0 );
     }
 }

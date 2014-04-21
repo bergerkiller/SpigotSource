@@ -6,6 +6,7 @@ import java.util.List;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 // CraftBukkit end
 
 public class EntityHorse extends EntityAnimal implements IInventoryListener {
@@ -137,11 +138,11 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         return this.cb();
     }
 
-    public String getOwnerName() {
+    public String getOwnerUUID() {
         return this.datawatcher.getString(21);
     }
 
-    public void setOwnerName(String s) {
+    public void setOwnerUUID(String s) {
         this.datawatcher.watch(21, s);
     }
 
@@ -601,7 +602,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
                     }
 
                     if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
-                        this.heal(f);
+                        this.heal(f, RegainReason.EATING); // CraftBukkit
                         flag = true;
                     }
 
@@ -720,7 +721,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         super.e();
         if (!this.world.isStatic) {
             if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
-                this.heal(1.0F);
+                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
             }
 
             if (!this.cm() && this.passenger == null && this.random.nextInt(300) == 0 && this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY) - 1, MathHelper.floor(this.locZ)) == Blocks.GRASS) {
@@ -875,7 +876,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
     }
 
     public boolean h(EntityHuman entityhuman) {
-        this.setOwnerName(entityhuman.getName());
+        this.setOwnerUUID(entityhuman.getUniqueID().toString());
         this.setTame(true);
         return true;
     }
@@ -958,7 +959,7 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         nbttagcompound.setInt("Variant", this.getVariant());
         nbttagcompound.setInt("Temper", this.getTemper());
         nbttagcompound.setBoolean("Tame", this.isTame());
-        nbttagcompound.setString("OwnerName", this.getOwnerName());
+        nbttagcompound.setString("OwnerUUID", this.getOwnerUUID());
         nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
         if (this.hasChest()) {
             NBTTagList nbttaglist = new NBTTagList();
@@ -997,9 +998,17 @@ public class EntityHorse extends EntityAnimal implements IInventoryListener {
         this.setVariant(nbttagcompound.getInt("Variant"));
         this.setTemper(nbttagcompound.getInt("Temper"));
         this.setTame(nbttagcompound.getBoolean("Tame"));
-        if (nbttagcompound.hasKeyOfType("OwnerName", 8)) {
-            this.setOwnerName(nbttagcompound.getString("OwnerName"));
+        if (nbttagcompound.hasKeyOfType("OwnerUUID", 8)) {
+            this.setOwnerUUID(nbttagcompound.getString("OwnerUUID"));
         }
+        // Spigot start
+        else if (nbttagcompound.hasKey("OwnerName")) {
+            String owner = nbttagcompound.getString("OwnerName");
+            if (owner != null && !owner.isEmpty()) {
+                this.setOwnerUUID(NameReferencingFileConverter.a(owner));
+            }
+        }
+        // Spigot end
         // CraftBukkit start
         if (nbttagcompound.hasKey("Bukkit.MaxDomestication")) {
             this.maxDomestication = nbttagcompound.getInt("Bukkit.MaxDomestication");

@@ -62,6 +62,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public boolean keepLevel = false;
     public double maxHealthCache;
     public boolean joining = true;
+    public int lastPing = -1; // Spigot
     // CraftBukkit end
     // Spigot start
     public boolean collidesWithEntities = true;
@@ -97,7 +98,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.server = minecraftserver;
-        this.bO = minecraftserver.getPlayerList().i(this.getName());
+        this.bO = minecraftserver.getPlayerList().a((EntityHuman) this);
         this.W = 0.0F;
         this.height = 0.0F;
         this.setPositionRotation((double) i + 0.5D, (double) k, (double) j + 0.5D, 0.0F, 0.0F);
@@ -250,7 +251,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             }
         }
 
-        if (this.bX > 0L && this.server.getIdleTimeout() > 0 && MinecraftServer.aq() - this.bX > (long) (this.server.getIdleTimeout() * 1000 * 60)) {
+        if (this.bX > 0L && this.server.getIdleTimeout() > 0 && MinecraftServer.ar() - this.bX > (long) (this.server.getIdleTimeout() * 1000 * 60)) {
             this.playerConnection.disconnect("You have been idle for too long!");
         }
     }
@@ -443,7 +444,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             return false;
         } else {
             // CraftBukkit - this.server.getPvP() -> this.world.pvpMode
-            boolean flag = this.server.W() && this.world.pvpMode && "fall".equals(damagesource.translationIndex);
+            boolean flag = this.server.X() && this.world.pvpMode && "fall".equals(damagesource.translationIndex);
 
             if (!flag && this.invulnerableTicks > 0 && damagesource != DamageSource.OUT_OF_WORLD) {
                 return false;
@@ -538,7 +539,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void a(boolean flag, boolean flag1, boolean flag2) {
-        if (this.fauxSleeping && !this.sleeping) return; // CraftBukkit - Can't leave bed if not in one!
+        if (!this.sleeping) return; // CraftBukkit - Can't leave bed if not in one!
 
         if (this.isSleeping()) {
             this.r().getTracker().sendPacketToEntity(this, new PacketPlayOutAnimation(this, 2));
@@ -591,7 +592,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void startCrafting(int i, int j, int k) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerWorkbench(this.inventory, this.world, i, j, k));
-        if(container == null) return;
+        if (container == null) {
+            return;
+        }
         // CraftBukkit end
 
         this.nextContainerCounter();
@@ -604,7 +607,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void startEnchanting(int i, int j, int k, String s) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerEnchantTable(this.inventory, this.world, i, j, k));
-        if(container == null) return;
+        if (container == null) {
+            return;
+        }
         // CraftBukkit end
 
         this.nextContainerCounter();
@@ -617,7 +622,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openAnvil(int i, int j, int k) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerAnvil(this.inventory, this.world, i, j, k, this));
-        if(container == null) return;
+        if (container == null) {
+            return;
+        }
         // CraftBukkit end
 
         this.nextContainerCounter();
@@ -634,8 +641,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerChest(this.inventory, iinventory));
-        if(container == null) {
-            iinventory.l_();
+        if (container == null) {
+            iinventory.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -650,8 +657,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openHopper(TileEntityHopper tileentityhopper) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerHopper(this.inventory, tileentityhopper));
-        if(container == null) {
-            tileentityhopper.l_();
+        if (container == null) {
+            tileentityhopper.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -666,8 +673,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openMinecartHopper(EntityMinecartHopper entityminecarthopper) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerHopper(this.inventory, entityminecarthopper));
-        if(container == null) {
-            entityminecarthopper.l_();
+        if (container == null) {
+            entityminecarthopper.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -682,8 +689,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openFurnace(TileEntityFurnace tileentityfurnace) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerFurnace(this.inventory, tileentityfurnace));
-        if(container == null) {
-            tileentityfurnace.l_();
+        if (container == null) {
+            tileentityfurnace.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -698,8 +705,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openDispenser(TileEntityDispenser tileentitydispenser) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerDispenser(this.inventory, tileentitydispenser));
-        if(container == null) {
-            tileentitydispenser.l_();
+        if (container == null) {
+            tileentitydispenser.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -714,8 +721,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openBrewingStand(TileEntityBrewingStand tileentitybrewingstand) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerBrewingStand(this.inventory, tileentitybrewingstand));
-        if(container == null) {
-            tileentitybrewingstand.l_();
+        if (container == null) {
+            tileentitybrewingstand.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -730,8 +737,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openBeacon(TileEntityBeacon tileentitybeacon) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerBeacon(this.inventory, tileentitybeacon));
-        if(container == null) {
-            tileentitybeacon.l_();
+        if (container == null) {
+            tileentitybeacon.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -746,7 +753,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openTrade(IMerchant imerchant, String s) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerMerchant(this.inventory, imerchant, this.world));
-        if(container == null) return;
+        if (container == null) {
+            return;
+        }
         // CraftBukkit end
 
         this.nextContainerCounter();
@@ -755,7 +764,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.activeContainer.addSlotListener(this);
         InventoryMerchant inventorymerchant = ((ContainerMerchant) this.activeContainer).getMerchantInventory();
 
-        if (s.length() > 32) s = s.substring( 0, 32 ); // Spigot - Cap window name to prevent client disconnects
         this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.containerCounter, 6, s == null ? "" : s, inventorymerchant.getSize(), s != null));
         MerchantRecipeList merchantrecipelist = imerchant.getOffers(this);
 
@@ -777,8 +785,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public void openHorseInventory(EntityHorse entityhorse, IInventory iinventory) {
         // CraftBukkit start - Inventory open hook
         Container container = CraftEventFactory.callInventoryOpenEvent(this, new ContainerHorse(this.inventory, iinventory, entityhorse));
-        if(container == null) {
-            iinventory.l_();
+        if (container == null) {
+            iinventory.l_(); // Should be closeContainer
             return;
         }
         // CraftBukkit end
@@ -963,7 +971,19 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public boolean a(int i, String s) {
-        return "seed".equals(s) && !this.server.W() ? true : (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s) ? (this.server.getPlayerList().isOp(this.getName()) ? this.server.l() >= i : false) : true);
+        if ("seed".equals(s) && !this.server.X()) {
+            return true;
+        } else if (!"tell".equals(s) && !"help".equals(s) && !"me".equals(s)) {
+            if (this.server.getPlayerList().isOp(this.getProfile())) {
+                OpListEntry oplistentry = (OpListEntry) this.server.getPlayerList().getOPs().get(this.getProfile());
+
+                return oplistentry != null ? oplistentry.a() >= i : this.server.l() >= i;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
     }
 
     public String s() {
@@ -984,7 +1004,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
         this.bV = packetplayinsettings.e();
         this.bW = packetplayinsettings.f();
-        if (this.server.M() && this.server.L().equals(this.getName())) {
+        if (this.server.N() && this.server.M().equals(this.getName())) {
             this.server.a(packetplayinsettings.g());
         }
 
@@ -1004,7 +1024,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     public void v() {
-        this.bX = MinecraftServer.aq();
+        this.bX = MinecraftServer.ar();
     }
 
     public ServerStatisticManager getStatisticManager() {

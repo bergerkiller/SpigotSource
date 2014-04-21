@@ -1,14 +1,17 @@
 package net.minecraft.server;
 
+import net.minecraft.util.com.mojang.authlib.properties.Property; // Spigot
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 
 // CraftBukkit start
 import java.net.InetAddress;
 import java.util.HashMap;
+import net.minecraft.util.com.mojang.util.UUIDTypeAdapter;
 // CraftBukkit end
 
 public class HandshakeListener implements PacketHandshakingInListener {
 
+    private static final com.google.gson.Gson gson = new com.google.gson.Gson(); // Spigot
     // CraftBukkit start - add fields
     private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
     private static int throttleCounter = 0;
@@ -23,6 +26,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
     }
 
     public void a(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
+        NetworkManager.a( this.b ).attr( NetworkManager.protocolVersion ).set( packethandshakinginsetprotocol.d() ); // Spigot
         switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.c().ordinal()]) {
         case 1:
             this.b.a(EnumProtocol.LOGIN);
@@ -63,7 +67,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
             }
             // CraftBukkit end
 
-            if (packethandshakinginsetprotocol.d() > 4) {
+            if (packethandshakinginsetprotocol.d() > 5) {
                 chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedServerMessage ); // Spigot
                 this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
                 this.b.close(chatcomponenttext);
@@ -76,16 +80,20 @@ public class HandshakeListener implements PacketHandshakingInListener {
                 // Spigot Start
                 if (org.spigotmc.SpigotConfig.bungee) {
                     String[] split = packethandshakinginsetprotocol.b.split("\00");
-                    if ( split.length == 3 ) {
+                    if ( split.length == 3 || split.length == 4 ) {
                         packethandshakinginsetprotocol.b = split[0];
                         b.n = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
-                        b.spoofedUUID = split[2];
+                        b.spoofedUUID = UUIDTypeAdapter.fromString( split[2] );
                     } else
                     {
                         chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
                         this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
                         this.b.close(chatcomponenttext);
                         return;
+                    }
+                    if ( split.length == 4 )
+                    {
+                        b.spoofedProfile = gson.fromJson(split[3], Property[].class);
                     }
                 }
                 // Spigot End

@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 // CraftBukkit start
@@ -153,10 +154,6 @@ public abstract class World implements IBlockAccess {
     public boolean pvpMode;
     public boolean keepSpawnInMemory = true;
     public ChunkGenerator generator;
-    public Chunk lastChunkAccessed; // Spigot - Make public
-    int lastXAccessed = Integer.MIN_VALUE;
-    int lastZAccessed = Integer.MIN_VALUE;
-    final Object chunkLock = new Object();
     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
 
     public final SpigotTimings.WorldTimingsHandler timings; // Spigot
@@ -321,18 +318,9 @@ public abstract class World implements IBlockAccess {
         return this.getChunkAt(i >> 4, j >> 4);
     }
 
-    // Spigot start
     public Chunk getChunkAt(int i, int j) {
-        //synchronized (this.chunkLock) {
-        Chunk result = this.lastChunkAccessed; // Exploit fact that read is atomic 
-        if (result == null || result.locX != i || result.locZ != j) {
-            result = this.chunkProvider.getOrCreateChunk(i, j);
-            this.lastChunkAccessed = result; // Exploit fact that write is atomic
-        }
-        //}
-        return result;
+        return this.chunkProvider.getOrCreateChunk(i, j);
     }
-    // Spigot end
 
     public boolean setTypeAndData(int i, int j, int k, Block block, int l, int i1) {
         if (i >= -30000000 && k >= -30000000 && i < 30000000 && k < 30000000) {
@@ -1358,6 +1346,12 @@ public abstract class World implements IBlockAccess {
         timings.entityTick.stopTiming(); // Spigot
         this.methodProfiler.c("blockEntities");
         timings.tileEntityTick.startTiming(); // Spigot
+        // Spigot start - brought up from below
+        if (!this.b.isEmpty()) {
+            this.tileEntityList.removeAll(this.b);
+            this.b.clear();
+        }
+        // Spigot End
         this.M = true;
         Iterator iterator = this.tileEntityList.iterator();
 
@@ -1406,10 +1400,6 @@ public abstract class World implements IBlockAccess {
         timings.tileEntityTick.stopTiming(); // Spigot
         timings.tileEntityPending.startTiming(); // Spigot
         this.M = false;
-        if (!this.b.isEmpty()) {
-            this.tileEntityList.removeAll(this.b);
-            this.b.clear();
-        }
 
         this.methodProfiler.c("pendingBlockEntities");
         if (!this.a.isEmpty()) {
@@ -2693,8 +2683,22 @@ public abstract class World implements IBlockAccess {
 
     public EntityHuman a(String s) {
         for (int i = 0; i < this.players.size(); ++i) {
-            if (s.equals(((EntityHuman) this.players.get(i)).getName())) {
-                return (EntityHuman) this.players.get(i);
+            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+
+            if (s.equals(entityhuman.getName())) {
+                return entityhuman;
+            }
+        }
+
+        return null;
+    }
+
+    public EntityHuman a(UUID uuid) {
+        for (int i = 0; i < this.players.size(); ++i) {
+            EntityHuman entityhuman = (EntityHuman) this.players.get(i);
+
+            if (uuid.equals(entityhuman.getUniqueID())) {
+                return entityhuman;
             }
         }
 
@@ -2887,7 +2891,7 @@ public abstract class World implements IBlockAccess {
 
     public Calendar V() {
         if (this.getTime() % 600L == 0L) {
-            this.J.setTimeInMillis(MinecraftServer.aq());
+            this.J.setTimeInMillis(MinecraftServer.ar());
         }
 
         return this.J;

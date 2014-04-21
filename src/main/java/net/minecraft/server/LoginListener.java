@@ -9,6 +9,7 @@ import javax.crypto.SecretKey;
 
 import net.minecraft.util.com.google.common.base.Charsets;
 import net.minecraft.util.com.mojang.authlib.GameProfile;
+import net.minecraft.util.com.mojang.authlib.properties.Property;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
@@ -59,21 +60,38 @@ public class LoginListener implements PacketLoginInListener {
         }
     }
 
-    public void c() {
-        if (!this.i.isComplete()) {
-            // Spigot Start
-            String uuid;
-            if ( networkManager.spoofedUUID != null )
-            {
-                uuid = networkManager.spoofedUUID;
-            } else
-            {
-                uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + this.i.getName()).getBytes(Charsets.UTF_8)).toString().replaceAll("-", "");
-            }
-
-            this.i = new GameProfile(uuid, this.i.getName());
-            // Spigot End
+    // Spigot start
+    public void initUUID()
+    {
+        UUID uuid;
+        if ( networkManager.spoofedUUID != null )
+        {
+            uuid = networkManager.spoofedUUID;
+        } else
+        {
+            uuid = UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + this.i.getName() ).getBytes( Charsets.UTF_8 ) );
         }
+
+        this.i = new GameProfile( uuid, this.i.getName() );
+
+        if (networkManager.spoofedProfile != null)
+        {
+            for ( Property property : networkManager.spoofedProfile )
+            {
+                this.i.getProperties().put( property.getName(), property );
+            }
+        }
+    }
+    // Spigot end
+
+    public void c() {
+        // Spigot start - Moved to initUUID
+        /*
+        if (!this.i.isComplete()) {
+            this.i = this.a(this.i);
+        }
+        */
+        // Spigot end
 
         // CraftBukkit start - fire PlayerLoginEvent
         EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, this.hostname);
@@ -106,7 +124,7 @@ public class LoginListener implements PacketLoginInListener {
         this.i = packetlogininstart.c();
         if (this.server.getOnlineMode() && !this.networkManager.c()) {
             this.g = EnumProtocolState.KEY;
-            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.J().getPublic(), this.e), new GenericFutureListener[0]);
+            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.K().getPublic(), this.e), new GenericFutureListener[0]);
         } else {
             (new ThreadPlayerLookupUUID(this, "User Authenticator #" + b.incrementAndGet())).start(); // Spigot
         }
@@ -114,7 +132,7 @@ public class LoginListener implements PacketLoginInListener {
 
     public void a(PacketLoginInEncryptionBegin packetlogininencryptionbegin) {
         Validate.validState(this.g == EnumProtocolState.KEY, "Unexpected key packet", new Object[0]);
-        PrivateKey privatekey = this.server.J().getPrivate();
+        PrivateKey privatekey = this.server.K().getPrivate();
 
         if (!Arrays.equals(this.e, packetlogininencryptionbegin.b(privatekey))) {
             throw new IllegalStateException("Invalid nonce!");
@@ -126,24 +144,30 @@ public class LoginListener implements PacketLoginInListener {
         }
     }
 
-    static String a(LoginListener loginlistener) {
+    protected GameProfile a(GameProfile gameprofile) {
+        UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + gameprofile.getName()).getBytes(Charsets.UTF_8));
+
+        return new GameProfile(uuid, gameprofile.getName());
+    }
+
+    static GameProfile a(LoginListener loginlistener) {
+        return loginlistener.i;
+    }
+
+    static String b(LoginListener loginlistener) {
         return loginlistener.j;
     }
 
-    static MinecraftServer b(LoginListener loginlistener) {
+    static MinecraftServer c(LoginListener loginlistener) {
         return loginlistener.server;
     }
 
-    static SecretKey c(LoginListener loginlistener) {
+    static SecretKey d(LoginListener loginlistener) {
         return loginlistener.loginKey;
     }
 
     static GameProfile a(LoginListener loginlistener, GameProfile gameprofile) {
         return loginlistener.i = gameprofile;
-    }
-
-    static GameProfile d(LoginListener loginlistener) {
-        return loginlistener.i;
     }
 
     static Logger e() {

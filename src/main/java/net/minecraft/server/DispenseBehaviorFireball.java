@@ -15,7 +15,7 @@ final class DispenseBehaviorFireball extends DispenseBehaviorItem {
         EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
         IPosition iposition = BlockDispenser.a(isourceblock);
         double d0 = iposition.getX() + (double) ((float) enumfacing.getAdjacentX() * 0.3F);
-        double d1 = iposition.getY() + (double) ((float) enumfacing.getAdjacentY() * 0.3F);
+        double d1 = iposition.getY() + (double) ((float) enumfacing.getAdjacentX() * 0.3F);
         double d2 = iposition.getZ() + (double) ((float) enumfacing.getAdjacentZ() * 0.3F);
         World world = isourceblock.k();
         Random random = world.random;

@@ -6,6 +6,7 @@ import javax.crypto.SecretKey;
 
 import net.minecraft.util.com.google.common.collect.Queues;
 import net.minecraft.util.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import net.minecraft.util.com.mojang.authlib.properties.Property;
 import net.minecraft.util.io.netty.channel.Channel;
 import net.minecraft.util.io.netty.channel.ChannelFutureListener;
 import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
@@ -13,6 +14,7 @@ import net.minecraft.util.io.netty.channel.SimpleChannelInboundHandler;
 import net.minecraft.util.io.netty.channel.local.LocalChannel;
 import net.minecraft.util.io.netty.channel.local.LocalServerChannel;
 import net.minecraft.util.io.netty.channel.nio.NioEventLoopGroup;
+import net.minecraft.util.io.netty.handler.timeout.TimeoutException;
 import net.minecraft.util.io.netty.util.AttributeKey;
 import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 import net.minecraft.util.org.apache.commons.lang3.Validate;
@@ -36,11 +38,28 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     private final Queue k = Queues.newConcurrentLinkedQueue();
     private final Queue l = Queues.newConcurrentLinkedQueue();
     private Channel m;
-    public SocketAddress n; // Spigot
-    public String spoofedUUID; // Spigot
+    // Spigot Start
+    public SocketAddress n;
+    public java.util.UUID spoofedUUID;
+    public Property[] spoofedProfile;
+    // Spigot End
     private PacketListener o;
     private EnumProtocol p;
     private IChatBaseComponent q;
+    private boolean r;
+    // Spigot Start
+    public static final AttributeKey<Integer> protocolVersion = new AttributeKey<Integer>("protocol_version");
+    public static final int CURRENT_VERSION = 5;
+    public static int getVersion(Channel attr)
+    {
+        Integer ver = attr.attr( protocolVersion ).get();
+        return ( ver != null ) ? ver : CURRENT_VERSION;
+    }
+    public int getVersion()
+    {
+        return getVersion( this.m );
+    }
+    // Spigot End
 
     public NetworkManager(boolean flag) {
         this.j = flag;
@@ -66,7 +85,16 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     }
 
     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
-        this.close(new ChatMessage("disconnect.genericReason", new Object[] { "Internal Exception: " + throwable}));
+        ChatMessage chatmessage;
+
+        if (throwable instanceof TimeoutException) {
+            chatmessage = new ChatMessage("disconnect.timeout", new Object[0]);
+        } else {
+            chatmessage = new ChatMessage("disconnect.genericReason", new Object[] { "Internal Exception: " + throwable});
+        }
+
+        this.close(chatmessage);
+        if (MinecraftServer.getServer().isDebugging()) throwable.printStackTrace(); // Spigot
     }
 
     protected void a(ChannelHandlerContext channelhandlercontext, Packet packet) {
@@ -87,7 +115,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
 
     public void handle(Packet packet, GenericFutureListener... agenericfuturelistener) {
         if (this.m != null && this.m.isOpen()) {
-            this.h();
+            this.i();
             this.b(packet, agenericfuturelistener);
         } else {
             this.l.add(new QueuedPacket(packet, agenericfuturelistener));
@@ -114,7 +142,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
         }
     }
 
-    private void h() {
+    private void i() {
         if (this.m != null && this.m.isOpen()) {
             while (!this.l.isEmpty()) {
                 QueuedPacket queuedpacket = (QueuedPacket) this.l.poll();
@@ -125,7 +153,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     }
 
     public void a() {
-        this.h();
+        this.i();
         EnumProtocol enumprotocol = (EnumProtocol) this.m.attr(d).get();
 
         if (this.p != enumprotocol) {
@@ -172,6 +200,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     public void a(SecretKey secretkey) {
         this.m.pipeline().addBefore("splitter", "decrypt", new PacketDecrypter(MinecraftEncryption.a(2, secretkey)));
         this.m.pipeline().addBefore("prepender", "encrypt", new PacketEncrypter(MinecraftEncryption.a(1, secretkey)));
+        this.r = true;
     }
 
     public boolean isConnected() {

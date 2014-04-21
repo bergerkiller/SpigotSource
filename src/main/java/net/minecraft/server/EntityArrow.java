@@ -24,6 +24,18 @@ public class EntityArrow extends Entity implements IProjectile {
     private double damage = 2.0D;
     public int knockbackStrength; // CraftBukkit - private -> public
 
+    // Spigot Start
+    @Override
+    public void inactiveTick()
+    {
+        if ( this.inGround )
+        {
+            this.at += 19; // Despawn counter. First int after shooter
+        }
+        super.inactiveTick();
+    }
+    // Spigot End
+
     public EntityArrow(World world) {
         super(world);
         this.j = 10.0D;
@@ -144,7 +156,7 @@ public class EntityArrow extends Entity implements IProjectile {
 
             if (block == this.g && i == this.h) {
                 ++this.at;
-                if (this.at == world.spigotConfig.arrowDespawnRate) {
+                if (this.at >= world.spigotConfig.arrowDespawnRate) { // First int after shooter
                     this.die();
                 }
             } else {
@@ -280,7 +292,7 @@ public class EntityArrow extends Entity implements IProjectile {
                     this.d = movingobjectposition.b;
                     this.e = movingobjectposition.c;
                     this.f = movingobjectposition.d;
-                    this.g = this.world.getType(d, e, f); // CraftBukkit - Get correct block for storage
+                    this.g = this.world.getType(this.d, this.e, this.f);
                     this.h = this.world.getData(this.d, this.e, this.f);
                     this.motX = (double) ((float) (movingobjectposition.pos.a - this.locX));
                     this.motY = (double) ((float) (movingobjectposition.pos.b - this.locY));

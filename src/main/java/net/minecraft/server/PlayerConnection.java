@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -369,7 +370,7 @@ public class PlayerConnection implements PacketPlayInListener {
                 // CraftBukkit end
                 double d10 = d7 * d7 + d8 * d8 + d9 * d9;
 
-                if (d10 > 100.0D && this.checkMovement && (!this.minecraftServer.M() || !this.minecraftServer.L().equals(this.player.getName()))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
+                if (d10 > 100.0D && this.checkMovement && (!this.minecraftServer.N() || !this.minecraftServer.M().equals(this.player.getName()))) { // CraftBukkit - Added this.checkMovement condition to solve this check being triggered by teleports
                     c.warn(this.player.getName() + " moved too quickly! " + d4 + "," + d5 + "," + d6 + " (" + d7 + ", " + d8 + ", " + d9 + ")");
                     this.a(this.y, this.z, this.q, this.player.yaw, this.player.pitch);
                     return;
@@ -639,7 +640,7 @@ public class PlayerConnection implements PacketPlayInListener {
             }
 
             if (!this.player.playerInteractManager.interact(this.player, worldserver, itemstack, i, j, k, l, packetplayinblockplace.h(), packetplayinblockplace.i(), packetplayinblockplace.j())) {
-                always = true; // force Packet103SetSlot to be sent to client to update ItemStack count
+                always = true; // force PacketPlayOutSetSlot to be sent to client to update ItemStack count
             }
             // CraftBukkit end
 
@@ -704,7 +705,7 @@ public class PlayerConnection implements PacketPlayInListener {
         }
         // CraftBukkit end
         c.info(this.player.getName() + " lost connection: " + ichatbasecomponent.c()); // CraftBukkit - Don't toString the component
-        this.minecraftServer.av();
+        this.minecraftServer.az();
         // CraftBukkit start - Replace vanilla quit message handling with our own.
         /*
         ChatMessage chatmessage = new ChatMessage("multiplayer.player.left", new Object[] { this.player.getScoreboardDisplayName()});
@@ -719,7 +720,7 @@ public class PlayerConnection implements PacketPlayInListener {
             this.minecraftServer.getPlayerList().sendMessage(CraftChatMessage.fromString(quitMessage));
         }
         // CraftBukkit end
-        if (this.minecraftServer.M() && this.player.getName().equals(this.minecraftServer.L())) {
+        if (this.minecraftServer.N() && this.player.getName().equals(this.minecraftServer.M())) {
             c.info("Stopping singleplayer server as player logged out");
             this.minecraftServer.safeShutdown();
         }
@@ -860,7 +861,7 @@ public class PlayerConnection implements PacketPlayInListener {
             }
             // CraftBukkit start - replaced with thread safe throttle
             // this.chatThrottle += 20;
-            if (counted && chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getName())) {
+            if (counted && chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) {
                 if (packetplayinchat.a()) {
                     Waitable waitable = new Waitable() {
                         @Override
@@ -1162,14 +1163,13 @@ public class PlayerConnection implements PacketPlayInListener {
             if (this.player.viewingCredits) {
                 this.minecraftServer.getPlayerList().changeDimension(this.player, 0, PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit - reroute logic through custom portal management
             } else if (this.player.r().getWorldData().isHardcore()) {
-                if (this.minecraftServer.M() && this.player.getName().equals(this.minecraftServer.L())) {
+                if (this.minecraftServer.N() && this.player.getName().equals(this.minecraftServer.M())) {
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");
-                    this.minecraftServer.T();
+                    this.minecraftServer.U();
                 } else {
-                    BanEntry banentry = new BanEntry(this.player.getName());
+                    GameProfileBanEntry gameprofilebanentry = new GameProfileBanEntry(this.player.getProfile(), (Date) null, "(You just lost the game)", (Date) null, "Death in Hardcore");
 
-                    banentry.setReason("Death in Hardcore");
-                    this.minecraftServer.getPlayerList().getNameBans().add(banentry);
+                    this.minecraftServer.getPlayerList().getProfileBans().add(gameprofilebanentry);
                     this.player.playerConnection.disconnect("You have died. Game over, man, it\'s game over!");
                 }
             } else {
@@ -1626,12 +1626,7 @@ public class PlayerConnection implements PacketPlayInListener {
                 this.server.getPluginManager().callEvent(event);
 
                 if (!event.isCancelled()) {
-                    for (int l = 0; l < 4; ++l) {
-                        tileentitysign1.lines[l] = event.getLine(l);
-                        if(tileentitysign1.lines[l] == null) {
-                            tileentitysign1.lines[l] = "";
-                        }
-                    }
+                    tileentitysign1.lines = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
                     tileentitysign1.isEditable = false;
                 }
                 // System.arraycopy(packetplayinupdatesign.f(), 0, tileentitysign1.lines, 0, 4);
@@ -1702,18 +1697,18 @@ public class PlayerConnection implements PacketPlayInListener {
 
             try {
                 itemstack = packetdataserializer.c();
-                if (itemstack != null) {
-                    if (!ItemBookAndQuill.a(itemstack.getTag())) {
-                        throw new IOException("Invalid book tag!");
-                    }
+                if (itemstack == null) {
+                    return;
+                }
 
-                    itemstack1 = this.player.inventory.getItemInHand();
-                    if (itemstack1 == null) {
-                        return;
-                    }
+                if (!ItemBookAndQuill.a(itemstack.getTag())) {
+                    throw new IOException("Invalid book tag!");
+                }
 
+                itemstack1 = this.player.inventory.getItemInHand();
+                if (itemstack1 != null) {
                     if (itemstack.getItem() == Items.BOOK_AND_QUILL && itemstack.getItem() == itemstack1.getItem()) {
-                        itemstack1.a("pages", (NBTBase) itemstack.getTag().getList("pages", 8));
+                        CraftEventFactory.handleEditBookEvent(player, itemstack); // CraftBukkit
                     }
 
                     return;
@@ -1734,16 +1729,16 @@ public class PlayerConnection implements PacketPlayInListener {
 
             try {
                 itemstack = packetdataserializer.c();
-                if (itemstack == null) {
-                    return;
-                }
+                if (itemstack != null) {
+                    if (!ItemWrittenBook.a(itemstack.getTag())) {
+                        throw new IOException("Invalid book tag!");
+                    }
 
-                if (!ItemWrittenBook.a(itemstack.getTag())) {
-                    throw new IOException("Invalid book tag!");
-                }
+                    itemstack1 = this.player.inventory.getItemInHand();
+                    if (itemstack1 == null) {
+                        return;
+                    }
 
-                itemstack1 = this.player.inventory.getItemInHand();
-                if (itemstack1 != null) {
                     if (itemstack.getItem() == Items.WRITTEN_BOOK && itemstack1.getItem() == Items.BOOK_AND_QUILL) {
                         CraftEventFactory.handleEditBookEvent(player, itemstack); // CraftBukkit
                     }

@@ -86,7 +86,7 @@ public class CraftEventFactory {
 
         if (world.getHandle().dimension != 0) return true;
         if (spawnSize <= 0) return true;
-        if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().isEmpty()) return true;
+        if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().d()) return true; // Should be isEmpty
         if (player.isOp()) return true;
 
         ChunkCoordinates chunkcoordinates = worldServer.getSpawn();
@@ -726,7 +726,7 @@ public class CraftEventFactory {
         ItemStack itemInHand = player.inventory.getItem(itemInHandIndex);
 
         // If they've got the same item in their hand, it'll need to be updated.
-        if (itemInHand.getItem() == Items.BOOK_AND_QUILL) {
+        if (itemInHand != null && itemInHand.getItem() == Items.BOOK_AND_QUILL) {
             if (!editBookEvent.isCancelled()) {
                 CraftItemStack.setItemMeta(itemInHand, editBookEvent.getNewBookMeta());
                 if (editBookEvent.isSigning()) {
