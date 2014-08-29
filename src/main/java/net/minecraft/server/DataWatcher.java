@@ -15,11 +15,11 @@ public class DataWatcher {
     private final Entity a;
     private boolean b = true;
     // Spigot Start
-    private static final gnu.trove.map.TObjectIntMap classToId = new gnu.trove.map.hash.TObjectIntHashMap( 10, 0.5f, -1 );
-    private final gnu.trove.map.TIntObjectMap dataValues = new gnu.trove.map.hash.TIntObjectHashMap( 10, 0.5f, -1 );
+    private static final net.minecraft.util.gnu.trove.map.TObjectIntMap classToId = new net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap( 10, 0.5f, -1 );
+    private final net.minecraft.util.gnu.trove.map.TIntObjectMap dataValues = new net.minecraft.util.gnu.trove.map.hash.TIntObjectHashMap( 10, 0.5f, -1 );
     // These exist as an attempt at backwards compatability for (broken) NMS plugins
-    private static final Map c = gnu.trove.TDecorators.wrap( classToId );
-    private final Map d = gnu.trove.TDecorators.wrap( dataValues );
+    private static final Map c = net.minecraft.util.gnu.trove.TDecorators.wrap( classToId );
+    private final Map d = net.minecraft.util.gnu.trove.TDecorators.wrap( dataValues );
     // Spigot End
     private boolean e;
     private ReadWriteLock f = new ReentrantReadWriteLock();
@@ -47,7 +47,7 @@ public class DataWatcher {
         }
     }
 
-    public void a(int i, int j) {
+    public void add(int i, int j) {
         WatchableObject watchableobject = new WatchableObject(j, i, null);
 
         this.f.writeLock().lock();
@@ -110,7 +110,7 @@ public class DataWatcher {
         }
     }
 
-    public void h(int i) {
+    public void update(int i) {
         WatchableObject.a(this.i(i), true);
         this.e = true;
     }
@@ -149,6 +149,17 @@ public class DataWatcher {
                         arraylist = new ArrayList();
                     }
 
+                    // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
+                    if ( watchableobject.b() instanceof ItemStack )
+                    {
+                        watchableobject = new WatchableObject(
+                                watchableobject.c(),
+                                watchableobject.a(),
+                                ( (ItemStack) watchableobject.b() ).cloneItemStack()
+                        );
+                    }
+                    // Spigot end
+
                     arraylist.add(watchableobject);
                 }
             }
@@ -180,6 +191,21 @@ public class DataWatcher {
         this.f.readLock().lock();
 
         arraylist.addAll(this.dataValues.valueCollection()); // Spigot
+        // Spigot start - copy ItemStacks to prevent ConcurrentModificationExceptions
+        for ( int i = 0; i < arraylist.size(); i++ )
+        {
+            WatchableObject watchableobject = (WatchableObject) arraylist.get( i );
+            if ( watchableobject.b() instanceof ItemStack )
+            {
+                watchableobject = new WatchableObject(
+                        watchableobject.c(),
+                        watchableobject.a(),
+                        ( (ItemStack) watchableobject.b() ).cloneItemStack()
+                );
+                arraylist.set( i, watchableobject );
+            }
+        }
+        // Spigot end
 
         this.f.readLock().unlock();
         return arraylist;

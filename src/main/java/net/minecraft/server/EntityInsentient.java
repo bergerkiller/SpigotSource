@@ -50,9 +50,9 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    protected void aC() {
-        super.aC();
-        this.bb().b(GenericAttributes.b).setValue(16.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeMap().b(GenericAttributes.b).setValue(16.0D);
     }
 
     public ControllerLook getControllerLook() {
@@ -103,12 +103,12 @@ public abstract class EntityInsentient extends EntityLiving {
         String s = this.t();
 
         if (s != null) {
-            this.makeSound(s, this.be(), this.bf());
+            this.makeSound(s, this.bf(), this.bg());
         }
     }
 
-    public void B() {
-        super.B();
+    public void C() {
+        super.C();
         this.world.methodProfiler.a("mobBaseTick");
         if (this.isAlive() && this.random.nextInt(1000) < this.a_++) {
             this.a_ = -this.q();
@@ -154,7 +154,7 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     protected float f(float f, float f1) {
-        if (this.bj()) {
+        if (this.bk()) {
             this.bn.a();
             return f1;
         } else {
@@ -167,12 +167,10 @@ public abstract class EntityInsentient extends EntityLiving {
     }
 
     protected Item getLoot() {
-        return Item.d(0);
+        return Item.getById(0);
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         Item item = this.getLoot();
 
         if (item != null) {
@@ -182,25 +180,10 @@ public abstract class EntityInsentient extends EntityLiving {
                 j += this.random.nextInt(i + 1);
             }
 
-            if (j > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(item), j));
+            for (int k = 0; k < j; ++k) {
+                this.a(item, 1);
             }
         }
-
-        // Determine rare item drops and add them to the loot
-        if (this.lastDamageByPlayerTime > 0) {
-            int k = this.random.nextInt(200) - i;
-
-            if (k < 5) {
-                ItemStack itemstack = this.getRareDrop(k <= 0 ? 1 : 0);
-                if (itemstack != null) {
-                    loot.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
-                }
-            }
-        }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
-        // CraftBukkit end
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -379,7 +362,7 @@ public abstract class EntityInsentient extends EntityLiving {
         this.world.methodProfiler.b();
     }
 
-    protected boolean bj() {
+    protected boolean bk() {
         return false;
     }
 
@@ -412,7 +395,7 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    protected void bm() {
+    protected void bn() {
         ++this.aU;
         this.world.methodProfiler.a("checkDespawn");
         this.w();
@@ -436,7 +419,7 @@ public abstract class EntityInsentient extends EntityLiving {
         this.navigation.f();
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("mob tick");
-        this.bo();
+        this.bp();
         this.world.methodProfiler.b();
         this.world.methodProfiler.a("controls");
         this.world.methodProfiler.a("move");
@@ -449,8 +432,8 @@ public abstract class EntityInsentient extends EntityLiving {
         this.world.methodProfiler.b();
     }
 
-    protected void bp() {
-        super.bp();
+    protected void bq() {
+        super.bq();
         this.bd = 0.0F;
         this.be = 0.0F;
         this.w();
@@ -468,7 +451,7 @@ public abstract class EntityInsentient extends EntityLiving {
         }
 
         if (this.bu != null) {
-            this.a(this.bu, 10.0F, (float) this.bv());
+            this.a(this.bu, 10.0F, (float) this.x());
             if (this.g-- <= 0 || this.bu.dead || this.bu.f((Entity) this) > (double) (f * f)) {
                 this.bu = null;
             }
@@ -481,15 +464,15 @@ public abstract class EntityInsentient extends EntityLiving {
             this.pitch = this.f;
         }
 
-        boolean flag = this.L();
-        boolean flag1 = this.O();
+        boolean flag = this.M();
+        boolean flag1 = this.P();
 
         if (flag || flag1) {
             this.bc = this.random.nextFloat() < 0.8F;
         }
     }
 
-    public int bv() {
+    public int x() {
         return 40;
     }
 
@@ -536,7 +519,7 @@ public abstract class EntityInsentient extends EntityLiving {
         return 4;
     }
 
-    public int aw() {
+    public int ax() {
         if (this.getGoalTarget() == null) {
             return 3;
         } else {
@@ -551,7 +534,7 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    public ItemStack bd() {
+    public ItemStack be() {
         return this.equipment[0];
     }
 
@@ -718,8 +701,8 @@ public abstract class EntityInsentient extends EntityLiving {
     protected void bD() {
         float f = this.world.b(this.locX, this.locY, this.locZ);
 
-        if (this.bd() != null && this.random.nextFloat() < 0.25F * f) {
-            EnchantmentManager.a(this.random, this.bd(), (int) (5.0F + f * (float) this.random.nextInt(18)));
+        if (this.be() != null && this.random.nextFloat() < 0.25F * f) {
+            EnchantmentManager.a(this.random, this.be(), (int) (5.0F + f * (float) this.random.nextInt(18)));
         }
 
         for (int i = 0; i < 4; ++i) {
@@ -731,7 +714,7 @@ public abstract class EntityInsentient extends EntityLiving {
         }
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
         this.getAttributeInstance(GenericAttributes.b).a(new AttributeModifier("Random spawn bonus", this.random.nextGaussian() * 0.05D, 1));
         return groupdataentity;
     }

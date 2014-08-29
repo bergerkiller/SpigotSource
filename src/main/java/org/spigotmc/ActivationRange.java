@@ -27,7 +27,6 @@ import net.minecraft.server.EntityWither;
 import net.minecraft.server.MathHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.World;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.SpigotTimings;
 
 public class ActivationRange
@@ -125,7 +124,7 @@ public class ActivationRange
         maxRange = Math.max( maxRange, miscActivationRange );
         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
 
-        for ( Entity player : new ArrayList<Entity>( world.players ) )
+        for ( Entity player : (List<Entity>) world.players )
         {
 
             player.activatedTick = MinecraftServer.currentTick;
@@ -286,7 +285,8 @@ public class ActivationRange
         int x = MathHelper.floor( entity.locX );
         int z = MathHelper.floor( entity.locZ );
         // Make sure not on edge of unloaded chunk
-        if ( isActive && !entity.world.areChunksLoaded( x, 0, z, 16 ) )
+        Chunk chunk = entity.world.getChunkIfLoaded( x >> 4, z >> 4 );
+        if ( isActive && !( chunk != null && chunk.areNeighborsLoaded( 1 ) ) )
         {
             isActive = false;
         }

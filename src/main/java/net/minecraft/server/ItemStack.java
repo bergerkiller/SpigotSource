@@ -6,7 +6,17 @@ import java.util.Random;
 import net.minecraft.util.com.google.common.collect.HashMultimap;
 import net.minecraft.util.com.google.common.collect.Multimap;
 
-import org.bukkit.craftbukkit.util.CraftMagicNumbers; // CraftBukkit
+// CraftBukkit start
+import java.util.List;
+
+import org.bukkit.Location;
+import org.bukkit.TreeType;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.Player;
+import org.bukkit.event.world.StructureGrowEvent;
+// CraftBukkit end
 
 public final class ItemStack {
 
@@ -75,11 +85,95 @@ public final class ItemStack {
     }
 
     public boolean placeItem(EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+        // CraftBukkit start - handle all block place event logic here
+        int data = this.getData();
+        int count = this.count;
+
+        if (!(this.getItem() instanceof ItemBucket)) { // if not bucket
+            world.captureBlockStates = true;
+            // special case bonemeal
+            if (this.getItem() instanceof ItemDye && this.getData() == 15) {
+                Block block = world.getType(i, j, k);
+                if (block == Blocks.SAPLING || block instanceof BlockMushroom) {
+                    world.captureTreeGeneration = true;
+                }
+            }
+        }
         boolean flag = this.getItem().interactWith(this, entityhuman, world, i, j, k, l, f, f1, f2);
+        int newData = this.getData();
+        int newCount = this.count;
+        this.count = count;
+        this.setData(data);
+        world.captureBlockStates = false;
+        if (flag && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
+            world.captureTreeGeneration = false;
+            Location location = new Location(world.getWorld(), i, j, k);
+            TreeType treeType = BlockSapling.treeType;
+            BlockSapling.treeType = null;
+            List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
+            world.capturedBlockStates.clear();
+            StructureGrowEvent event = null;
+            if (treeType != null) {
+                event = new StructureGrowEvent(location, treeType, false, (Player) entityhuman.getBukkitEntity(), blocks);
+                org.bukkit.Bukkit.getPluginManager().callEvent(event);
+            }
+            if (event == null || !event.isCancelled()) {
+                // Change the stack to its new contents if it hasn't been tampered with.
+                if (this.count == count && this.getData() == data) {
+                    this.setData(newData);
+                    this.count = newCount;
+                }
+                for (BlockState blockstate : blocks) {
+                    blockstate.update(true);
+                }
+            }
+
+            return flag;
+        }
+        world.captureTreeGeneration = false;
 
         if (flag) {
-            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
+            org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
+            List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
+            world.capturedBlockStates.clear();
+            if (blocks.size() > 1) {
+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, blocks, i, j, k);
+            } else if (blocks.size() == 1) {
+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blocks.get(0), i, j, k);
+            }
+
+            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
+                flag = false; // cancel placement
+                // revert back all captured blocks
+                for (BlockState blockstate : blocks) {
+                    blockstate.update(true, false);
+                }
+            } else {
+                // Change the stack to its new contents if it hasn't been tampered with.
+                if (this.count == count && this.getData() == data) {
+                    this.setData(newData);
+                    this.count = newCount;
+                }
+                for (BlockState blockstate : blocks) {
+                    int x = blockstate.getX();
+                    int y = blockstate.getY();
+                    int z = blockstate.getZ();
+                    int updateFlag = ((CraftBlockState) blockstate).getFlag();
+                    org.bukkit.Material mat = blockstate.getType();
+                    Block oldBlock = CraftMagicNumbers.getBlock(mat);
+                    Block block = world.getType(x, y, z);
+
+                    if (block != null && !(block instanceof BlockContainer)) { // Containers get placed automatically
+                        block.onPlace(world, x, y, z);
+                    }
+
+                    world.notifyAndUpdatePhysics(x, y, z, null, oldBlock, block, updateFlag); // send null chunk as chunk.k() returns false by this point
+                }
+                entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)], 1);
+            }
         }
+        world.capturedBlockStates.clear();
+        // CraftBukkit end
 
         return flag;
     }
@@ -97,7 +191,7 @@ public final class ItemStack {
     }
 
     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setShort("id", (short) Item.b(this.item));
+        nbttagcompound.setShort("id", (short) Item.getId(this.item));
         nbttagcompound.setByte("Count", (byte) this.count);
         nbttagcompound.setShort("Damage", (short) this.damage);
         if (this.tag != null) {
@@ -108,19 +202,75 @@ public final class ItemStack {
     }
 
     public void c(NBTTagCompound nbttagcompound) {
-        this.item = Item.d(nbttagcompound.getShort("id"));
+        this.item = Item.getById(nbttagcompound.getShort("id"));
         this.count = nbttagcompound.getByte("Count");
+        /* CraftBukkit start - Route through setData for filtering
         this.damage = nbttagcompound.getShort("Damage");
         if (this.damage < 0) {
             this.damage = 0;
         }
+        */
+        this.setData(nbttagcompound.getShort("Damage"));
+        // CraftBukkit end
 
         if (nbttagcompound.hasKeyOfType("tag", 10)) {
             // CraftBukkit - make defensive copy as this data may be coming from the save thread
             this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
+            validateSkullSkin(); // Spigot
         }
     }
 
+    // Spigot start - make sure the tag is given the full gameprofile if it's a skull (async lookup)
+    public void validateSkullSkin()
+    {
+        if ( this.item == Items.SKULL && this.getData() == 3 )
+        {
+            String owner;
+            if ( this.tag.hasKeyOfType( "SkullOwner", 8 ) )
+            {
+                owner = this.tag.getString( "SkullOwner" );
+            } else if ( this.tag.hasKeyOfType( "SkullOwner", 10 ) )
+            {
+                net.minecraft.util.com.mojang.authlib.GameProfile profile = GameProfileSerializer.deserialize( this.tag.getCompound( "SkullOwner" ) );
+                if ( profile == null || !profile.getProperties().isEmpty() )
+                {
+                    return;
+                } else
+                {
+                    owner = profile.getName();
+                }
+            } else
+            {
+                return;
+            }
+
+            final String finalOwner = owner;
+            TileEntitySkull.executor.execute( new Runnable()
+            {
+                @Override
+                public void run()
+                {
+
+                    final net.minecraft.util.com.mojang.authlib.GameProfile profile = TileEntitySkull.skinCache.getUnchecked( finalOwner.toLowerCase() );
+                    if ( profile != null )
+                    {
+                        MinecraftServer.getServer().processQueue.add( new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                NBTTagCompound nbtProfile = new NBTTagCompound();
+                                GameProfileSerializer.serialize( nbtProfile, profile );
+                                ItemStack.this.tag.set( "SkullOwner", nbtProfile );
+                            }
+                        } );
+                    }
+                }
+            } );
+        }
+    }
+    // Spigot end
+    
     public int getMaxStackSize() {
         return this.getItem().getMaxStackSize();
     }
@@ -169,6 +319,11 @@ public final class ItemStack {
             if (!(this.usesData() || this.getItem().usesDurability())) {
                 i = 0;
             }
+        }
+
+        // Filter invalid plant data
+        if (CraftMagicNumbers.getBlock(CraftMagicNumbers.getId(this.getItem())) == Blocks.DOUBLE_PLANT && (i > 5 || i < 0)) {
+            i = 0;
         }
         // CraftBukkit end
 
@@ -225,15 +380,15 @@ public final class ItemStack {
     public void damage(int i, EntityLiving entityliving) {
         if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
             if (this.g()) {
-                if (this.isDamaged(i, entityliving.aH(), entityliving)) {
+                if (this.isDamaged(i, entityliving.aI(), entityliving)) { // Spigot
                     entityliving.a(this);
                     --this.count;
                     if (entityliving instanceof EntityHuman) {
                         EntityHuman entityhuman = (EntityHuman) entityliving;
 
-                        entityhuman.a(StatisticList.BREAK_ITEM_COUNT[Item.b(this.item)], 1);
+                        entityhuman.a(StatisticList.BREAK_ITEM_COUNT[Item.getId(this.item)], 1);
                         if (this.count == 0 && this.getItem() instanceof ItemBow) {
-                            entityhuman.bF();
+                            entityhuman.bG();
                         }
                     }
 
@@ -257,7 +412,7 @@ public final class ItemStack {
         boolean flag = this.item.a(this, entityliving, (EntityLiving) entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
+            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)], 1);
         }
     }
 
@@ -265,7 +420,7 @@ public final class ItemStack {
         boolean flag = this.item.a(this, world, block, i, j, k, entityhuman);
 
         if (flag) {
-            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.b(this.item)], 1);
+            entityhuman.a(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)], 1);
         }
     }
 
@@ -324,7 +479,7 @@ public final class ItemStack {
     }
 
     public void a(World world, EntityHuman entityhuman, int i) {
-        entityhuman.a(StatisticList.CRAFT_BLOCK_COUNT[Item.b(this.item)], i);
+        entityhuman.a(StatisticList.CRAFT_BLOCK_COUNT[Item.getId(this.item)], i);
         this.item.d(this, world, entityhuman);
     }
 
@@ -354,6 +509,7 @@ public final class ItemStack {
 
     public void setTag(NBTTagCompound nbttagcompound) {
         this.tag = nbttagcompound;
+        validateSkullSkin(); // Spigot
     }
 
     public String getName() {
@@ -492,6 +648,7 @@ public final class ItemStack {
 
     public void setItem(Item item) {
         this.item = item;
+        this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
     }
 
     public IChatBaseComponent E() {

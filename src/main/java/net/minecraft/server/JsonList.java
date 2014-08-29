@@ -51,7 +51,7 @@ public class JsonList {
     }
 
     public void add(JsonListEntry jsonlistentry) {
-        this.d.put(this.a(jsonlistentry.f()), jsonlistentry);
+        this.d.put(this.a(jsonlistentry.getKey()), jsonlistentry);
 
         try {
             this.save();
@@ -85,7 +85,7 @@ public class JsonList {
     }
     // CraftBukkit end
 
-    public boolean d() {
+    public boolean isEmpty() {
         return this.d.size() < 1;
     }
 
@@ -104,8 +104,8 @@ public class JsonList {
         while (iterator.hasNext()) {
             JsonListEntry jsonlistentry = (JsonListEntry) iterator.next();
 
-            if (jsonlistentry.e()) {
-                arraylist.add(jsonlistentry.f());
+            if (jsonlistentry.hasExpired()) {
+                arraylist.add(jsonlistentry.getKey());
             }
         }
 
@@ -146,6 +146,17 @@ public class JsonList {
         try {
             bufferedreader = Files.newReader(this.c, Charsets.UTF_8);
             collection = (Collection) this.b.fromJson(bufferedreader, f);
+        // Spigot Start
+        } catch ( java.io.FileNotFoundException ex )
+        {
+            org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.INFO, "Unable to find file {0}, creating it.", this.c );
+        } catch ( net.minecraft.util.com.google.gson.JsonSyntaxException ex )
+        {
+            org.bukkit.Bukkit.getLogger().log( java.util.logging.Level.WARNING, "Unable to read file {0}, backing it up to {0}.backup and creating new copy.", this.c );
+            File backup = new File( this.c + ".backup" );
+            this.c.renameTo( backup );
+            this.c.delete();
+        // Spigot End
         } finally {
             IOUtils.closeQuietly(bufferedreader);
         }
@@ -157,8 +168,8 @@ public class JsonList {
             while (iterator.hasNext()) {
                 JsonListEntry jsonlistentry = (JsonListEntry) iterator.next();
 
-                if (jsonlistentry.f() != null) {
-                    this.d.put(this.a(jsonlistentry.f()), jsonlistentry);
+                if (jsonlistentry.getKey() != null) {
+                    this.d.put(this.a(jsonlistentry.getKey()), jsonlistentry);
                 }
             }
         }

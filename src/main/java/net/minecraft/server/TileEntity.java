@@ -24,6 +24,40 @@ public class TileEntity {
     public int g = -1;
     public Block h;
 
+    // Spigot start
+    // Helper method for scheduleTicks. If the hopper at x0, y0, z0 is pointed
+    // at this tile entity, then make it active.
+    private void scheduleTick(int x0, int y0, int z0) {
+        TileEntity tileEntity = this.world.getTileEntity(x0, y0, z0);
+        if (tileEntity instanceof TileEntityHopper && tileEntity.world != null) {
+            // i is the metadeta assoiated with the direction the hopper faces.
+            int i = BlockHopper.b(tileEntity.p());
+            // Facing class provides arrays for direction offset.
+            if (tileEntity.x + Facing.b[i] == this.x && tileEntity.y + Facing.c[i] == this.y && tileEntity.z + Facing.d[i] == this.z) {
+                ((TileEntityHopper) tileEntity).makeTick();
+            }
+        }
+    }
+    
+    // Called from update when the contents have changed, so hoppers need updates.
+    // Check all 6 faces.
+    public void scheduleTicks() {
+        if (this.world != null && this.world.spigotConfig.altHopperTicking) {
+            // Check the top
+            this.scheduleTick(this.x, this.y + 1, this.z);
+            // Check the sides
+            for (int i = 2; i < 6; i++) {
+                this.scheduleTick(this.x + Facing.b[i], this.y, this.z + Facing.d[i]);
+            }
+            // Check the bottom.
+            TileEntity tileEntity = this.world.getTileEntity(this.x, this.y - 1, this.z);
+            if (tileEntity instanceof TileEntityHopper && tileEntity.world != null) {
+                ((TileEntityHopper) tileEntity).makeTick();
+            }
+        }
+    }
+    // Spigot end
+
     public TileEntity() {}
 
     private static void a(Class oclass, String s) {
@@ -103,8 +137,12 @@ public class TileEntity {
             this.g = this.world.getData(this.x, this.y, this.z);
             this.world.b(this.x, this.y, this.z, this);
             if (this.q() != Blocks.AIR) {
-                this.world.f(this.x, this.y, this.z, this.q());
+                this.world.updateAdjacentComparators(this.x, this.y, this.z, this.q());
             }
+            // Spigot start - Called when the contents have changed, so hoppers around this
+            // tile need updating.
+            this.scheduleTicks();
+            // Spigot end
         }
     }
 

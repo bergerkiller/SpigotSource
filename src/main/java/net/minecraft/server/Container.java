@@ -13,6 +13,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.InventoryView;
 // CraftBukkit end
 
@@ -88,7 +89,7 @@ public abstract class Container {
         return false;
     }
 
-    public Slot a(IInventory iinventory, int i) {
+    public Slot getSlot(IInventory iinventory, int i) {
         for (int j = 0; j < this.c.size(); ++j) {
             Slot slot = (Slot) this.c.get(j);
 
@@ -282,7 +283,11 @@ public abstract class Container {
 
                                 if (itemstack4.count == 0) {
                                     playerinventory.setCarried((ItemStack) null);
+                                // CraftBukkit start - Update client cursor if we didn't empty it
+                                } else if (entityhuman instanceof EntityPlayer) {
+                                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, entityhuman.inventory.getCarried()));
                                 }
+                                // CraftBukkit end
                             }
                         } else if (slot2.isAllowed(entityhuman)) {
                             if (itemstack4 == null) {
@@ -308,7 +313,11 @@ public abstract class Container {
                                     itemstack4.a(k1);
                                     if (itemstack4.count == 0) {
                                         playerinventory.setCarried((ItemStack) null);
+                                    // CraftBukkit start - Update client cursor if we didn't empty it
+                                    } else if (entityhuman instanceof EntityPlayer) {
+                                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, entityhuman.inventory.getCarried()));
                                     }
+                                    // CraftBukkit end
 
                                     itemstack1.count += k1;
                                 } else if (itemstack4.count <= slot2.getMaxStackSize()) {
@@ -317,7 +326,10 @@ public abstract class Container {
                                 }
                             } else if (itemstack1.getItem() == itemstack4.getItem() && itemstack4.getMaxStackSize() > 1 && (!itemstack1.usesData() || itemstack1.getData() == itemstack4.getData()) && ItemStack.equals(itemstack1, itemstack4)) {
                                 k1 = itemstack1.count;
-                                if (k1 > 0 && k1 + itemstack4.count <= itemstack4.getMaxStackSize()) {
+                                // CraftBukkit start - itemstack4.getMaxStackSize() -> maxStack
+                                int maxStack = Math.min(itemstack4.getMaxStackSize(), slot2.getMaxStackSize());
+                                if (k1 > 0 && k1 + itemstack4.count <= maxStack) {
+                                    // CraftBukkit end
                                     itemstack4.count += k1;
                                     itemstack1 = slot2.a(k1);
                                     if (itemstack1.count == 0) {
@@ -325,11 +337,24 @@ public abstract class Container {
                                     }
 
                                     slot2.a(entityhuman, playerinventory.getCarried());
+                                // CraftBukkit start - Update client cursor if we didn't empty it
+                                } else if (entityhuman instanceof EntityPlayer) {
+                                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, entityhuman.inventory.getCarried()));
                                 }
+                                // CraftBukkit end
                             }
                         }
 
                         slot2.f();
+                        // CraftBukkit start - Make sure the client has the right slot contents
+                        if (entityhuman instanceof EntityPlayer && slot2.getMaxStackSize() != 64) {
+                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(this.windowId, slot2.rawSlotIndex, slot2.getItem()));
+                            // Updating a crafting inventory makes the client reset the result slot, have to send it again
+                            if (this.getBukkitView().getType() == InventoryType.WORKBENCH || this.getBukkitView().getType() == InventoryType.CRAFTING) {
+                                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSetSlot(this.windowId, 0, this.getSlot(0).getItem()));
+                            }
+                        }
+                        // CraftBukkit end
                     }
                 }
             } else if (k == 2 && j >= 0 && j < 9) {
@@ -468,17 +493,20 @@ public abstract class Container {
                 if (itemstack1 != null && itemstack1.getItem() == itemstack.getItem() && (!itemstack.usesData() || itemstack.getData() == itemstack1.getData()) && ItemStack.equals(itemstack, itemstack1)) {
                     int l = itemstack1.count + itemstack.count;
 
-                    if (l <= itemstack.getMaxStackSize()) {
+                    // CraftBukkit start - itemstack.getMaxStackSize() -> maxStack
+                    int maxStack = Math.min(itemstack.getMaxStackSize(), slot.getMaxStackSize());
+                    if (l <= maxStack) {
                         itemstack.count = 0;
                         itemstack1.count = l;
                         slot.f();
                         flag1 = true;
-                    } else if (itemstack1.count < itemstack.getMaxStackSize()) {
-                        itemstack.count -= itemstack.getMaxStackSize() - itemstack1.count;
-                        itemstack1.count = itemstack.getMaxStackSize();
+                    } else if (itemstack1.count < maxStack) {
+                        itemstack.count -= maxStack - itemstack1.count;
+                        itemstack1.count = maxStack;
                         slot.f();
                         flag1 = true;
                     }
+                    // CraftBukkit end
                 }
 
                 if (flag) {

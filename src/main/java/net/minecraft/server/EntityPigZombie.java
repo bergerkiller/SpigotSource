@@ -3,10 +3,7 @@ package net.minecraft.server;
 import java.util.List;
 import java.util.UUID;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.event.entity.EntityTargetEvent;
-// CraftBukkit end
+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public class EntityPigZombie extends EntityZombie {
 
@@ -21,14 +18,14 @@ public class EntityPigZombie extends EntityZombie {
         this.fireProof = true;
     }
 
-    protected void aC() {
-        super.aC();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(bp).setValue(0.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.5D);
         this.getAttributeInstance(GenericAttributes.e).setValue(5.0D);
     }
 
-    protected boolean bj() {
+    protected boolean bk() {
         return false;
     }
 
@@ -44,7 +41,7 @@ public class EntityPigZombie extends EntityZombie {
 
         this.bu = this.target;
         if (this.soundDelay > 0 && --this.soundDelay == 0) {
-            this.makeSound("mob.zombiepig.zpigangry", this.be() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
+            this.makeSound("mob.zombiepig.zpigangry", this.bf() * 2.0F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * 1.8F);
         }
 
         super.h();
@@ -119,61 +116,44 @@ public class EntityPigZombie extends EntityZombie {
         return "mob.zombiepig.zpig";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.zombiepig.zpighurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.zombiepig.zpigdeath";
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(2 + i);
 
-        if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Items.ROTTEN_FLESH, j));
+        int k;
+
+        for (k = 0; k < j; ++k) {
+            this.a(Items.ROTTEN_FLESH, 1);
         }
 
         j = this.random.nextInt(2 + i);
 
-        if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Items.GOLD_NUGGET, j));
+        for (k = 0; k < j; ++k) {
+            this.a(Items.GOLD_NUGGET, 1);
         }
-
-        // Determine rare item drops and add them to the loot
-        if (this.lastDamageByPlayerTime > 0) {
-            int k = this.random.nextInt(200) - i;
-
-            if (k < 5) {
-                ItemStack itemstack = this.getRareDrop(k <= 0 ? 1 : 0);
-                if (itemstack != null) {
-                    loot.add(CraftItemStack.asCraftMirror(itemstack));
-                }
-            }
-        }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public boolean a(EntityHuman entityhuman) {
         return false;
     }
 
-    // CraftBukkit start - Return rare dropped item instead of dropping it
-    protected ItemStack getRareDrop(int i) {
-        return new ItemStack(Items.GOLD_INGOT, 1, 0);
+    protected void getRareDrop(int i) {
+        this.a(Items.GOLD_INGOT, 1);
     }
-    // CraftBukkit end
 
     protected void bC() {
         this.setEquipment(0, new ItemStack(Items.GOLD_SWORD));
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
-        super.a(groupdataentity);
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
+        super.prepare(groupdataentity);
         this.setVillager(false);
         return groupdataentity;
     }

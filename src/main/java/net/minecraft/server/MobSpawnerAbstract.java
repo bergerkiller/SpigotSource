@@ -41,7 +41,7 @@ public abstract class MobSpawnerAbstract {
         }
     }
 
-    public void a(String s) {
+    public void setMobName(String s) {
         this.mobName = s;
     }
 
@@ -182,8 +182,8 @@ public abstract class MobSpawnerAbstract {
                 entity1 = entity2;
             }
         } else if (entity instanceof EntityLiving && entity.world != null) {
-            ((EntityInsentient) entity).a((GroupDataEntity) null);
-            // CraftBukkit start - call SpawnerSpawnEvent, abort if cancelled
+            ((EntityInsentient) entity).prepare((GroupDataEntity) null);
+            // Spigot start - call SpawnerSpawnEvent, abort if cancelled
             SpawnerSpawnEvent event = CraftEventFactory.callSpawnerSpawnEvent(entity, this.b(), this.c(), this.d());
             if (!event.isCancelled()) {
                 this.a().addEntity(entity, CreatureSpawnEvent.SpawnReason.SPAWNER); // CraftBukkit
@@ -194,7 +194,7 @@ public abstract class MobSpawnerAbstract {
                 }
                 // Spigot End
             }
-            // CraftBukkit end
+            // Spigot end
         }
 
         return entity;

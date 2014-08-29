@@ -26,7 +26,12 @@ public class HandshakeListener implements PacketHandshakingInListener {
     }
 
     public void a(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
-        NetworkManager.a( this.b ).attr( NetworkManager.protocolVersion ).set( packethandshakinginsetprotocol.d() ); // Spigot
+        // Spigot start
+        if ( NetworkManager.SUPPORTED_VERSIONS.contains( packethandshakinginsetprotocol.d() ) )
+        {
+            NetworkManager.a( this.b ).attr( NetworkManager.protocolVersion ).set( packethandshakinginsetprotocol.d() );
+        }
+        // Spigot end
         switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.c().ordinal()]) {
         case 1:
             this.b.a(EnumProtocol.LOGIN);

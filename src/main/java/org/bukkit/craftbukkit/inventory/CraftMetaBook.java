@@ -17,6 +17,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
 
+// Spigot start
+import static org.spigotmc.ValidateUtils.*;
+// Spigot end
+
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
@@ -45,11 +49,11 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         super(tag);
 
         if (tag.hasKey(BOOK_TITLE.NBT)) {
-            this.title = tag.getString(BOOK_TITLE.NBT);
+            this.title = limit( tag.getString(BOOK_TITLE.NBT), 1024 ); // Spigot
         }
 
         if (tag.hasKey(BOOK_AUTHOR.NBT)) {
-            this.author = tag.getString(BOOK_AUTHOR.NBT);
+            this.author = limit( tag.getString(BOOK_AUTHOR.NBT), 1024 ); // Spigot
         }
 
         if (tag.hasKey(BOOK_PAGES.NBT)) {
@@ -57,7 +61,7 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
             String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
-                String page = pages.f(i);
+                String page = limit( pages.getString(i), 2048 ); // Spigot
                 pageArray[i] = page;
             }
 

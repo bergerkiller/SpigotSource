@@ -102,7 +102,7 @@ public abstract class EntityHanging extends Entity {
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;
-        if (this.e++ == 100 && !this.world.isStatic) {
+        if (this.e++ == this.world.spigotConfig.hangingTickFrequency && !this.world.isStatic) { // Spigot - 100 -> this.world.spigotConfig.hangingTickFrequency
             this.e = 0;
             if (!this.dead && !this.survives()) {
                 // CraftBukkit start - fire break events
@@ -199,7 +199,7 @@ public abstract class EntityHanging extends Entity {
         }
     }
 
-    public boolean Q() {
+    public boolean R() {
         return true;
     }
 
@@ -243,7 +243,7 @@ public abstract class EntityHanging extends Entity {
                 // CraftBukkit end
 
                 this.die();
-                this.P();
+                this.Q();
                 this.b(damagesource.getEntity());
             }
 
@@ -334,7 +334,7 @@ public abstract class EntityHanging extends Entity {
 
     public abstract void b(Entity entity);
 
-    protected boolean U() {
+    protected boolean V() {
         return false;
     }
 }

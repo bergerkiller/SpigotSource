@@ -3,7 +3,6 @@ package net.minecraft.server;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 // CraftBukkit end
 
 public class EntityCow extends EntityAnimal {
@@ -22,13 +21,13 @@ public class EntityCow extends EntityAnimal {
         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.20000000298023224D);
     }
 
@@ -36,11 +35,11 @@ public class EntityCow extends EntityAnimal {
         return "mob.cow.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.cow.hurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.cow.hurt";
     }
 
@@ -48,7 +47,7 @@ public class EntityCow extends EntityAnimal {
         this.makeSound("mob.cow.step", 0.15F, 1.0F);
     }
 
-    protected float be() {
+    protected float bf() {
         return 0.4F;
     }
 
@@ -57,24 +56,23 @@ public class EntityCow extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
         int k;
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.LEATHER), j));
+        for (k = 0; k < j; ++k) {
+            this.a(Items.LEATHER, 1);
         }
 
         j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
-        if (j > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.isBurning() ? CraftMagicNumbers.getMaterial(Items.COOKED_BEEF) : CraftMagicNumbers.getMaterial(Items.RAW_BEEF), j));
+        for (k = 0; k < j; ++k) {
+            if (this.isBurning()) {
+                this.a(Items.COOKED_BEEF, 1);
+            } else {
+                this.a(Items.RAW_BEEF, 1);
+            }
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public boolean a(EntityHuman entityhuman) {

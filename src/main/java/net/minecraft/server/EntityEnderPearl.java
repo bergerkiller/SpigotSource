@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.player.PlayerTeleportEvent;
 // CraftBukkit end
 
@@ -40,17 +40,15 @@ public class EntityEnderPearl extends EntityProjectile {
                     Bukkit.getPluginManager().callEvent(teleEvent);
 
                     if (!teleEvent.isCancelled() && !entityplayer.playerConnection.isDisconnected()) {
+                        if (this.getShooter().am()) {
+                            this.getShooter().mount((Entity) null);
+                        }
+
                         entityplayer.playerConnection.teleport(teleEvent.getTo());
                         this.getShooter().fallDistance = 0.0F;
-
-                        EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(this.getBukkitEntity(), player, EntityDamageByEntityEvent.DamageCause.FALL, 5.0D);
-                        Bukkit.getPluginManager().callEvent(damageEvent);
-
-                        if (!damageEvent.isCancelled() && !entityplayer.playerConnection.isDisconnected()) {
-                            entityplayer.invulnerableTicks = -1; // Remove spawning invulnerability
-                            player.setLastDamageCause(damageEvent);
-                            entityplayer.damageEntity(DamageSource.FALL, (float) damageEvent.getDamage());
-                        }
+                        CraftEventFactory.entityDamage = this;
+                        this.getShooter().damageEntity(DamageSource.FALL, 5.0F);
+                        CraftEventFactory.entityDamage = null;
                     }
                     // CraftBukkit end
                 }

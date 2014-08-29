@@ -54,7 +54,7 @@ public class EntityItem extends Entity {
     }
 
     protected void c() {
-        this.getDataWatcher().a(10, 5);
+        this.getDataWatcher().add(10, 5);
     }
 
     public void h() {
@@ -102,6 +102,27 @@ public class EntityItem extends Entity {
             if (this.onGround) {
                 this.motY *= -0.5D;
             }
+            // Spigot start - Make the hopper(s) below this item active.
+            // Called each tick on each item entity.
+            if (this.world.spigotConfig.altHopperTicking) {
+                int xi = MathHelper.floor(this.boundingBox.a);
+                int yi = MathHelper.floor(this.boundingBox.b) - 1;
+                int zi = MathHelper.floor(this.boundingBox.c);
+                int xf = MathHelper.floor(this.boundingBox.d);
+                int yf = MathHelper.floor(this.boundingBox.e) - 1;
+                int zf = MathHelper.floor(this.boundingBox.f);
+                for (int a = xi; a <= xf; a++) {
+                    for (int c = zi; c <= zf; c++) {
+                        for (int b = yi; b <= yf; b++) {
+                            TileEntity tileEntity = this.world.getTileEntity(a, b, c);
+                            if (tileEntity instanceof TileEntityHopper) {
+                                ((TileEntityHopper) tileEntity).makeTick();
+                            }
+                        }
+                    }
+                }
+            }
+            // Spigot end
 
             // ++this.age; // CraftBukkit - Moved up
             if (!this.world.isStatic && this.age >= world.spigotConfig.itemDespawnRate) { // Spigot
@@ -169,7 +190,7 @@ public class EntityItem extends Entity {
         this.age = 4800;
     }
 
-    public boolean M() {
+    public boolean N() {
         return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
     }
 
@@ -183,7 +204,7 @@ public class EntityItem extends Entity {
         } else if (this.getItemStack() != null && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
             return false;
         } else {
-            this.P();
+            this.Q();
             this.e = (int) ((float) this.e - f);
             if (this.e <= 0) {
                 this.die();
@@ -306,7 +327,7 @@ public class EntityItem extends Entity {
         return LocaleI18n.get("item." + this.getItemStack().a());
     }
 
-    public boolean au() {
+    public boolean av() {
         return false;
     }
 
@@ -325,7 +346,7 @@ public class EntityItem extends Entity {
 
     public void setItemStack(ItemStack itemstack) {
         this.getDataWatcher().watch(10, itemstack);
-        this.getDataWatcher().h(10);
+        this.getDataWatcher().update(10);
     }
 
     public String i() {

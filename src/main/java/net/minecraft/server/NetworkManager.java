@@ -22,6 +22,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+// Spigot start
+import com.google.common.collect.ImmutableSet;
+// Spigot end
 
 public class NetworkManager extends SimpleChannelInboundHandler {
 
@@ -42,6 +45,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     public SocketAddress n;
     public java.util.UUID spoofedUUID;
     public Property[] spoofedProfile;
+    public boolean preparing = true;
     // Spigot End
     private PacketListener o;
     private EnumProtocol p;
@@ -49,6 +53,7 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     private boolean r;
     // Spigot Start
     public static final AttributeKey<Integer> protocolVersion = new AttributeKey<Integer>("protocol_version");
+    public static final ImmutableSet<Integer> SUPPORTED_VERSIONS = ImmutableSet.of(4, 5);
     public static final int CURRENT_VERSION = 5;
     public static int getVersion(Channel attr)
     {
@@ -69,6 +74,9 @@ public class NetworkManager extends SimpleChannelInboundHandler {
         super.channelActive(channelhandlercontext);
         this.m = channelhandlercontext.channel();
         this.n = this.m.remoteAddress();
+        // Spigot Start
+        this.preparing = false;
+        // Spigot End
         this.a(EnumProtocol.HANDSHAKING);
     }
 
@@ -187,6 +195,9 @@ public class NetworkManager extends SimpleChannelInboundHandler {
     }
 
     public void close(IChatBaseComponent ichatbasecomponent) {
+        // Spigot Start
+        this.preparing = false;
+        // Spigot End
         if (this.m.isOpen()) {
             this.m.close();
             this.q = ichatbasecomponent;

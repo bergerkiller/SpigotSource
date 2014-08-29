@@ -44,7 +44,9 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
 
     // CraftBukkit start - Add async variant, provide compatibility
     public Chunk a(World world, int i, int j) {
+        world.timings.syncChunkLoadDataTimer.startTiming(); // Spigot
         Object[] data = this.loadChunk(world, i, j);
+        world.timings.syncChunkLoadDataTimer.stopTiming(); // Spigot
         if (data != null) {
             Chunk chunk = (Chunk) data[0];
             NBTTagCompound nbttagcompound = (NBTTagCompound) data[1];
@@ -208,7 +210,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
         nbttagcompound.setBoolean("TerrainPopulated", chunk.done);
         nbttagcompound.setBoolean("LightPopulated", chunk.lit);
         nbttagcompound.setLong("InhabitedTime", chunk.s);
-        ChunkSection[] achunksection = chunk.i();
+        ChunkSection[] achunksection = chunk.getSections();
         NBTTagList nbttaglist = new NBTTagList();
         boolean flag = !world.worldProvider.g;
         ChunkSection[] achunksection1 = achunksection;
@@ -224,15 +226,15 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 nbttagcompound1.setByte("Y", (byte) (chunksection.getYPosition() >> 4 & 255));
                 nbttagcompound1.setByteArray("Blocks", chunksection.getIdArray());
                 if (chunksection.getExtendedIdArray() != null) {
-                    nbttagcompound1.setByteArray("Add", chunksection.getExtendedIdArray().getValueArray()); // Spigot
+                    nbttagcompound1.setByteArray("Add", chunksection.getExtendedIdArray().a);
                 }
 
-                nbttagcompound1.setByteArray("Data", chunksection.getDataArray().getValueArray()); // Spigot
-                nbttagcompound1.setByteArray("BlockLight", chunksection.getEmittedLightArray().getValueArray()); // Spigot
+                nbttagcompound1.setByteArray("Data", chunksection.getDataArray().a);
+                nbttagcompound1.setByteArray("BlockLight", chunksection.getEmittedLightArray().a);
                 if (flag) {
-                    nbttagcompound1.setByteArray("SkyLight", chunksection.getSkyLightArray().getValueArray()); // Spigot
+                    nbttagcompound1.setByteArray("SkyLight", chunksection.getSkyLightArray().a);
                 } else {
-                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.getEmittedLightArray().getValueArray().length]); // Spigot
+                    nbttagcompound1.setByteArray("SkyLight", new byte[chunksection.getEmittedLightArray().a.length]);
                 }
 
                 nbttaglist.add(nbttagcompound1);
@@ -285,7 +287,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 NextTickListEntry nextticklistentry = (NextTickListEntry) iterator1.next();
                 NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
-                nbttagcompound2.setInt("i", Block.b(nextticklistentry.a()));
+                nbttagcompound2.setInt("i", Block.getId(nextticklistentry.a()));
                 nbttagcompound2.setInt("x", nextticklistentry.a);
                 nbttagcompound2.setInt("y", nextticklistentry.b);
                 nbttagcompound2.setInt("z", nextticklistentry.c);
@@ -343,6 +345,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
 
     public void loadEntities(Chunk chunk, NBTTagCompound nbttagcompound, World world) {
         // CraftBukkit end
+        world.timings.syncChunkLoadEntitiesTimer.startTiming(); // Spigot
         NBTTagList nbttaglist1 = nbttagcompound.getList("Entities", 10);
 
         if (nbttaglist1 != null) {
@@ -368,7 +371,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 }
             }
         }
-
+        world.timings.syncChunkLoadEntitiesTimer.stopTiming(); // Spigot
+        world.timings.syncChunkLoadTileEntitiesTimer.startTiming(); // Spigot
         NBTTagList nbttaglist2 = nbttagcompound.getList("TileEntities", 10);
 
         if (nbttaglist2 != null) {
@@ -381,6 +385,8 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 }
             }
         }
+        world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
+        world.timings.syncChunkLoadTileTicksTimer.startTiming(); // Spigot
 
         if (nbttagcompound.hasKeyOfType("TileTicks", 9)) {
             NBTTagList nbttaglist3 = nbttagcompound.getList("TileTicks", 10);
@@ -389,10 +395,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
                 for (int j1 = 0; j1 < nbttaglist3.size(); ++j1) {
                     NBTTagCompound nbttagcompound5 = nbttaglist3.get(j1);
 
-                    world.b(nbttagcompound5.getInt("x"), nbttagcompound5.getInt("y"), nbttagcompound5.getInt("z"), Block.e(nbttagcompound5.getInt("i")), nbttagcompound5.getInt("t"), nbttagcompound5.getInt("p"));
+                    world.b(nbttagcompound5.getInt("x"), nbttagcompound5.getInt("y"), nbttagcompound5.getInt("z"), Block.getById(nbttagcompound5.getInt("i")), nbttagcompound5.getInt("t"), nbttagcompound5.getInt("p"));
                 }
             }
         }
+        world.timings.syncChunkLoadTileTicksTimer.stopTiming(); // Spigot
 
         // return chunk; // CraftBukkit
     }

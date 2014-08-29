@@ -1,10 +1,11 @@
 package org.spigotmc;
 
-import gnu.trove.set.TByteSet;
-import gnu.trove.set.hash.TByteHashSet;
+import net.minecraft.util.gnu.trove.set.TByteSet;
+import net.minecraft.util.gnu.trove.set.hash.TByteHashSet;
 import net.minecraft.server.Block;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.World;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class AntiXray
 {
@@ -29,7 +30,7 @@ public class AntiXray
         TByteSet blocks = new TByteHashSet();
         for ( Integer i : config.hiddenBlocks )
         {
-            Block block = Block.e( i );
+            Block block = Block.getById( i );
             // Check it exists and is not a tile entity
             if ( block != null && !block.isTileEntity() )
             {
@@ -88,6 +89,20 @@ public class AntiXray
             int startX = chunkX << 4;
             int startZ = chunkY << 4;
 
+            byte replaceWithTypeId;
+            switch ( world.getWorld().getEnvironment() )
+            {
+                case NETHER:
+                    replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.NETHERRACK);
+                    break;
+                case THE_END:
+                    replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.WHITESTONE);
+                    break;
+                default:
+                    replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.STONE);
+                    break;
+            }
+
             // Chunks can have up to 16 sections
             for ( int i = 0; i < 16; i++ )
             {
@@ -125,8 +140,8 @@ public class AntiXray
                                         switch ( world.spigotConfig.engineMode )
                                         {
                                             case 1:
-                                                // Replace with stone
-                                                buffer[index] = 1;
+                                                // Replace with replacement material
+                                                buffer[index] = replaceWithTypeId;
                                                 break;
                                             case 2:
                                                 // Replace with random ore.
@@ -158,7 +173,7 @@ public class AntiXray
             Block block = world.getType(x, y, z);
 
             // See if it needs update
-            if ( updateSelf && obfuscateBlocks[Block.b(block)] )
+            if ( updateSelf && obfuscateBlocks[Block.getId( block )] )
             {
                 // Send the update
                 world.notify( x, y, z );
@@ -191,7 +206,7 @@ public class AntiXray
 
     private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
     {
-        return !isSolidBlock(world.getType(x, y, z)) /* isSolidBlock */
+        return !isSolidBlock(world.getType(x, y, z, false)) /* isSolidBlock */
                 || ( radius > 0
                 && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
                 || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )

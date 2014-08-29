@@ -250,7 +250,7 @@ public class PlayerChunkMap {
                     this.a(pair.x, pair.z, true).a(entityplayer);
                 }
 
-                if (i1 > 1 || i1 < -1 || j1 > 1 || j1 < -1) {
+                if (j1 > 1 || j1 < -1 || k1 > 1 || k1 < -1) { // Spigot - missed diff
                     Collections.sort(entityplayer.chunkCoordIntPairQueue, new ChunkCoordComparator(entityplayer));
                 }
                 // CraftBukkit end

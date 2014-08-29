@@ -26,16 +26,16 @@ public class EntityCreeper extends EntityMonster {
         this.targetSelector.a(2, new PathfinderGoalHurtByTarget(this, false));
     }
 
-    protected void aC() {
-        super.aC();
+    protected void aD() {
+        super.aD();
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    public int aw() {
+    public int ax() {
         return this.getGoalTarget() == null ? 3 : 3 + (int) (this.getHealth() - 1.0F);
     }
 
@@ -108,54 +108,39 @@ public class EntityCreeper extends EntityMonster {
         super.h();
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.creeper.say";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.creeper.death";
     }
 
     public void die(DamageSource damagesource) {
-        // CraftBukkit start - Rearranged the method (super call to end, drop to dropDeathLoot)
+        // super.die(damagesource); // CraftBukkit - Moved to end
         if (damagesource.getEntity() instanceof EntitySkeleton) {
-            int i = Item.b(Items.RECORD_1);
-            int j = Item.b(Items.RECORD_12);
+            int i = Item.getId(Items.RECORD_1);
+            int j = Item.getId(Items.RECORD_12);
             int k = i + this.random.nextInt(j - i + 1);
 
-            // this.a(Item.d(k), 1); // CraftBukkit
+            // CraftBukkit start - Store record for now, drop in dropDeathLoot
+            // this.a(Item.getById(k), 1);
             this.record = k;
+            // CraftBukkit end
         }
 
-        super.die(damagesource);
-        // CraftBukkit end
+        super.die(damagesource); // CraftBukkit - Moved from above
     }
 
     // CraftBukkit start - Whole method
     protected void dropDeathLoot(boolean flag, int i) {
-        Item j = this.getLoot();
-
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-
-        if (j != null) {
-            int k = this.random.nextInt(3);
-
-            if (i > 0) {
-                k += this.random.nextInt(i + 1);
-            }
-
-            if (k > 0) {
-                loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(j), k));
-            }
-        }
+        super.dropDeathLoot(flag, i);
 
         // Drop a music disc?
         if (this.record != -1) {
-            loot.add(new org.bukkit.inventory.ItemStack(this.record, 1)); // TODO: Material
+            this.a(Item.getById(this.record), 1);
             this.record = -1;
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
     }
     // CraftBukkit end
 
@@ -203,7 +188,7 @@ public class EntityCreeper extends EntityMonster {
 
         if (itemstack != null && itemstack.getItem() == Items.FLINT_AND_STEEL) {
             this.world.makeSound(this.locX + 0.5D, this.locY + 0.5D, this.locZ + 0.5D, "fire.ignite", 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
-            entityhuman.aZ();
+            entityhuman.ba();
             if (!this.world.isStatic) {
                 this.cd();
                 itemstack.damage(1, entityhuman);

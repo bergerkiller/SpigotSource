@@ -201,11 +201,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
-        if (entity.vehicle != null || entity.passenger != null || entity.dead) {
+        if (entity.passenger != null || entity.dead) {
             return false;
         }
 
-        entity.world = ((CraftWorld) location.getWorld()).getHandle();
+        // If this entity is riding another entity, we must dismount before teleporting.
+        entity.mount(null);
+
+        // Spigot start
+        if (!location.getWorld().equals(getWorld())) {
+          entity.teleportTo(location, cause.equals(TeleportCause.NETHER_PORTAL));
+          return true;
+        }
+
+        // entity.world = ((CraftWorld) location.getWorld()).getHandle();
+        // Spigot end
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // entity.setLocation() throws no event, and so cannot be cancelled
         return true;

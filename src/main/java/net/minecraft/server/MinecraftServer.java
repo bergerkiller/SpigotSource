@@ -115,6 +115,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     // Spigot end
 
     public MinecraftServer(OptionSet options, Proxy proxy) { // CraftBukkit - signature file -> OptionSet
+        net.minecraft.util.io.netty.util.ResourceLeakDetector.setEnabled( false ); // Spigot - disable
         this.X = new UserCache(this, a);
         j = this;
         this.d = proxy;
@@ -419,6 +420,13 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
             if (this.l.d()) {
                 this.l.e();
             }
+            // Spigot start
+            if( org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly )
+            {
+                i.info("Saving usercache.json");
+                this.X.c();
+            }
+            //Spigot end
         }
     }
 
@@ -452,7 +460,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 long j = 0L;
 
                 this.q.setMOTD(new ChatComponentText(this.motd));
-                this.q.setServerInfo(new ServerPingServerData("1.7.9", 5));
+                this.q.setServerInfo(new ServerPingServerData("1.7.10", 5));
                 this.a(this.q);
 
                 // Spigot start
@@ -589,6 +597,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         }
 
         if ((this.autosavePeriod > 0) && ((this.ticks % this.autosavePeriod) == 0)) { // CraftBukkit
+            SpigotTimings.worldSaveTimer.startTiming(); // Spigot
             this.methodProfiler.a("save");
             this.u.savePlayers();
             // Spigot Start
@@ -602,6 +611,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
             // this.saveChunks(true);
             // Spigot End
             this.methodProfiler.b();
+            SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
         }
 
         this.methodProfiler.a("tallying");
@@ -618,6 +628,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
 
         this.methodProfiler.b();
         this.methodProfiler.b();
+        org.spigotmc.WatchdogThread.tick(); // Spigot
+        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
+        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
     }
 
     public void v() {
@@ -626,17 +639,20 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         SpigotTimings.schedulerTimer.startTiming(); // Spigot
         // CraftBukkit start
         this.server.getScheduler().mainThreadHeartbeat(this.ticks);
+        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
 
         // Run tasks that are waiting on processing
+        SpigotTimings.processQueueTimer.startTiming(); // Spigot
         while (!processQueue.isEmpty()) {
             processQueue.remove().run();
         }
+        SpigotTimings.processQueueTimer.stopTiming(); // Spigot
 
-        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
         SpigotTimings.chunkIOTickTimer.startTiming(); // Spigot
         org.bukkit.craftbukkit.chunkio.ChunkIOExecutor.tick();
         SpigotTimings.chunkIOTickTimer.stopTiming(); // Spigot
 
+        SpigotTimings.timeUpdateTimer.startTiming(); // Spigot
         // Send time updates to everyone, it will get the right time from the world the player is in.
         if (this.ticks % 20 == 0) {
             for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
@@ -644,6 +660,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean("doDaylightCycle"))); // Add support for per player time
             }
         }
+        SpigotTimings.timeUpdateTimer.stopTiming(); // Spigot
 
         int i;
 
@@ -669,7 +686,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 CrashReport crashreport;
 
                 try {
+                    worldserver.timings.doTick.startTiming(); // Spigot
                     worldserver.doTick();
+                    worldserver.timings.doTick.stopTiming(); // Spigot
                 } catch (Throwable throwable) {
                     // Spigot Start
                     try {
@@ -683,7 +702,9 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
                 }
 
                 try {
+                    worldserver.timings.tickEntities.startTiming(); // Spigot
                     worldserver.tickEntities();
+                    worldserver.timings.tickEntities.stopTiming(); // Spigot
                 } catch (Throwable throwable1) {
                     // Spigot Start
                     try {
@@ -725,9 +746,6 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
         SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 
         this.methodProfiler.b();
-        org.spigotmc.WatchdogThread.tick(); // Spigot
-        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
-        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
     }
 
     public boolean getAllowNether() {
@@ -743,7 +761,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
 
         try {
             /* CraftBukkit start - Replace everything
-            boolean flag = !GraphicsEnvironment.isHeadless();
+            boolean flag = true;
             String s = null;
             String s1 = ".";
             String s2 = null;
@@ -881,7 +899,7 @@ public abstract class MinecraftServer implements ICommandListener, Runnable, IMo
     }
 
     public String getVersion() {
-        return "1.7.9";
+        return "1.7.10";
     }
 
     public int C() {

@@ -23,20 +23,34 @@ public class RestartCommand extends Command
     {
         if ( testPermission( sender ) )
         {
-            restart();
+            MinecraftServer.getServer().processQueue.add( new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    restart();
+                }
+            } );
         }
         return true;
     }
 
     public static void restart()
     {
+        restart( new File( SpigotConfig.restartScript ) );
+    }
+
+    public static void restart(final File script)
+    {
         AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
         try
         {
-            final File file = new File( SpigotConfig.restartScript );
-            if ( file.isFile() )
+            if ( script.isFile() )
             {
                 System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
+
+                // Disable Watchdog
+                WatchdogThread.doStop();
 
                 // Kick all players
                 for ( EntityPlayer p : (List< EntityPlayer>) MinecraftServer.getServer().getPlayerList().players )
@@ -80,12 +94,12 @@ public class RestartCommand extends Command
                             String os = System.getProperty( "os.name" ).toLowerCase();
                             if ( os.contains( "win" ) )
                             {
-                                Runtime.getRuntime().exec( "cmd /c start " + file.getPath() );
+                                Runtime.getRuntime().exec( "cmd /c start " + script.getPath() );
                             } else
                             {
                                 Runtime.getRuntime().exec( new String[]
                                 {
-                                    "sh", file.getPath()
+                                    "sh", script.getPath()
                                 } );
                             }
                         } catch ( Exception e )

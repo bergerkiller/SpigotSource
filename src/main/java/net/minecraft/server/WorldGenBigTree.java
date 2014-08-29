@@ -2,13 +2,11 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
-
-public class WorldGenBigTree extends WorldGenTreeAbstract implements BlockSapling.TreeGenerator { // CraftBukkit - add interface
+public class WorldGenBigTree extends WorldGenTreeAbstract {
 
     static final byte[] a = new byte[] { (byte) 2, (byte) 0, (byte) 0, (byte) 1, (byte) 2, (byte) 1};
     Random b = new Random();
-    CraftBlockChangeDelegate world; // CraftBukkit - Change type
+    World world;
     int[] d = new int[] { 0, 0, 0};
     int e;
     int f;
@@ -349,17 +347,7 @@ public class WorldGenBigTree extends WorldGenTreeAbstract implements BlockSaplin
         this.k = d2;
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - Moved to generate
-        // sk: The idea is to have (our) WorldServer implement
-        // BlockChangeDelegate and then we can implicitly cast World to
-        // WorldServer (a safe cast, AFAIK) and no code will be broken. This
-        // then allows plugins to catch manually-invoked generation events
-        return this.generate(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k);
-    }
-
-    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
-        // CraftBukkit end
+    public boolean generate(World world, Random random, int i, int j, int k) {
         this.world = world;
         long l = random.nextLong();
 

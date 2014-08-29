@@ -16,7 +16,6 @@ public class ItemWaterLily extends ItemWithAuxData {
                 int i = movingobjectposition.b;
                 int j = movingobjectposition.c;
                 int k = movingobjectposition.d;
-                final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
 
                 if (!world.a(entityhuman, i, j, k)) {
                     return itemstack;
@@ -27,9 +26,12 @@ public class ItemWaterLily extends ItemWithAuxData {
                 }
 
                 if (world.getType(i, j, k).getMaterial() == Material.WATER && world.getData(i, j, k) == 0 && world.isEmpty(i, j + 1, k)) {
-                    // CraftBukkit start - fire BlockPlaceEvent
-                    // world.setTypeUpdate(i, j + 1, k, Blocks.WATER_LILY);
-                    if (!processBlockPlace(world, entityhuman, null, i, j + 1, k, Blocks.WATER_LILY, 0, clickedX, clickedY, clickedZ)) {
+                    // CraftBukkit start - special case for handling block placement with water lilies
+                    org.bukkit.block.BlockState blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(world, i, j + 1, k);
+                    world.setTypeUpdate(i, j + 1, k, Blocks.WATER_LILY);
+                    org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockstate, i, j, k);
+                    if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
+                        blockstate.update(true, false);
                         return itemstack;
                     }
                     // CraftBukkit end

@@ -35,12 +35,40 @@ public class Chunk {
     public boolean m;
     public boolean n;
     public boolean o;
-    public long p;
+    public long lastSaved;
     public boolean q;
     public int r;
     public long s;
     private int x;
-    protected gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+    protected net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap<Class> entityCount = new net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap<Class>(); // Spigot
+
+    // CraftBukkit start - Neighbor loaded cache for chunk lighting and entity ticking
+    private int neighbors = 0x1 << 12;
+
+    public boolean areNeighborsLoaded(final int radius) {
+        switch(radius) {
+            case 2:
+                return this.neighbors == Integer.MAX_VALUE >> 6;
+            case 1:
+                final int mask =
+                    //        x        z   offset            x        z   offset            x         z   offset
+                    ( 0x1 << (1 * 5 +  1 + 12) ) | ( 0x1 << (0 * 5 +  1 + 12) ) | ( 0x1 << (-1 * 5 +  1 + 12) ) |
+                    ( 0x1 << (1 * 5 +  0 + 12) ) | ( 0x1 << (0 * 5 +  0 + 12) ) | ( 0x1 << (-1 * 5 +  0 + 12) ) |
+                    ( 0x1 << (1 * 5 + -1 + 12) ) | ( 0x1 << (0 * 5 + -1 + 12) ) | ( 0x1 << (-1 * 5 + -1 + 12) );
+                return (this.neighbors & mask) == mask;
+            default:
+                throw new UnsupportedOperationException(String.valueOf(radius));
+        }
+    }
+
+    public void setNeighborLoaded(final int x, final int z) {
+        this.neighbors |= 0x1 << (x * 5 + 12 + z);
+    }
+
+    public void setNeighborUnloaded(final int x, final int z) {
+        this.neighbors &= ~(0x1 << (x * 5 + 12 + z));
+    }
+    // CraftBukkit end
 
     public Chunk(World world, int i, int j) {
         this.sections = new ChunkSection[16];
@@ -140,7 +168,7 @@ public class Chunk {
         return 0;
     }
 
-    public ChunkSection[] i() {
+    public ChunkSection[] getSections() {
         return this.sections;
     }
 
@@ -399,13 +427,13 @@ public class Chunk {
     }
 
     // Spigot start - prevent invalid data values
-    private static int checkData( Block block, int l )
+    public static int checkData( Block block, int data )
     {
-        if (block == Block.b( "minecraft:double_plant" ) )
+        if (block == Blocks.DOUBLE_PLANT )
         {
-            return l == 7 ? 0 : l;
+            return data < 6 || data >= 8 ? data : 0;
         }
-        return l;
+        return data;
     }
     // Spigot end
 
@@ -492,17 +520,12 @@ public class Chunk {
                     }
                 }
 
-                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer
-                if (!this.world.isStatic && (!this.world.callingPlaceEvent || (block instanceof BlockContainer))) {
+                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+                if (!this.world.isStatic && (!this.world.captureBlockStates || block instanceof BlockContainer)) {
                     block.onPlace(this.world, l1, j, i2);
                 }
 
                 if (block instanceof IContainer) {
-                    // CraftBukkit start - Don't create tile entity if placement failed
-                    if (this.getType(i, j, k) != block) {
-                        return false;
-                    }
-                    // CraftBukkit end
 
                     tileentity = this.e(i, j, k);
                     if (tileentity == null) {
@@ -727,6 +750,11 @@ public class Chunk {
 
             tileentity.t();
             this.tileEntities.put(chunkposition, tileentity);
+            // Spigot start - The tile entity has a world, now hoppers can be born ticking.
+            if (this.world.spigotConfig.altHopperTicking) {
+                this.world.triggerHoppersList.add(tileentity);
+            }
+            // Spigot end
             // CraftBukkit start
         } else {
             System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.x + "," + tileentity.y + "," + tileentity.z
@@ -759,7 +787,7 @@ public class Chunk {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                entity.W();
+                entity.X();
             }
 
             this.world.a(this.entitySlices[i]);
@@ -775,9 +803,12 @@ public class Chunk {
             // Spigot Start
             if ( tileentity instanceof IInventory )
             {
-                for ( org.bukkit.craftbukkit.entity.CraftHumanEntity h : new ArrayList<org.bukkit.craftbukkit.entity.CraftHumanEntity>( (List) ( (IInventory) tileentity ).getViewers() ) )
+                for ( org.bukkit.entity.HumanEntity h : new ArrayList<org.bukkit.entity.HumanEntity>( (List) ( (IInventory) tileentity ).getViewers() ) )
                 {
-                    h.getHandle().closeInventory();
+                    if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
+                    {
+                       ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory();
+                    }
                 }
             }
             // Spigot End
@@ -793,9 +824,12 @@ public class Chunk {
                 // Spigot Start
                 if ( entity instanceof IInventory )
                 {
-                    for ( org.bukkit.craftbukkit.entity.CraftHumanEntity h : new ArrayList<org.bukkit.craftbukkit.entity.CraftHumanEntity>( (List) ( (IInventory) entity ).getViewers() ) )
+                    for ( org.bukkit.entity.HumanEntity h : new ArrayList<org.bukkit.entity.HumanEntity>( (List) ( (IInventory) entity ).getViewers() ) )
                     {
-                        h.getHandle().closeInventory();
+                        if ( h instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity )
+                        {
+                           ( (org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeInventory();
+                        }
                     }
                 }
                 // Spigot End
@@ -831,7 +865,7 @@ public class Chunk {
 
                 if (entity1 != entity && entity1.boundingBox.b(axisalignedbb) && (ientityselector == null || ientityselector.a(entity1))) {
                     list.add(entity1);
-                    Entity[] aentity = entity1.as();
+                    Entity[] aentity = entity1.at();
 
                     if (aentity != null) {
                         for (int i1 = 0; i1 < aentity.length; ++i1) {
@@ -868,10 +902,10 @@ public class Chunk {
 
     public boolean a(boolean flag) {
         if (flag) {
-            if (this.o && this.world.getTime() != this.p || this.n) {
+            if (this.o && this.world.getTime() != this.lastSaved || this.n) {
                 return true;
             }
-        } else if (this.o && this.world.getTime() >= this.p + 600L) {
+        } else if (this.o && this.world.getTime() >= this.lastSaved + 600L) {
             return true;
         }
 
@@ -886,7 +920,8 @@ public class Chunk {
         return false;
     }
 
-    public void a(IChunkProvider ichunkprovider, IChunkProvider ichunkprovider1, int i, int j) {
+    public void loadNearby(IChunkProvider ichunkprovider, IChunkProvider ichunkprovider1, int i, int j) {
+        world.timings.syncChunkLoadPostTimer.startTiming(); // Spigot
         if (!this.done && ichunkprovider.isChunkLoaded(i + 1, j + 1) && ichunkprovider.isChunkLoaded(i, j + 1) && ichunkprovider.isChunkLoaded(i + 1, j)) {
             ichunkprovider.getChunkAt(ichunkprovider1, i, j);
         }
@@ -902,6 +937,7 @@ public class Chunk {
         if (ichunkprovider.isChunkLoaded(i - 1, j - 1) && !ichunkprovider.getOrCreateChunk(i - 1, j - 1).done && ichunkprovider.isChunkLoaded(i, j - 1) && ichunkprovider.isChunkLoaded(i - 1, j)) {
             ichunkprovider.getChunkAt(ichunkprovider1, i - 1, j - 1);
         }
+        world.timings.syncChunkLoadPostTimer.stopTiming(); // Spigot
     }
 
     public int d(int i, int j) {
@@ -941,7 +977,7 @@ public class Chunk {
         }
     }
 
-    public boolean k() {
+    public boolean isReady() {
         // Spigot Start
         /*
          * As of 1.7, Mojang added a check to make sure that only chunks which have been lit are sent to the client.
@@ -981,7 +1017,7 @@ public class Chunk {
         this.sections = achunksection;
     }
 
-    public BiomeBase a(int i, int j, WorldChunkManager worldchunkmanager) {
+    public BiomeBase getBiome(int i, int j, WorldChunkManager worldchunkmanager) {
         int k = this.v[j << 4 | i] & 255;
 
         if (k == 255) {

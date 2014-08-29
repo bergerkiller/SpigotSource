@@ -25,10 +25,13 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.*;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.LongHash;
 import org.bukkit.entity.*;
 import org.bukkit.entity.Entity;
@@ -249,9 +252,11 @@ public class CraftWorld implements World {
         net.minecraft.server.Chunk chunk = world.chunkProviderServer.chunks.get(LongHash.toLong(x, z));
 
         if (chunk == null) {
+            world.timings.syncChunkLoadTimer.startTiming(); // Spigot
             chunk = world.chunkProviderServer.loadChunk(x, z);
 
             chunkLoadPostProcess(chunk, x, z);
+            world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
         }
         return chunk != null;
     }
@@ -354,11 +359,7 @@ public class CraftWorld implements World {
     }
 
     public boolean generateTree(Location loc, TreeType type) {
-        return generateTree(loc, type, world);
-    }
-
-    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
-        BlockSapling.TreeGenerator gen;
+        net.minecraft.server.WorldGenerator gen;
         switch (type) {
         case BIG_TREE:
             gen = new WorldGenBigTree(true);
@@ -377,6 +378,9 @@ public class CraftWorld implements World {
             break;
         case SMALL_JUNGLE:
             gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
+            break;
+        case COCOA_TREE:
+            gen = new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, true);
             break;
         case JUNGLE_BUSH:
             gen = new WorldGenGroundBush(3, 0);
@@ -397,7 +401,7 @@ public class CraftWorld implements World {
             gen = new WorldGenForestTree(true);
             break;
         case MEGA_REDWOOD:
-            gen = new WorldGenMegaTree(true, rand.nextBoolean());
+            gen = new WorldGenMegaTree(false, rand.nextBoolean());
             break;
         case TALL_BIRCH:
             gen = new WorldGenForest(true, true);
@@ -408,7 +412,34 @@ public class CraftWorld implements World {
             break;
         }
 
-        return gen.generate(new CraftBlockChangeDelegate(delegate), rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        return gen.generate(world, rand, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
+        world.captureTreeGeneration = true;
+        world.captureBlockStates = true;
+        boolean grownTree = generateTree(loc, type);
+        world.captureBlockStates = false;
+        world.captureTreeGeneration = false;
+        if (grownTree) { // Copy block data to delegate
+            for (BlockState blockstate : world.capturedBlockStates) {
+                int x = blockstate.getX();
+                int y = blockstate.getY();
+                int z = blockstate.getZ();
+                net.minecraft.server.Block oldBlock = world.getType(x, y, z);
+                int typeId = blockstate.getTypeId();
+                int data = blockstate.getRawData();
+                int flag = ((CraftBlockState)blockstate).getFlag();
+                delegate.setTypeIdAndData(x, y, z, typeId, data);
+                net.minecraft.server.Block newBlock = world.getType(x, y, z);
+                world.notifyAndUpdatePhysics(x, y, z, null, oldBlock, newBlock, flag);
+            }
+            world.capturedBlockStates.clear();
+            return true;
+        } else {
+            world.capturedBlockStates.clear();
+            return false;
+        }
     }
 
     public TileEntity getTileEntityAt(final int x, final int y, final int z) {
@@ -678,7 +709,7 @@ public class CraftWorld implements World {
     }
 
     public void setDifficulty(Difficulty difficulty) {
-        this.getHandle().difficulty = EnumDifficulty.a(difficulty.getValue());
+        this.getHandle().difficulty = EnumDifficulty.getById(difficulty.getValue());
     }
 
     public Difficulty getDifficulty() {
@@ -806,8 +837,8 @@ public class CraftWorld implements World {
         double y = location.getBlockY() + 0.5;
         double z = location.getBlockZ() + 0.5;
 
-        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.e(material.getId()), data);
-        entity.b = 1; // ticksLived
+        EntityFallingBlock entity = new EntityFallingBlock(world, x, y, z, net.minecraft.server.Block.getById(material.getId()), data);
+        entity.ticksLived = 1;
 
         world.addEntity(entity, SpawnReason.CUSTOM);
         return (FallingBlock) entity.getBukkitEntity();
@@ -841,7 +872,7 @@ public class CraftWorld implements World {
             int type = world.getTypeId((int) x, (int) y, (int) z);
             int data = world.getData((int) x, (int) y, (int) z);
 
-            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.e(type), data);
+            entity = new EntityFallingBlock(world, x + 0.5, y + 0.5, z + 0.5, net.minecraft.server.Block.getById(type), data);
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);
@@ -1004,7 +1035,7 @@ public class CraftWorld implements World {
                 entity = new EntityItemFrame(world, (int) x, (int) y, (int) z, dir);
             } else if (LeashHitch.class.isAssignableFrom(clazz)) {
                 entity = new EntityLeash(world, (int) x, (int) y, (int) z);
-                entity.n = true;
+                entity.attachedToPlayer = true;
             }
 
             if (entity != null && !((EntityHanging) entity).survives()) {
@@ -1025,8 +1056,14 @@ public class CraftWorld implements World {
         }
 
         if (entity != null) {
+            // Spigot start
+            if (entity instanceof EntityOcelot)
+            {
+                ( (EntityOcelot) entity ).spawnBonus = false;
+            }
+            // Spigot end
             if (entity instanceof EntityInsentient) {
-                ((EntityInsentient) entity).a((GroupDataEntity) null); // Should be prepare?
+                ((EntityInsentient) entity).prepare((GroupDataEntity) null);
             }
 
             world.addEntity(entity, reason);
@@ -1243,11 +1280,11 @@ public class CraftWorld implements World {
     }
 
     public String[] getGameRules() {
-        return getHandle().getGameRules().b();
+        return getHandle().getGameRules().getGameRules();
     }
 
     public boolean isGameRule(String rule) {
-        return getHandle().getGameRules().e(rule);
+        return getHandle().getGameRules().contains(rule);
     }
 
     public void processChunkGC() {
@@ -1295,7 +1332,7 @@ public class CraftWorld implements World {
             {
                 StringBuilder particleFullName = new StringBuilder();
                 particleFullName.append( effect.getName() );
-                if ( effect.getData() != null && ( effect.getData().equals( Material.class ) || effect.getData().equals( org.bukkit.material.MaterialData.class ) ) )
+                if ( effect.getData() != null && ( effect.getData().equals( org.bukkit.Material.class ) || effect.getData().equals( org.bukkit.material.MaterialData.class ) ) )
                 {
                     particleFullName.append( '_' ).append( id );
                 }

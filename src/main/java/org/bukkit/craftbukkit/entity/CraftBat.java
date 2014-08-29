@@ -23,4 +23,14 @@ public class CraftBat extends CraftAmbient implements Bat {
     public EntityType getType() {
         return EntityType.BAT;
     }
+
+    @Override
+    public boolean isAwake() {
+        return !getHandle().isAsleep();
+    }
+
+    @Override
+    public void setAwake(boolean state) {
+        getHandle().setAsleep(!state);
+    }
 }

@@ -25,16 +25,12 @@ public class EntitySquid extends EntityWaterAnimal {
         this.by = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
     }
 
     protected String t() {
-        return null;
-    }
-
-    protected String aS() {
         return null;
     }
 
@@ -42,12 +38,16 @@ public class EntitySquid extends EntityWaterAnimal {
         return null;
     }
 
-    protected float be() {
+    protected String aU() {
+        return null;
+    }
+
+    protected float bf() {
         return 0.4F;
     }
 
     protected Item getLoot() {
-        return Item.d(0);
+        return Item.getById(0);
     }
 
     protected boolean g_() {
@@ -55,20 +55,15 @@ public class EntitySquid extends EntityWaterAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
+        int j = this.random.nextInt(3 + i) + 1;
 
-        int count = this.random.nextInt(3 + i) + 1;
-        if (count > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.Material.INK_SACK, count));
+        for (int k = 0; k < j; ++k) {
+            this.a(new ItemStack(Items.INK_SACK, 1, 0), 0.0F);
         }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     /* CraftBukkit start - Delegate to Entity to use existing inWater value
-    public boolean L() {
+    public boolean M() {
         return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, (Entity) this);
     }
     // CraftBukkit end */
@@ -87,7 +82,7 @@ public class EntitySquid extends EntityWaterAnimal {
             }
         }
 
-        if (this.L()) {
+        if (this.M()) {
             float f;
 
             if (this.bt < 3.1415927F) {
@@ -135,7 +130,7 @@ public class EntitySquid extends EntityWaterAnimal {
         this.move(this.motX, this.motY, this.motZ);
     }
 
-    protected void bp() {
+    protected void bq() {
         ++this.aU;
         if (this.aU > 100) {
             this.bA = this.bB = this.bC = 0.0F;

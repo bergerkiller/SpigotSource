@@ -166,11 +166,35 @@ public class SpigotWorldConfig
         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
 
+    public boolean altHopperTicking;
     public int hopperTransfer;
     public int hopperCheck;
     public int hopperAmount;
     private void hoppers()
     {
+        // Alternate ticking method. Uses inventory changes, redstone updates etc.
+        // to update hoppers. Hopper-check is disabled when this is true.
+        boolean prev = altHopperTicking;
+        altHopperTicking = getBoolean( "hopper-alt-ticking", false );
+        // Necessary for the reload command
+        if (prev != altHopperTicking) {
+            net.minecraft.server.World world = (net.minecraft.server.World) Bukkit.getWorld(this.worldName);
+            if (world != null) {
+                if (altHopperTicking) {
+                    for (Object o : world.tileEntityList) {
+                        if (o instanceof net.minecraft.server.TileEntityHopper) {
+                            ((net.minecraft.server.TileEntityHopper) o).convertToScheduling();
+                        }
+                    }
+                } else {
+                    for (Object o : world.tileEntityList) {
+                        if (o instanceof net.minecraft.server.TileEntityHopper) {
+                            ((net.minecraft.server.TileEntityHopper) o).convertToPolling();
+                        }
+                    }
+                }
+            }
+        }
         // Set the tick delay between hopper item movements
         hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
         // Set the tick delay between checking for items after the associated
@@ -178,6 +202,7 @@ public class SpigotWorldConfig
         // hopper sorting machines from becoming out of sync.
         hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
         hopperAmount = getInt( "hopper-amount", 1 );
+        log( "Alternative Hopper Ticking: " + altHopperTicking );
         log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
     }
 
@@ -291,5 +316,43 @@ public class SpigotWorldConfig
     private void witherSpawnSoundRadius()
     {
         witherSpawnSoundRadius = getInt( "wither-spawn-sound-radius", 0 );
+    }
+
+    public int villageSeed;
+    public int largeFeatureSeed;
+    private void initWorldGenSeeds()
+    {
+        villageSeed = getInt( "seed-village", 10387312 );
+        largeFeatureSeed = getInt( "seed-feature", 14357617 );
+        log( "Custom Map Seeds:  Village: " + villageSeed + " Feature: " + largeFeatureSeed );
+    }
+
+    public float walkExhaustion;
+    public float sprintExhaustion;
+    public float combatExhaustion;
+    public float regenExhaustion;
+    private void initHunger()
+    {
+        walkExhaustion = (float) getDouble( "hunger.walk-exhaustion", 0.2 );
+        sprintExhaustion = (float) getDouble( "hunger.sprint-exhaustion", 0.8 );
+        combatExhaustion = (float) getDouble( "hunger.combat-exhaustion", 0.3 );
+        regenExhaustion = (float) getDouble( "hunger.regen-exhaustion", 3 );
+    }
+
+    public int currentPrimedTnt = 0;
+    public int maxTntTicksPerTick;
+    private void maxTntPerTick() {
+        if ( SpigotConfig.version < 7 )
+        {
+            set( "max-tnt-per-tick", 100 );
+        }
+        maxTntTicksPerTick = getInt( "max-tnt-per-tick", 100 );
+        log( "Max TNT Explosions: " + maxTntTicksPerTick );
+    }
+
+    public int hangingTickFrequency;
+    private void hangingTickFrequency()
+    {
+        hangingTickFrequency = getInt( "hanging-tick-frequency", 100 );
     }
 }

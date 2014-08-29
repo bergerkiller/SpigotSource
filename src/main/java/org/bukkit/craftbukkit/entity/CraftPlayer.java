@@ -222,18 +222,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
         OfflinePlayer other = (OfflinePlayer) obj;
-        if ((this.getName() == null) || (other.getName() == null)) {
+        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
             return false;
         }
 
-        boolean nameEquals = this.getName().equalsIgnoreCase(other.getName());
+        boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
         boolean idEquals = true;
 
         if (other instanceof CraftPlayer) {
             idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
         }
 
-        return nameEquals && idEquals;
+        return uuidEquals && idEquals;
     }
 
     @Override
@@ -459,11 +459,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
 
-        // Spigot Start
-        // if (entity.vehicle != null || entity.passenger != null) {
-        // return false;
-        // }
-        // Spigot End
+        if (entity.passenger != null) {
+            return false;
+        }
 
         // From = Players current Location
         Location from = this.getLocation();
@@ -477,11 +475,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (event.isCancelled()) {
             return false;
         }
-        
-        // Spigot Start
-        eject();
-        leaveVehicle();
-        // Spigot End
+
+        // If this player is riding another entity, we must dismount before teleporting.
+        entity.mount(null);
 
         // Update the From Location
         from = event.getFrom();
@@ -576,7 +572,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean hasAchievement(Achievement achievement) {
         Validate.notNull(achievement, "Achievement cannot be null");
-        return getHandle().getStatisticManager().a(CraftStatistic.getNMSAchievement(achievement));
+        return getHandle().getStatisticManager().hasAchievement(CraftStatistic.getNMSAchievement(achievement));
     }
 
     @Override
@@ -787,7 +783,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 return;
             }
 
-            getHandle().playerInteractManager.setGameMode(EnumGamemode.a(mode.getValue()));
+            getHandle().playerInteractManager.setGameMode(EnumGamemode.getById(mode.getValue()));
             getHandle().fallDistance = 0;
             getHandle().playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, mode.getValue()));
         }
@@ -795,7 +791,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public GameMode getGameMode() {
-        return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().a());
+        return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().getId());
     }
 
     public void giveExp(int exp) {
@@ -955,7 +951,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public int hashCode() {
         if (hash == 0 || hash == 485) {
-            hash = 97 * 5 + (this.getName() != null ? this.getName().toLowerCase().hashCode() : 0);
+            hash = 97 * 5 + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
         }
         return hash;
     }
@@ -1267,13 +1263,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth() {
-        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().bb();
-        Set set = attributemapserver.b();
+        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
+        Set set = attributemapserver.getAttributes();
 
         injectScaledMaxHealth(set, true);
 
         getHandle().getDataWatcher().watch(6, (float) getScaledHealth());
-        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().a(), getHandle().getFoodData().e()));
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
 
         set.clear();
@@ -1285,14 +1281,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return;
         }
         for (Object genericInstance : collection) {
-            IAttribute attribute = ((AttributeInstance) genericInstance).a();
-            if (attribute.a().equals("generic.maxHealth")) {
+            IAttribute attribute = ((AttributeInstance) genericInstance).getAttribute();
+            if (attribute.getName().equals("generic.maxHealth")) {
                 collection.remove(genericInstance);
                 break;
             }
-            continue;
         }
-        collection.add(new AttributeModifiable(getHandle().bb(), (new AttributeRanged("generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
+        // Spigot start
+        double healthMod = scaledHealth ? healthScale : getMaxHealth();
+        if ( healthMod >= Float.MAX_VALUE || healthMod <= 0 )
+        {
+            healthMod = 20; // Reset health
+            getServer().getLogger().warning( getName() + " tried to crash the server with a large health attribute" );
+        }
+        collection.add(new AttributeModifiable(getHandle().getAttributeMap(), (new AttributeRanged("generic.maxHealth", healthMod, 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
+        // Spigot end
     }
 
     // Spigot start

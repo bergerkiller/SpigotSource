@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 public class EntityOcelot extends EntityTameableAnimal {
 
+    public boolean spawnBonus = true; // Spigot
     private PathfinderGoalTempt bq;
 
     public EntityOcelot(World world) {
@@ -27,7 +28,32 @@ public class EntityOcelot extends EntityTameableAnimal {
         this.datawatcher.a(18, Byte.valueOf((byte) 0));
     }
 
-    public void bo() {
+    // Spigot start - When this ocelot begins standing, chests below this ocelot must be
+    // updated as if its contents have changed. We update chests if this ocelot is sitting
+    // knowing that it may be dead, gone, or standing after this method returns.
+    // Called each tick on each ocelot.
+    @Override
+    public void h() {
+        if (this.world.spigotConfig.altHopperTicking && this.isSitting()) {
+            int xi = MathHelper.floor(this.boundingBox.a);
+            int yi = MathHelper.floor(this.boundingBox.b) - 1;
+            int zi = MathHelper.floor(this.boundingBox.c);
+            int xf = MathHelper.floor(this.boundingBox.d);
+            int yf = MathHelper.floor(this.boundingBox.e) - 1;
+            int zf = MathHelper.floor(this.boundingBox.f);
+            for (int a = xi; a <= xf; a++) {
+                for (int c = zi; c <= zf; c++) {
+                    for (int b = yi; b <= yf; b++) {
+                        this.world.updateChestAndHoppers(a, b, c);
+                    }
+                }
+            }
+        }
+        super.h();
+    }
+    // Spigot end
+
+    public void bp() {
         if (this.getControllerMove().a()) {
             double d0 = this.getControllerMove().b();
 
@@ -51,13 +77,13 @@ public class EntityOcelot extends EntityTameableAnimal {
         return !this.isTamed() /*&& this.ticksLived > 2400*/; // CraftBukkit
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.30000001192092896D);
     }
 
@@ -77,15 +103,15 @@ public class EntityOcelot extends EntityTameableAnimal {
         return this.isTamed() ? (this.ce() ? "mob.cat.purr" : (this.random.nextInt(4) == 0 ? "mob.cat.purreow" : "mob.cat.meow")) : "";
     }
 
-    protected String aS() {
-        return "mob.cat.hitt";
-    }
-
     protected String aT() {
         return "mob.cat.hitt";
     }
 
-    protected float be() {
+    protected String aU() {
+        return "mob.cat.hitt";
+    }
+
+    protected float bf() {
         return 0.4F;
     }
 
@@ -106,9 +132,7 @@ public class EntityOcelot extends EntityTameableAnimal {
         }
     }
 
-    protected void dropDeathLoot(boolean flag, int i) {
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this); // CraftBukkit - Call EntityDeathEvent
-    }
+    protected void dropDeathLoot(boolean flag, int i) {}
 
     public boolean a(EntityHuman entityhuman) {
         ItemStack itemstack = entityhuman.inventory.getItemInHand();
@@ -213,9 +237,9 @@ public class EntityOcelot extends EntityTameableAnimal {
         return this.hasCustomName() ? this.getCustomName() : (this.isTamed() ? LocaleI18n.get("entity.Cat.name") : super.getName());
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
-        groupdataentity = super.a(groupdataentity);
-        if (this.world.random.nextInt(7) == 0) {
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
+        groupdataentity = super.prepare(groupdataentity);
+        if (spawnBonus && this.world.random.nextInt(7) == 0) { // Spigot
             for (int i = 0; i < 2; ++i) {
                 EntityOcelot entityocelot = new EntityOcelot(this.world);
 

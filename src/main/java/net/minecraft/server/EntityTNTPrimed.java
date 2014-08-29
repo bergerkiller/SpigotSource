@@ -37,11 +37,12 @@ public class EntityTNTPrimed extends Entity {
         return false;
     }
 
-    public boolean Q() {
+    public boolean R() {
         return !this.dead;
     }
 
     public void h() {
+        if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
         this.lastX = this.locX;
         this.lastY = this.locY;
         this.lastZ = this.locZ;

@@ -87,6 +87,17 @@ public class BlockHopper extends BlockContainer {
 
         if (flag != flag1) {
             world.setData(i, j, k, i1 | (flag ? 0 : 8), 4);
+            // Spigot start - When this hopper becomes unpowered, make it active.
+            // Called when this block's power level changes. flag1 is the current
+            // isNotPowered from metadata. flag is the recalculated isNotPowered.
+            if (world.spigotConfig.altHopperTicking) {
+            	// e returns the TileEntityHopper associated with this BlockHopper.
+                TileEntityHopper hopper = e((IBlockAccess) world, i, j, k);
+                if (flag && hopper != null) {
+                    hopper.makeTick();
+                }
+            }
+            // Spigot end
         }
     }
 
@@ -126,7 +137,7 @@ public class BlockHopper extends BlockContainer {
                 }
             }
 
-            world.f(i, j, k, block);
+            world.updateAdjacentComparators(i, j, k, block);
         }
 
         super.remove(world, i, j, k, block, l);
@@ -152,7 +163,7 @@ public class BlockHopper extends BlockContainer {
         return (i & 8) != 8;
     }
 
-    public boolean M() {
+    public boolean isComplexRedstone() {
         return true;
     }
 
@@ -163,4 +174,17 @@ public class BlockHopper extends BlockContainer {
     public static TileEntityHopper e(IBlockAccess iblockaccess, int i, int j, int k) {
         return (TileEntityHopper) iblockaccess.getTileEntity(i, j, k);
     }
+
+    // Spigot start - Use random block updates to make hoppers active.
+    @Override
+    public void a(World world, int i, int j, int k, Random random) {
+        if (world.spigotConfig.altHopperTicking) {
+        	// e returns the TileEntityHopper associated with this BlockHopper.
+            TileEntityHopper hopper = e((IBlockAccess) world, i, j, k);
+            if (hopper != null) {
+                hopper.makeTick();
+            }
+        }
+    }
+    // Spigot end
 }

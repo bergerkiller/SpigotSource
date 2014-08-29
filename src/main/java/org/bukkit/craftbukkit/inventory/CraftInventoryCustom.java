@@ -18,6 +18,10 @@ public class CraftInventoryCustom extends CraftInventory {
         super(new MinecraftInventory(owner, type));
     }
 
+    public CraftInventoryCustom(InventoryHolder owner, InventoryType type, String title) {
+        super(new MinecraftInventory(owner, type, title));
+    }
+
     public CraftInventoryCustom(InventoryHolder owner, int size) {
         super(new MinecraftInventory(owner, size));
     }
@@ -36,6 +40,11 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public MinecraftInventory(InventoryHolder owner, InventoryType type) {
             this(owner, type.getDefaultSize(), type.getDefaultTitle());
+            this.type = type;
+        }
+
+        public MinecraftInventory(InventoryHolder owner, InventoryType type, String title) {
+            this(owner, type.getDefaultSize(), title);
             this.type = type;
         }
 
@@ -135,7 +144,7 @@ public class CraftInventoryCustom extends CraftInventory {
             return type;
         }
 
-        public void l_() {}
+        public void closeContainer() {}
 
         public InventoryHolder getOwner() {
             return owner;

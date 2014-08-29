@@ -66,6 +66,10 @@ public class ServerConnection {
                 NetworkManager networkmanager = (NetworkManager) iterator.next();
 
                 if (!networkmanager.isConnected()) {
+                    // Spigot Start
+                    // Fix a race condition where a NetworkManager could be unregistered just before connection.
+                    if (networkmanager.preparing) continue;
+                    // Spigot End
                     iterator.remove();
                     if (networkmanager.f() != null) {
                         networkmanager.getPacketListener().a(networkmanager.f());

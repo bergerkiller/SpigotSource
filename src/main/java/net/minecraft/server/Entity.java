@@ -25,9 +25,8 @@ import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.plugin.PluginManager;
 // CraftBukkit end
@@ -47,7 +46,7 @@ public abstract class Entity {
     public boolean k;
     public Entity passenger;
     public Entity vehicle;
-    public boolean n;
+    public boolean attachedToPlayer;
     public World world;
     public double lastX;
     public double lastY;
@@ -254,10 +253,10 @@ public abstract class Entity {
     }
 
     public void h() {
-        this.B();
+        this.C();
     }
 
-    public void B() {
+    public void C() {
         this.world.methodProfiler.a("entityBaseTick");
         if (this.vehicle != null && this.vehicle.dead) {
             this.vehicle = null;
@@ -275,12 +274,12 @@ public abstract class Entity {
             this.world.methodProfiler.a("portal");
             MinecraftServer minecraftserver = ((WorldServer) this.world).getMinecraftServer();
 
-            i = this.C();
+            i = this.D();
             if (this.an) {
                 if (true || minecraftserver.getAllowNether()) { // CraftBukkit
                     if (this.vehicle == null && this.ao++ >= i) {
                         this.ao = i;
-                        this.portalCooldown = this.ah();
+                        this.portalCooldown = this.ai();
                         byte b0;
 
                         if (this.world.worldProvider.dimension == -1) {
@@ -311,7 +310,7 @@ public abstract class Entity {
             this.world.methodProfiler.b();
         }
 
-        if (this.isSprinting() && !this.L()) {
+        if (this.isSprinting() && !this.M()) {
             int j = MathHelper.floor(this.locX);
 
             i = MathHelper.floor(this.locY - 0.20000000298023224D - (double) this.height);
@@ -319,11 +318,11 @@ public abstract class Entity {
             Block block = this.world.getType(j, i, k);
 
             if (block.getMaterial() != Material.AIR) {
-                this.world.addParticle("blockcrack_" + Block.b(block) + "_" + this.world.getData(j, i, k), this.locX + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, this.boundingBox.b + 0.1D, this.locZ + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, -this.motX * 4.0D, 1.5D, -this.motZ * 4.0D);
+                this.world.addParticle("blockcrack_" + Block.getId(block) + "_" + this.world.getData(j, i, k), this.locX + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, this.boundingBox.b + 0.1D, this.locZ + ((double) this.random.nextFloat() - 0.5D) * (double) this.width, -this.motX * 4.0D, 1.5D, -this.motZ * 4.0D);
             }
         }
 
-        this.M();
+        this.N();
         if (this.world.isStatic) {
             this.fireTicks = 0;
         } else if (this.fireTicks > 0) {
@@ -341,13 +340,13 @@ public abstract class Entity {
             }
         }
 
-        if (this.O()) {
-            this.D();
+        if (this.P()) {
+            this.E();
             this.fallDistance *= 0.5F;
         }
 
         if (this.locY < -64.0D) {
-            this.F();
+            this.G();
         }
 
         if (!this.world.isStatic) {
@@ -358,32 +357,23 @@ public abstract class Entity {
         this.world.methodProfiler.b();
     }
 
-    public int C() {
+    public int D() {
         return 0;
     }
 
-    protected void D() {
+    protected void E() {
         if (!this.fireProof) {
+            this.damageEntity(DamageSource.LAVA, 4);
+
             // CraftBukkit start - Fallen in lava TODO: this event spams!
             if (this instanceof EntityLiving) {
-                Server server = this.world.getServer();
-
-                // TODO: shouldn't be sending null for the block.
-                org.bukkit.block.Block damager = null; // ((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
-                org.bukkit.entity.Entity damagee = this.getBukkitEntity();
-
-                EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, EntityDamageEvent.DamageCause.LAVA, 4D);
-                server.getPluginManager().callEvent(event);
-
-                if (!event.isCancelled()) {
-                    damagee.setLastDamageCause(event);
-                    this.damageEntity(DamageSource.LAVA, (float) event.getDamage());
-                }
-
                 if (this.fireTicks <= 0) {
                     // not on fire yet
+                    // TODO: shouldn't be sending null for the block.
+                    org.bukkit.block.Block damager = null; // ((WorldServer) this.l).getWorld().getBlockAt(i, j, k);
+                    org.bukkit.entity.Entity damagee = this.getBukkitEntity();
                     EntityCombustEvent combustEvent = new org.bukkit.event.entity.EntityCombustByBlockEvent(damager, damagee, 15);
-                    server.getPluginManager().callEvent(combustEvent);
+                    this.world.getServer().getPluginManager().callEvent(combustEvent);
 
                     if (!combustEvent.isCancelled()) {
                         this.setOnFire(combustEvent.getDuration());
@@ -396,7 +386,6 @@ public abstract class Entity {
             }
             // CraftBukkit end - we also don't throw an event unless the object in lava is living, to save on some event calls
 
-            this.damageEntity(DamageSource.LAVA, 4);
             this.setOnFire(15);
         }
     }
@@ -414,7 +403,7 @@ public abstract class Entity {
         this.fireTicks = 0;
     }
 
-    protected void F() {
+    protected void G() {
         this.die();
     }
 
@@ -429,7 +418,7 @@ public abstract class Entity {
         // CraftBukkit start - Don't do anything if we aren't moving
         // We need to do this regardless of whether or not we are moving thanks to portals
         try {
-            this.H();
+            this.I();
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.a(throwable, "Checking entity block collision");
             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being checked for collision");
@@ -441,7 +430,7 @@ public abstract class Entity {
         if (d0 == 0 && d1 == 0 && d2 == 0 && this.vehicle == null && this.passenger == null) {
             return;
         }
-        // CraftBukkit end       
+        // CraftBukkit end
         org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
         if (this.X) {
             this.boundingBox.d(d0, d1, d2);
@@ -693,14 +682,14 @@ public abstract class Entity {
                 this.Q = (float) ((double) this.Q + (double) MathHelper.sqrt(d10 * d10 + d11 * d11 + d12 * d12) * 0.6D);
                 if (this.Q > (float) this.d && block.getMaterial() != Material.AIR) {
                     this.d = (int) this.Q + 1;
-                    if (this.L()) {
+                    if (this.M()) {
                         float f = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.35F;
 
                         if (f > 1.0F) {
                             f = 1.0F;
                         }
 
-                        this.makeSound(this.G(), f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                        this.makeSound(this.H(), f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                     }
 
                     this.a(l, k, i1, block);
@@ -711,7 +700,7 @@ public abstract class Entity {
             // CraftBukkit start - Move to the top of the method
             /*
             try {
-                this.H();
+                this.I();
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.a(throwable, "Checking entity block collision");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being checked for collision");
@@ -721,7 +710,7 @@ public abstract class Entity {
             }
             */
             // CraftBukkit end
-            boolean flag2 = this.K();
+            boolean flag2 = this.L();
 
             if (this.world.e(this.boundingBox.shrink(0.001D, 0.001D, 0.001D))) {
                 this.burn(1);
@@ -754,11 +743,11 @@ public abstract class Entity {
         org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
     }
 
-    protected String G() {
+    protected String H() {
         return "game.neutral.swim";
     }
 
-    protected void H() {
+    protected void I() {
         int i = MathHelper.floor(this.boundingBox.a + 0.001D);
         int j = MathHelper.floor(this.boundingBox.b + 0.001D);
         int k = MathHelper.floor(this.boundingBox.c + 0.001D);
@@ -817,7 +806,7 @@ public abstract class Entity {
         }
     }
 
-    public AxisAlignedBB I() {
+    public AxisAlignedBB J() {
         return null;
     }
 
@@ -837,15 +826,15 @@ public abstract class Entity {
         }
     }
 
-    public boolean K() {
+    public boolean L() {
         return this.inWater || this.world.isRainingAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)) || this.world.isRainingAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY + (double) this.length), MathHelper.floor(this.locZ));
     }
 
-    public boolean L() {
+    public boolean M() {
         return this.inWater;
     }
 
-    public boolean M() {
+    public boolean N() {
         if (this.world.a(this.boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D, 0.001D, 0.001D), Material.WATER, this)) {
             if (!this.inWater && !this.justCreated) {
                 float f = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.2F;
@@ -854,7 +843,7 @@ public abstract class Entity {
                     f = 1.0F;
                 }
 
-                this.makeSound(this.N(), f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+                this.makeSound(this.O(), f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                 float f1 = (float) MathHelper.floor(this.boundingBox.b);
 
                 int i;
@@ -884,7 +873,7 @@ public abstract class Entity {
         return this.inWater;
     }
 
-    protected String N() {
+    protected String O() {
         return "game.neutral.swim.splash";
     }
 
@@ -909,7 +898,7 @@ public abstract class Entity {
         return 0.0F;
     }
 
-    public boolean O() {
+    public boolean P() {
         return this.world.a(this.boundingBox.grow(-0.10000000149011612D, -0.4000000059604645D, -0.10000000149011612D), Material.LAVA);
     }
 
@@ -1059,7 +1048,7 @@ public abstract class Entity {
         this.al = true;
     }
 
-    protected void P() {
+    protected void Q() {
         this.velocityChanged = true;
     }
 
@@ -1067,23 +1056,23 @@ public abstract class Entity {
         if (this.isInvulnerable()) {
             return false;
         } else {
-            this.P();
+            this.Q();
             return false;
         }
-    }
-
-    public boolean Q() {
-        return false;
     }
 
     public boolean R() {
         return false;
     }
 
+    public boolean S() {
+        return false;
+    }
+
     public void b(Entity entity, int i) {}
 
     public boolean c(NBTTagCompound nbttagcompound) {
-        String s = this.V();
+        String s = this.W();
 
         if (!this.dead && s != null) {
             nbttagcompound.setString("id", s);
@@ -1095,7 +1084,7 @@ public abstract class Entity {
     }
 
     public boolean d(NBTTagCompound nbttagcompound) {
-        String s = this.V();
+        String s = this.W();
 
         if (!this.dead && s != null && this.passenger == null) {
             nbttagcompound.setString("id", s);
@@ -1197,7 +1186,7 @@ public abstract class Entity {
             this.setPosition(this.locX, this.locY, this.locZ);
             this.b(this.yaw, this.pitch);
             this.a(nbttagcompound);
-            if (this.U()) {
+            if (this.V()) {
                 this.setPosition(this.locX, this.locY, this.locZ);
             }
 
@@ -1263,11 +1252,11 @@ public abstract class Entity {
         }
     }
 
-    protected boolean U() {
+    protected boolean V() {
         return true;
     }
 
-    protected final String V() {
+    protected final String W() {
         return EntityTypes.b(this);
     }
 
@@ -1275,7 +1264,7 @@ public abstract class Entity {
 
     protected abstract void b(NBTTagCompound nbttagcompound);
 
-    public void W() {}
+    public void X() {}
 
     protected NBTTagList a(double... adouble) {
         NBTTagList nbttaglist = new NBTTagList();
@@ -1315,6 +1304,13 @@ public abstract class Entity {
 
     public EntityItem a(ItemStack itemstack, float f) {
         if (itemstack.count != 0 && itemstack.getItem() != null) {
+            // CraftBukkit start - Capture drops for death event
+            if (this instanceof EntityLiving && ((EntityLiving) this).drops != null) {
+                ((EntityLiving) this).drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack));
+                return null;
+            }
+            // CraftBukkit end
+
             EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY + (double) f, this.locZ, itemstack);
 
             entityitem.pickupDelay = 10;
@@ -1354,7 +1350,7 @@ public abstract class Entity {
         return null;
     }
 
-    public void aa() {
+    public void ab() {
         if (this.vehicle.dead) {
             this.vehicle = null;
         } else {
@@ -1363,7 +1359,7 @@ public abstract class Entity {
             this.motZ = 0.0D;
             this.h();
             if (this.vehicle != null) {
-                this.vehicle.ab();
+                this.vehicle.ac();
                 this.h += (double) (this.vehicle.yaw - this.vehicle.lastYaw);
 
                 for (this.g += (double) (this.vehicle.pitch - this.vehicle.lastPitch); this.h >= 180.0D; this.h -= 360.0D) {
@@ -1408,17 +1404,17 @@ public abstract class Entity {
         }
     }
 
-    public void ab() {
+    public void ac() {
         if (this.passenger != null) {
-            this.passenger.setPosition(this.locX, this.locY + this.ad() + this.passenger.ac(), this.locZ);
+            this.passenger.setPosition(this.locX, this.locY + this.ae() + this.passenger.ad(), this.locZ); // Spigot
         }
     }
 
-    public double ac() {
+    public double ad() {
         return (double) this.height;
     }
 
-    public double ad() {
+    public double ae() {
         return (double) this.length * 0.75D;
     }
 
@@ -1524,17 +1520,17 @@ public abstract class Entity {
         }
     }
 
-    public float ae() {
+    public float af() {
         return 0.1F;
     }
 
-    public Vec3D af() {
+    public Vec3D ag() {
         return null;
     }
 
-    public void ag() {
+    public void ah() {
         if (this.portalCooldown > 0) {
-            this.portalCooldown = this.ah();
+            this.portalCooldown = this.ai();
         } else {
             double d0 = this.lastX - this.locX;
             double d1 = this.lastZ - this.locZ;
@@ -1547,7 +1543,7 @@ public abstract class Entity {
         }
     }
 
-    public int ah() {
+    public int ai() {
         return 300;
     }
 
@@ -1563,7 +1559,7 @@ public abstract class Entity {
         return !this.fireProof && (this.fireTicks > 0 || flag && this.g(0));
     }
 
-    public boolean al() {
+    public boolean am() {
         return this.vehicle != null;
     }
 
@@ -1643,12 +1639,14 @@ public abstract class Entity {
             }
         }
 
-        EntityDamageEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDamageEvent(entitylightning, this, EntityDamageEvent.DamageCause.LIGHTNING, 5D);
-        if (event.isCancelled()) {
+        if (this.fireProof) {
             return;
         }
-
-        this.burn((float) event.getDamage());
+        CraftEventFactory.entityDamage = entitylightning;
+        if (!this.damageEntity(DamageSource.FIRE, 5.0F)) {
+            CraftEventFactory.entityDamage = null;
+            return;
+        }
         // CraftBukkit end
 
         ++this.fireTicks;
@@ -1741,7 +1739,7 @@ public abstract class Entity {
         }
     }
 
-    public void ar() {
+    public void as() {
         this.I = true;
         this.fallDistance = 0.0F;
     }
@@ -1756,7 +1754,7 @@ public abstract class Entity {
         return LocaleI18n.get("entity." + s + ".name");
     }
 
-    public Entity[] as() {
+    public Entity[] at() {
         return null;
     }
 
@@ -1768,7 +1766,7 @@ public abstract class Entity {
         return 0.0F;
     }
 
-    public boolean au() {
+    public boolean av() {
         return true;
     }
 
@@ -1890,15 +1888,15 @@ public abstract class Entity {
         return true;
     }
 
-    public int aw() {
+    public int ax() {
         return 3;
     }
 
-    public int ax() {
+    public int ay() {
         return this.aq;
     }
 
-    public boolean ay() {
+    public boolean az() {
         return false;
     }
 
@@ -1915,7 +1913,7 @@ public abstract class Entity {
         return this.uniqueID;
     }
 
-    public boolean aB() {
+    public boolean aC() {
         return true;
     }
 

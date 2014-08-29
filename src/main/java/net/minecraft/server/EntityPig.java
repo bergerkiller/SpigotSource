@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-// CraftBukkit end
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityPig extends EntityAnimal {
 
@@ -25,22 +22,22 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bj() {
+    public boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    protected void bm() {
-        super.bm();
+    protected void bn() {
+        super.bn();
     }
 
     public boolean bE() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).bd();
+        ItemStack itemstack = ((EntityHuman) this.passenger).be();
 
         return itemstack != null && itemstack.getItem() == Items.CARROT_STICK;
     }
@@ -64,11 +61,11 @@ public class EntityPig extends EntityAnimal {
         return "mob.pig.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.pig.say";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.pig.death";
     }
 
@@ -92,24 +89,19 @@ public class EntityPig extends EntityAnimal {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(3) + 1 + this.random.nextInt(1 + i);
 
-        if (j > 0) {
+        for (int k = 0; k < j; ++k) {
             if (this.isBurning()) {
-                loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.GRILLED_PORK), j));
+                this.a(Items.GRILLED_PORK, 1);
             } else {
-                loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.PORK), j));
+                this.a(Items.PORK, 1);
             }
         }
 
         if (this.hasSaddle()) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.SADDLE), 1));
+            this.a(Items.SADDLE, 1);
         }
-
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
     public boolean hasSaddle() {

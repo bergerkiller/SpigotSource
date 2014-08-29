@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-// CraftBukkit start
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.event.entity.EntityTargetEvent;
-// CraftBukkti end
+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
 
 public class EntitySpider extends EntityMonster {
 
@@ -24,9 +21,9 @@ public class EntitySpider extends EntityMonster {
         }
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(16.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(16.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.800000011920929D);
     }
 
@@ -46,11 +43,11 @@ public class EntitySpider extends EntityMonster {
         return "mob.spider.say";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.spider.say";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.spider.death";
     }
 
@@ -97,32 +94,17 @@ public class EntitySpider extends EntityMonster {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start - Whole method; adapted from super.dropDeathLoot.
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-
-        int k = this.random.nextInt(3);
-
-        if (i > 0) {
-            k += this.random.nextInt(i + 1);
-        }
-
-        if (k > 0) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.STRING), k));
-        }
-
+        super.dropDeathLoot(flag, i);
         if (flag && (this.random.nextInt(3) == 0 || this.random.nextInt(1 + i) > 0)) {
-            loot.add(new org.bukkit.inventory.ItemStack(CraftMagicNumbers.getMaterial(Items.SPIDER_EYE), 1));
+            this.a(Items.SPIDER_EYE, 1);
         }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot); // raise event even for those times when the entity does not drop loot
-        // CraftBukkit end
     }
 
     public boolean h_() {
         return this.bZ();
     }
 
-    public void ar() {}
+    public void as() {}
 
     public EnumMonsterType getMonsterType() {
         return EnumMonsterType.ARTHROPOD;
@@ -148,14 +130,14 @@ public class EntitySpider extends EntityMonster {
         this.datawatcher.watch(16, Byte.valueOf(b0));
     }
 
-    public GroupDataEntity a(GroupDataEntity groupdataentity) {
-        Object object = super.a(groupdataentity);
+    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
+        Object object = super.prepare(groupdataentity);
 
         if (this.world.random.nextInt(100) == 0) {
             EntitySkeleton entityskeleton = new EntitySkeleton(this.world);
 
             entityskeleton.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
-            entityskeleton.a((GroupDataEntity) null);
+            entityskeleton.prepare((GroupDataEntity) null);
             this.world.addEntity(entityskeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit - add SpawnReason
             entityskeleton.mount(this);
         }

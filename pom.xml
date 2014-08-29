@@ -1,18 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>org.spigotmc</groupId>
-    <artifactId>spigot-parent</artifactId>
-    <version>dev-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
-
   <groupId>org.spigotmc</groupId>
   <artifactId>spigot</artifactId>
   <packaging>jar</packaging>
-  <version>1.7.9-R0.1-SNAPSHOT</version>
+  <version>1.7.10-R0.1-SNAPSHOT</version>
   <name>Spigot</name>
   <url>http://www.spigotmc.org</url>
 
@@ -20,11 +12,18 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <api.version>unknown</api.version>
     <junit.version>4.11</junit.version>
-    <minecraft.version>1.7.9</minecraft.version>
-    <minecraft_version>1_7_R3</minecraft_version>
+    <minecraft.version>1.7.10</minecraft.version>
+    <minecraft_version>1_7_R4</minecraft_version>
     <buildtag.prefix>git-Bukkit-</buildtag.prefix>
     <buildtag.suffix></buildtag.suffix>
   </properties>
+
+  <parent>
+    <groupId>org.spigotmc</groupId>
+    <artifactId>spigot-parent</artifactId>
+    <version>dev-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
   <repositories>
     <repository>
@@ -49,9 +48,9 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.bukkit</groupId>
+      <groupId>org.spigotmc</groupId>
       <artifactId>minecraft-server</artifactId>
-      <version>${minecraft.version}</version>
+      <version>${minecraft.version}-SNAPSHOT</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -110,9 +109,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>net.sf.trove4j</groupId>
-      <artifactId>trove4j</artifactId>
-      <version>3.0.3</version>
+        <groupId>org.spigotmc</groupId>
+        <artifactId>sneaky-throw</artifactId>
+        <version>1.0</version>
+        <scope>system</scope>
+        <systemPath>${project.basedir}/../SneakyThrow.jar</systemPath>
     </dependency>
   </dependencies>
 

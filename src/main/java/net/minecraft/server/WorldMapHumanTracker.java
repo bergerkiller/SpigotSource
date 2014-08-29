@@ -43,14 +43,14 @@ public class WorldMapHumanTracker {
 
             if (--this.g < 0) {
                 this.g = 4;
-                abyte = new byte[((custom) ? render.cursors.size() : this.worldMap.g.size()) * 3 + 1]; // CraftBukkit
+                abyte = new byte[((custom) ? render.cursors.size() : this.worldMap.decorations.size()) * 3 + 1]; // CraftBukkit
                 abyte[0] = 1;
                 i = 0;
 
                 // CraftBukkit start
 
                 // Spigot start
-                for (Iterator iterator = ((custom) ? render.cursors.iterator() : this.worldMap.g.values().iterator()); iterator.hasNext(); ++i) {
+                for (Iterator iterator = ((custom) ? render.cursors.iterator() : this.worldMap.decorations.values().iterator()); iterator.hasNext(); ++i) {
                     org.bukkit.map.MapCursor cursor = (custom) ? (org.bukkit.map.MapCursor) iterator.next() : null;
                     if (cursor != null && !cursor.isVisible()) continue;
                     WorldMapDecoration deco = (custom) ? null : (WorldMapDecoration) iterator.next();

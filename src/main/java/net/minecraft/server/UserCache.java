@@ -99,7 +99,7 @@ public class UserCache {
         }
     }
 
-    public GameProfile a(String s) {
+    public GameProfile getProfile(String s) {
         String s1 = s.toLowerCase(Locale.ROOT);
         UserCacheEntry usercacheentry = (UserCacheEntry) this.c.get(s1);
 
@@ -133,7 +133,7 @@ public class UserCache {
             }
         }
 
-        this.c();
+        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.c(); // Spigot - skip saving if disabled
         return usercacheentry == null ? null : usercacheentry.a();
     }
 
@@ -176,6 +176,11 @@ public class UserCache {
                 break label81;
             } catch (FileNotFoundException filenotfoundexception) {
                 ;
+            // Spigot Start
+            } catch (net.minecraft.util.com.google.gson.JsonSyntaxException ex) {
+                JsonList.a.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
+                this.g.delete();
+            // Spigot End
             } finally {
                 IOUtils.closeQuietly(bufferedreader);
             }
@@ -206,7 +211,7 @@ public class UserCache {
     }
 
     public void c() {
-        String s = this.b.toJson(this.a(1000));
+        String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
         BufferedWriter bufferedwriter = null;
 
         try {
@@ -214,9 +219,9 @@ public class UserCache {
             bufferedwriter.write(s);
             return;
         } catch (FileNotFoundException filenotfoundexception) {
-            ;
-        } catch (IOException ioexception) {
             return;
+        } catch (IOException ioexception) {
+            ;
         } finally {
             IOUtils.closeQuietly(bufferedwriter);
         }

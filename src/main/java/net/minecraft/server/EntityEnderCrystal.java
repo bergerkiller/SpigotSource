@@ -50,7 +50,7 @@ public class EntityEnderCrystal extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean Q() {
+    public boolean R() {
         return true;
     }
 
@@ -67,18 +67,18 @@ public class EntityEnderCrystal extends Entity {
 
                 this.b = 0;
                 if (this.b <= 0) {
-                    // this.die(); // CraftBukkit - moved down
+                    this.die();
                     if (!this.world.isStatic) {
                         // CraftBukkit start
                         ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 6.0F, false);
                         this.world.getServer().getPluginManager().callEvent(event);
                         if (event.isCancelled()) {
+                            this.dead = false;
                             return false;
                         }
                         this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
+                        // CraftBukkit end
                     }
-                    this.die();
-                    // CraftBukkit end
                 }
             }
 

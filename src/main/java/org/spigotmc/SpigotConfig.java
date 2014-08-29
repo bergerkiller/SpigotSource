@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,13 +14,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
-
-import gnu.trove.map.hash.TObjectIntHashMap;
+import net.minecraft.server.AttributeRanged;
+import net.minecraft.server.GenericAttributes;
+import net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap;
 import net.minecraft.server.MinecraftServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class SpigotConfig
@@ -35,10 +41,10 @@ public class SpigotConfig
             + "If you need help with the configuration or have any questions related to Spigot,\n"
             + "join us at the IRC or drop by our forums and leave a post.\n"
             + "\n"
-            + "IRC: #spigot @ irc.esper.net ( http://webchat.esper.net/?channel=spigot )\n"
-            + "Forums: http://www.spigotmc.org/forum/\n";
+            + "IRC: #spigot @ irc.spi.gt ( http://www.spigotmc.org/pages/irc/ )\n"
+            + "Forums: http://www.spigotmc.org/\n";
     /*========================================================================*/
-    static YamlConfiguration config;
+    public static YamlConfiguration config;
     static int version;
     static Map<String, Command> commands;
     /*========================================================================*/
@@ -46,14 +52,25 @@ public class SpigotConfig
 
     public static void init()
     {
-        config = YamlConfiguration.loadConfiguration( CONFIG_FILE );
+        config = new YamlConfiguration();
+        try
+        {
+            config.load( CONFIG_FILE );
+        } catch ( IOException ex )
+        {
+        } catch ( InvalidConfigurationException ex )
+        {
+            Bukkit.getLogger().log( Level.SEVERE, "Could not load spigot.yml, please correct your syntax errors", ex );
+            throw Throwables.propagate( ex );
+        }
+
         config.options().header( HEADER );
         config.options().copyDefaults( true );
 
         commands = new HashMap<String, Command>();
 
-        version = getInt( "config-version", 6 );
-        set( "config-version", 6 );
+        version = getInt( "config-version", 7 );
+        set( "config-version", 7 );
         readConfig( SpigotConfig.class, null );
     }
 
@@ -91,7 +108,7 @@ public class SpigotConfig
                         method.invoke( instance );
                     } catch ( InvocationTargetException ex )
                     {
-                        Throwables.propagate( ex.getCause() );
+                        throw Throwables.propagate( ex.getCause() );
                     } catch ( Exception ex )
                     {
                         Bukkit.getLogger().log( Level.SEVERE, "Error invoking " + method, ex );
@@ -136,6 +153,12 @@ public class SpigotConfig
     {
         config.addDefault( path, def );
         return config.getString( path, config.getString( path ) );
+    }
+
+    private static double getDouble(String path, double def)
+    {
+        config.addDefault( path, def );
+        return config.getDouble( path, config.getDouble( path ) );
     }
 
     public static boolean logCommands;
@@ -297,5 +320,81 @@ public class SpigotConfig
         }
         replaceCommands = new HashSet<String>( (List<String>) getList( "commands.replace-commands",
                 Arrays.asList( "setblock", "summon", "testforblock", "tellraw" ) ) );
+    }
+    
+    public static int userCacheCap;
+    private static void userCacheCap()
+    {
+        userCacheCap = getInt( "settings.user-cache-size", 1000 );
+    }
+    
+    public static boolean saveUserCacheOnStopOnly;
+    private static void saveUserCacheOnStopOnly()
+    {
+        saveUserCacheOnStopOnly = getBoolean( "settings.save-user-cache-on-stop-only", false );
+    }
+
+    public static int intCacheLimit;
+    private static void intCacheLimit()
+    {
+        intCacheLimit = getInt( "settings.int-cache-limit", 1024 );
+    }
+
+    public static double movedWronglyThreshold;
+    private static void movedWronglyThreshold()
+    {
+        movedWronglyThreshold = getDouble( "settings.moved-wrongly-threshold", 0.0625D );
+    }
+
+    public static double movedTooQuicklyThreshold;
+    private static void movedTooQuicklyThreshold()
+    {
+        movedTooQuicklyThreshold = getDouble( "settings.moved-too-quickly-threshold", 100.0D );
+    }
+
+    public static double maxHealth = 2048;
+    public static double movementSpeed = 2048;
+    public static double attackDamage = 2048;
+    private static void attributeMaxes()
+    {
+        maxHealth = getDouble( "settings.attribute.maxHealth.max", maxHealth );
+        ( (AttributeRanged) GenericAttributes.maxHealth ).b = maxHealth;
+        movementSpeed = getDouble( "settings.attribute.movementSpeed.max", movementSpeed );
+        ( (AttributeRanged) GenericAttributes.d ).b = movementSpeed;
+        attackDamage = getDouble( "settings.attribute.attackDamage.max", attackDamage );
+        ( (AttributeRanged) GenericAttributes.e ).b = attackDamage;
+    }
+
+    private static void globalAPICache()
+    {
+        if ( getBoolean( "settings.global-api-cache", false ) )
+        {
+            Bukkit.getLogger().info( "Global API cache enabled - All requests to Mojang's API will be " +
+                    "handled by Spigot" );
+            URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
+        }
+    }
+
+    public static boolean debug;
+    private static void debug()
+    {
+        debug = getBoolean( "settings.debug", false );
+
+        if ( debug && !LogManager.getRootLogger().isTraceEnabled() )
+        {
+            // Enable debug logging
+            LoggerContext ctx = (LoggerContext) LogManager.getContext( false );
+            Configuration conf = ctx.getConfiguration();
+            conf.getLoggerConfig( LogManager.ROOT_LOGGER_NAME ).setLevel( org.apache.logging.log4j.Level.ALL );
+            ctx.updateLoggers( conf );
+        }
+
+        if ( LogManager.getRootLogger().isTraceEnabled() )
+        {
+            Bukkit.getLogger().info( "Debug logging is enabled" );
+        } else
+        {
+            Bukkit.getLogger().info( "Debug logging is disabled" );
+        }
     }
 }

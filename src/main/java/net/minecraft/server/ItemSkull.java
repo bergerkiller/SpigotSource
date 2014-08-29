@@ -16,7 +16,6 @@ public class ItemSkull extends Item {
     }
 
     public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        final int clickedX = i, clickedY = j, clickedZ = k; // CraftBukkit
         if (l == 0) {
             return false;
         } else if (!world.getType(i, j, k).getMaterial().isBuildable()) {
@@ -43,19 +42,13 @@ public class ItemSkull extends Item {
             }
 
             if (!world.isStatic) {
-                // CraftBukkit start - Handle in ItemBlock
-                // world.setTypeAndData(i, j, k, Blocks.SKULL, l, 2);
                 // Spigot Start
                 if ( !Blocks.SKULL.canPlace( world, i, j, k ) )
                 {
                     return false;
                 }
                 // Spigot End
-                if (!ItemBlock.processBlockPlace(world, entityhuman, null, i, j, k, Blocks.SKULL, l, clickedX, clickedY, clickedZ)) {
-                    return false;
-                }
-                l = world.getData(i, j, k);
-                // CraftBukkit end
+                world.setTypeAndData(i, j, k, Blocks.SKULL, l, 2);
                 int i1 = 0;
 
                 if (l == 1) {
@@ -72,7 +65,7 @@ public class ItemSkull extends Item {
                             NBTTagCompound nbttagcompound = itemstack.getTag();
 
                             if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
-                                gameprofile = GameProfileSerializer.a(nbttagcompound.getCompound("SkullOwner"));
+                                gameprofile = GameProfileSerializer.deserialize(nbttagcompound.getCompound("SkullOwner"));
                             } else if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && nbttagcompound.getString("SkullOwner").length() > 0) {
                                 gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
                             }
@@ -111,7 +104,7 @@ public class ItemSkull extends Item {
     public String n(ItemStack itemstack) {
         if (itemstack.getData() == 3 && itemstack.hasTag()) {
             if (itemstack.getTag().hasKeyOfType("SkullOwner", 10)) {
-                return LocaleI18n.get("item.skull.player.name", new Object[] { GameProfileSerializer.a(itemstack.getTag().getCompound("SkullOwner")).getName()});
+                return LocaleI18n.get("item.skull.player.name", new Object[] { GameProfileSerializer.deserialize(itemstack.getTag().getCompound("SkullOwner")).getName()});
             }
 
             if (itemstack.getTag().hasKeyOfType("SkullOwner", 8)) {

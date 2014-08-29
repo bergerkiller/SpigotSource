@@ -2,21 +2,13 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.bukkit.craftbukkit.CraftBlockChangeDelegate; // CraftBukkit
-
-public class WorldGenForestTree extends WorldGenTreeAbstract implements BlockSapling.TreeGenerator { // CraftBukkit - add interface 
+public class WorldGenForestTree extends WorldGenTreeAbstract {
 
     public WorldGenForestTree(boolean flag) {
         super(flag);
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
-        // CraftBukkit start - Moved to generate
-        return this.generate(new CraftBlockChangeDelegate((org.bukkit.BlockChangeDelegate) world), random, i, j, k);
-    }
-
-    public boolean generate(CraftBlockChangeDelegate world, Random random, int i, int j, int k) {
-        // CraftBukkit end
+    public boolean generate(World world, Random random, int i, int j, int k) {
         int l = random.nextInt(3) + random.nextInt(2) + 6;
         boolean flag = true;
 
@@ -169,8 +161,7 @@ public class WorldGenForestTree extends WorldGenTreeAbstract implements BlockSap
         }
     }
 
-    // CraftBukkit - Changed signature
-    private void a(CraftBlockChangeDelegate world, int i, int j, int k) {
+    private void a(World world, int i, int j, int k) {
         Block block = world.getType(i, j, k);
 
         if (block.getMaterial() == Material.AIR) {

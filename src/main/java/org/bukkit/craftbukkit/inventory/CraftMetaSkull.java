@@ -34,9 +34,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super(tag);
 
         if (tag.hasKeyOfType(SKULL_OWNER.NBT, 10)) {
-            profile = GameProfileSerializer.a(tag.getCompound(SKULL_OWNER.NBT));
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
         } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8)) {
-            profile = MinecraftServer.getServer().getUserCache().a(tag.getString(SKULL_OWNER.NBT));
+            profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
         }
     }
 
@@ -46,13 +46,39 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(final NBTTagCompound tag) { // Spigot - make final
         super.applyToItem(tag);
 
         if (hasOwner()) {
             NBTTagCompound owner = new NBTTagCompound();
-            GameProfileSerializer.a(owner, profile);
-            tag.set(SKULL_OWNER.NBT, owner);
+            GameProfileSerializer.serialize(owner, profile);
+            tag.set( SKULL_OWNER.NBT, owner );
+            // Spigot start - do an async lookup of the profile. 
+            // Unfortunately there is not way to refresh the holding
+            // inventory, so that responsibility is left to the user.
+            net.minecraft.server.TileEntitySkull.executor.execute( new Runnable()
+            {
+                @Override
+                public void run()
+                {
+
+                    final GameProfile profile = net.minecraft.server.TileEntitySkull.skinCache.getUnchecked( CraftMetaSkull.this.profile.getName().toLowerCase() );
+                    if ( profile != null )
+                    {
+                        MinecraftServer.getServer().processQueue.add( new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                NBTTagCompound owner = new NBTTagCompound();
+                                GameProfileSerializer.serialize( owner, profile );
+                                tag.set( SKULL_OWNER.NBT, owner );
+                            }
+                        } );
+                    }
+                }
+            } );
+            // Spigot end
         }
     }
 
@@ -93,12 +119,12 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             return false;
         }
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().a(name);
-        if (profile == null) {
-            return false;
+        if (name == null) {
+            profile = null;
+        } else {
+            profile = new GameProfile(null, name);
         }
 
-        this.profile = profile;
         return true;
     }
 

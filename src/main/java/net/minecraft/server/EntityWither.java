@@ -58,11 +58,11 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         return "mob.wither.idle";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.wither.hurt";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.wither.death";
     }
 
@@ -157,7 +157,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         }
     }
 
-    protected void bm() {
+    protected void bn() {
         int i;
 
         if (this.ca() > 0) {
@@ -173,14 +173,24 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 // CraftBukkit end
 
                 this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
-                // Spigot start
-                if(this.world.spigotConfig.witherSpawnSoundRadius > 0){
-                    this.world.getServer().getHandle().sendPacketNearby((int) this.locX, (int) this.locY, (int) this.locZ, this.world.spigotConfig.witherSpawnSoundRadius, this.dimension, new PacketPlayOutWorldEvent(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0, true));
+                // CraftBukkit start - Use relative location for far away sounds
+                //this.world.b(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
+                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
+                for (EntityPlayer player : (List<EntityPlayer>) this.world.players) {
+                    double deltaX = this.locX - player.locX;
+                    double deltaZ = this.locZ - player.locZ;
+                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+                    if ( world.spigotConfig.witherSpawnSoundRadius > 0 && distanceSquared > world.spigotConfig.witherSpawnSoundRadius * world.spigotConfig.witherSpawnSoundRadius ) continue; // Spigot
+                    if (distanceSquared > viewDistance * viewDistance) {
+                        double deltaLength = Math.sqrt(distanceSquared);
+                        double relativeX = player.locX + (deltaX / deltaLength) * viewDistance;
+                        double relativeZ = player.locZ + (deltaZ / deltaLength) * viewDistance;
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, (int) relativeX, (int) this.locY, (int) relativeZ, 0, true));
+                    } else {
+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0, true));
+                    }
                 }
-                else {
-                    this.world.b(1013, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
-                }
-                // Spigot end
+                // CraftBukkit end
             }
 
             this.s(i);
@@ -188,7 +198,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
             }
         } else {
-            super.bm();
+            super.bn();
 
             int j;
 
@@ -216,7 +226,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                     if (j > 0) {
                         Entity entity = this.world.getEntity(j);
 
-                        if (entity != null && entity.isAlive() && this.f(entity) <= 900.0D && this.p(entity)) {
+                        if (entity != null && entity.isAlive() && this.f(entity) <= 900.0D && this.hasLineOfSight(entity)) {
                             this.a(i + 1, (EntityLiving) entity);
                             this.bt[i - 1] = this.ticksLived + 40 + this.random.nextInt(20);
                             this.bu[i - 1] = 0;
@@ -229,7 +239,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                         for (int i1 = 0; i1 < 10 && !list.isEmpty(); ++i1) {
                             EntityLiving entityliving = (EntityLiving) list.get(this.random.nextInt(list.size()));
 
-                            if (entityliving != this && entityliving.isAlive() && this.p(entityliving)) {
+                            if (entityliving != this && entityliving.isAlive() && this.hasLineOfSight(entityliving)) {
                                 if (entityliving instanceof EntityHuman) {
                                     if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
                                         this.b(i, entityliving.getId());
@@ -298,9 +308,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         this.setHealth(this.getMaxHealth() / 3.0F);
     }
 
-    public void ar() {}
+    public void as() {}
 
-    public int aU() {
+    public int aV() {
         return 4;
     }
 
@@ -359,7 +369,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
         EntityWitherSkull entitywitherskull = new EntityWitherSkull(this.world, this, d6, d7, d8);
 
         if (flag) {
-            entitywitherskull.a(true);
+            entitywitherskull.setCharged(true);
         }
 
         entitywitherskull.locY = d4;
@@ -407,11 +417,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
-        loot.add(new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(Items.NETHER_STAR), 1));
-        CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
+        this.a(Items.NETHER_STAR, 1);
         if (!this.world.isStatic) {
             Iterator iterator = this.world.a(EntityHuman.class, this.boundingBox.grow(50.0D, 100.0D, 50.0D)).iterator();
 
@@ -431,13 +437,13 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
 
     public void addEffect(MobEffect mobeffect) {}
 
-    protected boolean bj() {
+    protected boolean bk() {
         return true;
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(300.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(300.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.6000000238418579D);
         this.getAttributeInstance(GenericAttributes.b).setValue(40.0D);
     }

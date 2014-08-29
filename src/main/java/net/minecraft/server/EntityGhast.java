@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityTargetEvent;
 // CraftBukkit end
 
@@ -42,12 +41,12 @@ public class EntityGhast extends EntityFlying implements IMonster {
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
-    protected void aC() {
-        super.aC();
-        this.getAttributeInstance(GenericAttributes.a).setValue(10.0D);
+    protected void aD() {
+        super.aD();
+        this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
     }
 
-    protected void bp() {
+    protected void bq() {
         if (!this.world.isStatic && this.world.difficulty == EnumDifficulty.PEACEFUL) {
             this.die();
         }
@@ -124,7 +123,7 @@ public class EntityGhast extends EntityFlying implements IMonster {
             double d7 = this.target.locZ - this.locZ;
 
             this.aM = this.yaw = -((float) Math.atan2(d5, d7)) * 180.0F / 3.1415927F;
-            if (this.p(this.target)) {
+            if (this.hasLineOfSight(this.target)) {
                 if (this.bp == 10) {
                     this.world.a((EntityHuman) null, 1007, (int) this.locX, (int) this.locY, (int) this.locZ, 0);
                 }
@@ -185,11 +184,11 @@ public class EntityGhast extends EntityFlying implements IMonster {
         return "mob.ghast.moan";
     }
 
-    protected String aS() {
+    protected String aT() {
         return "mob.ghast.scream";
     }
 
-    protected String aT() {
+    protected String aU() {
         return "mob.ghast.death";
     }
 
@@ -198,27 +197,22 @@ public class EntityGhast extends EntityFlying implements IMonster {
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
-        // CraftBukkit start
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         int j = this.random.nextInt(2) + this.random.nextInt(1 + i);
 
         int k;
 
-        if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Items.GHAST_TEAR, j));
+        for (k = 0; k < j; ++k) {
+            this.a(Items.GHAST_TEAR, 1);
         }
 
         j = this.random.nextInt(3) + this.random.nextInt(1 + i);
 
-        if (j > 0) {
-            loot.add(CraftItemStack.asNewCraftStack(Items.SULPHUR, j));
+        for (k = 0; k < j; ++k) {
+            this.a(Items.SULPHUR, 1);
         }
-
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, loot);
-        // CraftBukkit end
     }
 
-    protected float be() {
+    protected float bf() {
         return 10.0F;
     }
 
