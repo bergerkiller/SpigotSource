@@ -108,13 +108,6 @@
       <version>1.3</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-        <groupId>org.spigotmc</groupId>
-        <artifactId>sneaky-throw</artifactId>
-        <version>1.0</version>
-        <scope>system</scope>
-        <systemPath>${project.basedir}/../SneakyThrow.jar</systemPath>
-    </dependency>
   </dependencies>
 
   <!-- This builds a completely 'ready to start' jar with all dependencies inside -->

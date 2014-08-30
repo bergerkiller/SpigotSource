@@ -367,10 +367,11 @@ public class SpigotConfig
 
     private static void globalAPICache()
     {
-        if ( getBoolean( "settings.global-api-cache", false ) )
+        if ( getBoolean( "settings.global-api-cache", false ) && !CachedStreamHandlerFactory.isSet )
         {
             Bukkit.getLogger().info( "Global API cache enabled - All requests to Mojang's API will be " +
                     "handled by Spigot" );
+            CachedStreamHandlerFactory.isSet = true;
             URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
         }
     }

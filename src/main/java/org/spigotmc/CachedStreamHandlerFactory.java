@@ -11,6 +11,8 @@ import java.net.URLStreamHandlerFactory;
 
 public class CachedStreamHandlerFactory implements URLStreamHandlerFactory
 {
+    public static boolean isSet = false;
+
     @Override
     public URLStreamHandler createURLStreamHandler(String protocol)
     {
