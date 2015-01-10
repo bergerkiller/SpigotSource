@@ -1,8 +1,8 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -21,10 +21,10 @@ public class WorldMap extends PersistentBase {
     public byte map;
     public byte scale;
     public byte[] colors = new byte[16384];
-    public List f = new ArrayList();
-    public Map i = new HashMap(); // Spigot
-    public Map decorations = new LinkedHashMap();
-
+    public List g = Lists.newArrayList();
+    public Map i = Maps.newHashMap(); // Spigot
+    public Map decorations = Maps.newLinkedHashMap();
+ 
     // CraftBukkit start
     public final CraftMapView mapView;
     private CraftServer server;
@@ -37,6 +37,15 @@ public class WorldMap extends PersistentBase {
         mapView = new CraftMapView(this);
         server = (CraftServer) org.bukkit.Bukkit.getServer();
         // CraftBukkit end
+    }
+
+    public void a(double d0, double d1, int i) {
+        int j = 128 * (1 << i);
+        int k = MathHelper.floor((d0 + 64.0D) / (double) j);
+        int l = MathHelper.floor((d1 + 64.0D) / (double) j);
+
+        this.centerX = k * j + j / 2 - 64;
+        this.centerZ = l * j + j / 2 - 64;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -67,40 +76,34 @@ public class WorldMap extends PersistentBase {
         this.centerX = nbttagcompound.getInt("xCenter");
         this.centerZ = nbttagcompound.getInt("zCenter");
         this.scale = nbttagcompound.getByte("scale");
-        if (this.scale < 0) {
-            this.scale = 0;
-        }
+        this.scale = (byte) MathHelper.clamp(this.scale, 0, 4);
+        short short0 = nbttagcompound.getShort("width");
+        short short1 = nbttagcompound.getShort("height");
 
-        if (this.scale > 4) {
-            this.scale = 4;
-        }
-
-        short short1 = nbttagcompound.getShort("width");
-        short short2 = nbttagcompound.getShort("height");
-
-        if (short1 == 128 && short2 == 128) {
+        if (short0 == 128 && short1 == 128) {
             this.colors = nbttagcompound.getByteArray("colors");
         } else {
             byte[] abyte = nbttagcompound.getByteArray("colors");
 
             this.colors = new byte[16384];
-            int i = (128 - short1) / 2;
-            int j = (128 - short2) / 2;
+            int i = (128 - short0) / 2;
+            int j = (128 - short1) / 2;
 
-            for (int k = 0; k < short2; ++k) {
+            for (int k = 0; k < short1; ++k) {
                 int l = k + j;
 
                 if (l >= 0 || l < 128) {
-                    for (int i1 = 0; i1 < short1; ++i1) {
+                    for (int i1 = 0; i1 < short0; ++i1) {
                         int j1 = i1 + i;
 
                         if (j1 >= 0 || j1 < 128) {
-                            this.colors[j1 + l * 128] = abyte[i1 + k * short1];
+                            this.colors[j1 + l * 128] = abyte[i1 + k * short0];
                         }
                     }
                 }
             }
         }
+
     }
 
     public void b(NBTTagCompound nbttagcompound) {
@@ -137,29 +140,45 @@ public class WorldMap extends PersistentBase {
             WorldMapHumanTracker worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
 
             this.i.put(entityhuman, worldmaphumantracker);
-            this.f.add(worldmaphumantracker);
+            this.g.add(worldmaphumantracker);
         }
 
         if (!entityhuman.inventory.c(itemstack)) {
             this.decorations.remove(entityhuman.getName());
         }
 
-        for (int i = 0; i < this.f.size(); ++i) {
-            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.f.get(i);
+        for (int i = 0; i < this.g.size(); ++i) {
+            WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker) this.g.get(i);
 
-            if (!worldmaphumantracker1.trackee.dead && (worldmaphumantracker1.trackee.inventory.c(itemstack) || itemstack.A())) {
-                if (!itemstack.A() && worldmaphumantracker1.trackee.dimension == this.map) {
+            if (!worldmaphumantracker1.trackee.dead && (worldmaphumantracker1.trackee.inventory.c(itemstack) || itemstack.y())) {
+                if (!itemstack.y() && worldmaphumantracker1.trackee.dimension == this.map) {
                     this.a(0, worldmaphumantracker1.trackee.world, worldmaphumantracker1.trackee.getName(), worldmaphumantracker1.trackee.locX, worldmaphumantracker1.trackee.locZ, (double) worldmaphumantracker1.trackee.yaw);
                 }
             } else {
                 this.i.remove(worldmaphumantracker1.trackee);
-                this.f.remove(worldmaphumantracker1);
+                this.g.remove(worldmaphumantracker1);
             }
         }
 
-        if (itemstack.A()) {
-            this.a(1, entityhuman.world, "frame-" + itemstack.B().getId(), (double) itemstack.B().x, (double) itemstack.B().z, (double) (itemstack.B().direction * 90));
+        if (itemstack.y()) {
+            EntityItemFrame entityitemframe = itemstack.z();
+            BlockPosition blockposition = entityitemframe.getBlockPosition();
+
+            this.a(1, entityhuman.world, "frame-" + entityitemframe.getId(), (double) blockposition.getX(), (double) blockposition.getZ(), (double) (entityitemframe.direction.b() * 90));
         }
+
+        if (itemstack.hasTag() && itemstack.getTag().hasKeyOfType("Decorations", 9)) {
+            NBTTagList nbttaglist = itemstack.getTag().getList("Decorations", 10);
+
+            for (int j = 0; j < nbttaglist.size(); ++j) {
+                NBTTagCompound nbttagcompound = nbttaglist.get(j);
+
+                if (!this.decorations.containsKey(nbttagcompound.getString("id"))) {
+                    this.a(nbttagcompound.getByte("type"), entityhuman.world, nbttagcompound.getString("id"), nbttagcompound.getDouble("x"), nbttagcompound.getDouble("z"), nbttagcompound.getDouble("rot"));
+                }
+            }
+        }
+
     }
 
     private void a(int i, World world, String s, double d0, double d1, double d2) {
@@ -204,29 +223,25 @@ public class WorldMap extends PersistentBase {
             }
         }
 
-        this.decorations.put(s, new WorldMapDecoration(this, (byte) i, b0, b1, b3));
+        this.decorations.put(s, new MapIcon((byte) i, b0, b1, b3));
     }
 
-    public byte[] getUpdatePacket(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    public Packet a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.i.get(entityhuman);
 
         return worldmaphumantracker == null ? null : worldmaphumantracker.a(itemstack);
     }
 
-    public void flagDirty(int i, int j, int k) {
+    public void flagDirty(int i, int j) {
         super.c();
+        Iterator iterator = this.g.iterator();
 
-        for (int l = 0; l < this.f.size(); ++l) {
-            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) this.f.get(l);
+        while (iterator.hasNext()) {
+            WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker) iterator.next();
 
-            if (worldmaphumantracker.b[i] < 0 || worldmaphumantracker.b[i] > j) {
-                worldmaphumantracker.b[i] = j;
-            }
-
-            if (worldmaphumantracker.c[i] < 0 || worldmaphumantracker.c[i] < k) {
-                worldmaphumantracker.c[i] = k;
-            }
+            worldmaphumantracker.a(i, j);
         }
+
     }
 
     public WorldMapHumanTracker a(EntityHuman entityhuman) {
@@ -235,7 +250,7 @@ public class WorldMap extends PersistentBase {
         if (worldmaphumantracker == null) {
             worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
             this.i.put(entityhuman, worldmaphumantracker);
-            this.f.add(worldmaphumantracker);
+            this.g.add(worldmaphumantracker);
         }
 
         return worldmaphumantracker;

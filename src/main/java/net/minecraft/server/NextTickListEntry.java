@@ -2,21 +2,17 @@ package net.minecraft.server;
 
 public class NextTickListEntry implements Comparable {
 
-    private static long f;
-    private final Block g;
-    public int a;
-    public int b;
+    private static long d;
+    private final Block e;
+    public final BlockPosition a;
+    public long b;
     public int c;
-    public long d;
-    public int e;
-    private long h;
+    private long f;
 
-    public NextTickListEntry(int i, int j, int k, Block block) {
-        this.h = (long) (f++);
-        this.a = i;
-        this.b = j;
-        this.c = k;
-        this.g = block;
+    public NextTickListEntry(BlockPosition blockposition, Block block) {
+        this.f = (long) (NextTickListEntry.d++);
+        this.a = blockposition;
+        this.e = block;
     }
 
     public boolean equals(Object object) {
@@ -25,36 +21,36 @@ public class NextTickListEntry implements Comparable {
         } else {
             NextTickListEntry nextticklistentry = (NextTickListEntry) object;
 
-            return this.a == nextticklistentry.a && this.b == nextticklistentry.b && this.c == nextticklistentry.c && Block.a(this.g, nextticklistentry.g);
+            return this.a.equals(nextticklistentry.a) && Block.a(this.e, nextticklistentry.e);
         }
     }
 
     public int hashCode() {
-        return (this.a * 1024 * 1024 + this.c * 1024 + this.b) * 256;
+        return this.a.hashCode();
     }
 
     public NextTickListEntry a(long i) {
-        this.d = i;
+        this.b = i;
         return this;
     }
 
     public void a(int i) {
-        this.e = i;
+        this.c = i;
     }
 
-    public int compareTo(NextTickListEntry nextticklistentry) {
-        return this.d < nextticklistentry.d ? -1 : (this.d > nextticklistentry.d ? 1 : (this.e != nextticklistentry.e ? this.e - nextticklistentry.e : (this.h < nextticklistentry.h ? -1 : (this.h > nextticklistentry.h ? 1 : 0))));
+    public int a(NextTickListEntry nextticklistentry) {
+        return this.b < nextticklistentry.b ? -1 : (this.b > nextticklistentry.b ? 1 : (this.c != nextticklistentry.c ? this.c - nextticklistentry.c : (this.f < nextticklistentry.f ? -1 : (this.f > nextticklistentry.f ? 1 : 0))));
     }
 
     public String toString() {
-        return Block.getId(this.g) + ": (" + this.a + ", " + this.b + ", " + this.c + "), " + this.d + ", " + this.e + ", " + this.h;
+        return Block.getId(this.e) + ": " + this.a + ", " + this.b + ", " + this.c + ", " + this.f;
     }
 
     public Block a() {
-        return this.g;
+        return this.e;
     }
 
     public int compareTo(Object object) {
-        return this.compareTo((NextTickListEntry) object);
+        return this.a((NextTickListEntry) object);
     }
 }

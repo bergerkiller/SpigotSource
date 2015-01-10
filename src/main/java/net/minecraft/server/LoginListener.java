@@ -1,21 +1,19 @@
 package net.minecraft.server;
 
+import com.google.common.base.Charsets;
+import com.mojang.authlib.GameProfile;
+import io.netty.util.concurrent.GenericFutureListener;
 import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.crypto.SecretKey;
-
-import net.minecraft.util.com.google.common.base.Charsets;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.properties.Property;
-import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
-import net.minecraft.util.org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class LoginListener implements PacketLoginInListener {
+public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBox {
 
     private static final AtomicInteger b = new AtomicInteger(0);
     private static final Logger c = LogManager.getLogger();
@@ -35,29 +33,31 @@ public class LoginListener implements PacketLoginInListener {
         this.j = "";
         this.server = minecraftserver;
         this.networkManager = networkmanager;
-        random.nextBytes(this.e);
+        LoginListener.random.nextBytes(this.e);
     }
 
-    public void a() {
+    public void c() {
         if (this.g == EnumProtocolState.READY_TO_ACCEPT) {
-            this.c();
+            this.b();
         }
 
         if (this.h++ == 600) {
             this.disconnect("Took too long to log in");
         }
+
     }
 
     public void disconnect(String s) {
         try {
-            c.info("Disconnecting " + this.getName() + ": " + s);
+            LoginListener.c.info("Disconnecting " + this.d() + ": " + s);
             ChatComponentText chatcomponenttext = new ChatComponentText(s);
 
-            this.networkManager.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+            this.networkManager.handle(new PacketLoginOutDisconnect(chatcomponenttext));
             this.networkManager.close(chatcomponenttext);
         } catch (Exception exception) {
-            c.error("Error whilst disconnecting player", exception);
+            LoginListener.c.error("Error whilst disconnecting player", exception);
         }
+
     }
 
     // Spigot start
@@ -76,7 +76,7 @@ public class LoginListener implements PacketLoginInListener {
 
         if (networkManager.spoofedProfile != null)
         {
-            for ( Property property : networkManager.spoofedProfile )
+            for ( com.mojang.authlib.properties.Property property : networkManager.spoofedProfile )
             {
                 this.i.getProperties().put( property.getName(), property );
             }
@@ -84,7 +84,7 @@ public class LoginListener implements PacketLoginInListener {
     }
     // Spigot end
 
-    public void c() {
+    public void b() {
         // Spigot start - Moved to initUUID
         /*
         if (!this.i.isComplete()) {
@@ -94,45 +94,46 @@ public class LoginListener implements PacketLoginInListener {
         // Spigot end
 
         // CraftBukkit start - fire PlayerLoginEvent
-        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, this.hostname);
+        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, hostname);
 
         if (s == null) {
             // this.disconnect(s);
             // CraftBukkit end
         } else {
-            this.g = EnumProtocolState.e;
-            this.networkManager.handle(new PacketLoginOutSuccess(this.i), new GenericFutureListener[0]);
+            this.g = EnumProtocolState.ACCEPTED;
+            if (this.server.aI() >= 0 && !this.networkManager.c()) {
+                this.networkManager.a(new PacketLoginOutSetCompression(this.server.aI()), new LoginListenerInnerClass1(this), new GenericFutureListener[0]);
+            }
+
+            this.networkManager.handle(new PacketLoginOutSuccess(this.i));
             this.server.getPlayerList().a(this.networkManager, this.server.getPlayerList().processLogin(this.i, s)); // CraftBukkit - add player reference
         }
+
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {
-        c.info(this.getName() + " lost connection: " + ichatbasecomponent.c());
+        LoginListener.c.info(this.d() + " lost connection: " + ichatbasecomponent.c());
     }
 
-    public String getName() {
+    public String d() {
         return this.i != null ? this.i.toString() + " (" + this.networkManager.getSocketAddress().toString() + ")" : String.valueOf(this.networkManager.getSocketAddress());
-    }
-
-    public void a(EnumProtocol enumprotocol, EnumProtocol enumprotocol1) {
-        Validate.validState(this.g == EnumProtocolState.e || this.g == EnumProtocolState.HELLO, "Unexpected change in protocol", new Object[0]);
-        Validate.validState(enumprotocol1 == EnumProtocol.PLAY || enumprotocol1 == EnumProtocol.LOGIN, "Unexpected protocol " + enumprotocol1, new Object[0]);
     }
 
     public void a(PacketLoginInStart packetlogininstart) {
         Validate.validState(this.g == EnumProtocolState.HELLO, "Unexpected hello packet", new Object[0]);
-        this.i = packetlogininstart.c();
+        this.i = packetlogininstart.a();
         if (this.server.getOnlineMode() && !this.networkManager.c()) {
             this.g = EnumProtocolState.KEY;
-            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.K().getPublic(), this.e), new GenericFutureListener[0]);
+            this.networkManager.handle(new PacketLoginOutEncryptionBegin(this.j, this.server.P().getPublic(), this.e));
         } else {
             (new ThreadPlayerLookupUUID(this, "User Authenticator #" + b.incrementAndGet())).start(); // Spigot
         }
+
     }
 
     public void a(PacketLoginInEncryptionBegin packetlogininencryptionbegin) {
         Validate.validState(this.g == EnumProtocolState.KEY, "Unexpected key packet", new Object[0]);
-        PrivateKey privatekey = this.server.K().getPrivate();
+        PrivateKey privatekey = this.server.P().getPrivate();
 
         if (!Arrays.equals(this.e, packetlogininencryptionbegin.b(privatekey))) {
             throw new IllegalStateException("Invalid nonce!");
@@ -140,7 +141,7 @@ public class LoginListener implements PacketLoginInListener {
             this.loginKey = packetlogininencryptionbegin.a(privatekey);
             this.g = EnumProtocolState.AUTHENTICATING;
             this.networkManager.a(this.loginKey);
-            (new ThreadPlayerLookupUUID(this, "User Authenticator #" + b.incrementAndGet())).start();
+            (new ThreadPlayerLookupUUID(this, "User Authenticator #" + LoginListener.b.incrementAndGet())).start();
         }
     }
 
@@ -150,16 +151,16 @@ public class LoginListener implements PacketLoginInListener {
         return new GameProfile(uuid, gameprofile.getName());
     }
 
-    static GameProfile a(LoginListener loginlistener) {
+    static MinecraftServer a(LoginListener loginlistener) {
+        return loginlistener.server;
+    }
+
+    static GameProfile b(LoginListener loginlistener) {
         return loginlistener.i;
     }
 
-    static String b(LoginListener loginlistener) {
+    static String c(LoginListener loginlistener) {
         return loginlistener.j;
-    }
-
-    static MinecraftServer c(LoginListener loginlistener) {
-        return loginlistener.server;
     }
 
     static SecretKey d(LoginListener loginlistener) {
@@ -171,7 +172,7 @@ public class LoginListener implements PacketLoginInListener {
     }
 
     static Logger e() {
-        return c;
+        return LoginListener.c;
     }
 
     static EnumProtocolState a(LoginListener loginlistener, EnumProtocolState enumprotocolstate) {

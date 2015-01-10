@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,7 +25,7 @@ public class WorldGenVillagePieces {
     }
 
     public static List a(Random random, int i) {
-        ArrayList arraylist = new ArrayList();
+        ArrayList arraylist = Lists.newArrayList();
 
         arraylist.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse.class, 4, MathHelper.nextInt(random, 2 + i, 4 + i * 2)));
         arraylist.add(new WorldGenVillagePieceWeight(WorldGenVillageTemple.class, 20, MathHelper.nextInt(random, 0 + i, 1 + i)));
@@ -62,56 +63,56 @@ public class WorldGenVillagePieces {
         return flag ? i : -1;
     }
 
-    private static WorldGenVillagePiece a(WorldGenVillageStartPiece worldgenvillagestartpiece, WorldGenVillagePieceWeight worldgenvillagepieceweight, List list, Random random, int i, int j, int k, int l, int i1) {
+    private static WorldGenVillagePiece a(WorldGenVillageStartPiece worldgenvillagestartpiece, WorldGenVillagePieceWeight worldgenvillagepieceweight, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
         Class oclass = worldgenvillagepieceweight.a;
         Object object = null;
 
         if (oclass == WorldGenVillageHouse.class) {
-            object = WorldGenVillageHouse.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageHouse.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageTemple.class) {
-            object = WorldGenVillageTemple.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageTemple.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageLibrary.class) {
-            object = WorldGenVillageLibrary.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageLibrary.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageHut.class) {
-            object = WorldGenVillageHut.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageHut.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageButcher.class) {
-            object = WorldGenVillageButcher.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageButcher.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageFarm2.class) {
-            object = WorldGenVillageFarm2.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageFarm2.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageFarm.class) {
-            object = WorldGenVillageFarm.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageFarm.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageBlacksmith.class) {
-            object = WorldGenVillageBlacksmith.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageBlacksmith.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         } else if (oclass == WorldGenVillageHouse2.class) {
-            object = WorldGenVillageHouse2.a(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+            object = WorldGenVillageHouse2.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
         }
 
         return (WorldGenVillagePiece) object;
     }
 
-    private static WorldGenVillagePiece c(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, int l, int i1) {
-        int j1 = a(worldgenvillagestartpiece.e);
+    private static WorldGenVillagePiece c(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
+        int i1 = a(worldgenvillagestartpiece.e);
 
-        if (j1 <= 0) {
+        if (i1 <= 0) {
             return null;
         } else {
-            int k1 = 0;
+            int j1 = 0;
 
-            while (k1 < 5) {
-                ++k1;
-                int l1 = random.nextInt(j1);
+            while (j1 < 5) {
+                ++j1;
+                int k1 = random.nextInt(i1);
                 Iterator iterator = worldgenvillagestartpiece.e.iterator();
 
                 while (iterator.hasNext()) {
                     WorldGenVillagePieceWeight worldgenvillagepieceweight = (WorldGenVillagePieceWeight) iterator.next();
 
-                    l1 -= worldgenvillagepieceweight.b;
-                    if (l1 < 0) {
-                        if (!worldgenvillagepieceweight.a(i1) || worldgenvillagepieceweight == worldgenvillagestartpiece.d && worldgenvillagestartpiece.e.size() > 1) {
+                    k1 -= worldgenvillagepieceweight.b;
+                    if (k1 < 0) {
+                        if (!worldgenvillagepieceweight.a(l) || worldgenvillagepieceweight == worldgenvillagestartpiece.d && worldgenvillagestartpiece.e.size() > 1) {
                             break;
                         }
 
-                        WorldGenVillagePiece worldgenvillagepiece = a(worldgenvillagestartpiece, worldgenvillagepieceweight, list, random, i, j, k, l, i1);
+                        WorldGenVillagePiece worldgenvillagepiece = a(worldgenvillagestartpiece, worldgenvillagepieceweight, list, random, i, j, k, enumdirection, l);
 
                         if (worldgenvillagepiece != null) {
                             ++worldgenvillagepieceweight.c;
@@ -126,32 +127,32 @@ public class WorldGenVillagePieces {
                 }
             }
 
-            StructureBoundingBox structureboundingbox = WorldGenVillageLight.a(worldgenvillagestartpiece, list, random, i, j, k, l);
+            StructureBoundingBox structureboundingbox = WorldGenVillageLight.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection);
 
             if (structureboundingbox != null) {
-                return new WorldGenVillageLight(worldgenvillagestartpiece, i1, random, structureboundingbox, l);
+                return new WorldGenVillageLight(worldgenvillagestartpiece, l, random, structureboundingbox, enumdirection);
             } else {
                 return null;
             }
         }
     }
 
-    private static StructurePiece d(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, int l, int i1) {
-        if (i1 > 50) {
+    private static StructurePiece d(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
+        if (l > 50) {
             return null;
         } else if (Math.abs(i - worldgenvillagestartpiece.c().a) <= 112 && Math.abs(k - worldgenvillagestartpiece.c().c) <= 112) {
-            WorldGenVillagePiece worldgenvillagepiece = c(worldgenvillagestartpiece, list, random, i, j, k, l, i1 + 1);
+            WorldGenVillagePiece worldgenvillagepiece = c(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l + 1);
 
             if (worldgenvillagepiece != null) {
-                int j1 = (worldgenvillagepiece.f.a + worldgenvillagepiece.f.d) / 2;
-                int k1 = (worldgenvillagepiece.f.c + worldgenvillagepiece.f.f) / 2;
-                int l1 = worldgenvillagepiece.f.d - worldgenvillagepiece.f.a;
-                int i2 = worldgenvillagepiece.f.f - worldgenvillagepiece.f.c;
-                int j2 = l1 > i2 ? l1 : i2;
+                int i1 = (worldgenvillagepiece.l.a + worldgenvillagepiece.l.d) / 2;
+                int j1 = (worldgenvillagepiece.l.c + worldgenvillagepiece.l.f) / 2;
+                int k1 = worldgenvillagepiece.l.d - worldgenvillagepiece.l.a;
+                int l1 = worldgenvillagepiece.l.f - worldgenvillagepiece.l.c;
+                int i2 = k1 > l1 ? k1 : l1;
 
-                if (worldgenvillagestartpiece.e().a(j1, k1, j2 / 2 + 4, WorldGenVillage.e)) {
+                if (worldgenvillagestartpiece.e().a(i1, j1, i2 / 2 + 4, WorldGenVillage.d)) {
                     list.add(worldgenvillagepiece);
-                    worldgenvillagestartpiece.i.add(worldgenvillagepiece);
+                    worldgenvillagestartpiece.f.add(worldgenvillagepiece);
                     return worldgenvillagepiece;
                 }
             }
@@ -162,23 +163,23 @@ public class WorldGenVillagePieces {
         }
     }
 
-    private static StructurePiece e(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, int l, int i1) {
-        if (i1 > 3 + worldgenvillagestartpiece.c) {
+    private static StructurePiece e(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
+        if (l > 3 + worldgenvillagestartpiece.c) {
             return null;
         } else if (Math.abs(i - worldgenvillagestartpiece.c().a) <= 112 && Math.abs(k - worldgenvillagestartpiece.c().c) <= 112) {
-            StructureBoundingBox structureboundingbox = WorldGenVillageRoad.a(worldgenvillagestartpiece, list, random, i, j, k, l);
+            StructureBoundingBox structureboundingbox = WorldGenVillageRoad.a(worldgenvillagestartpiece, list, random, i, j, k, enumdirection);
 
             if (structureboundingbox != null && structureboundingbox.b > 10) {
-                WorldGenVillageRoad worldgenvillageroad = new WorldGenVillageRoad(worldgenvillagestartpiece, i1, random, structureboundingbox, l);
-                int j1 = (worldgenvillageroad.f.a + worldgenvillageroad.f.d) / 2;
-                int k1 = (worldgenvillageroad.f.c + worldgenvillageroad.f.f) / 2;
-                int l1 = worldgenvillageroad.f.d - worldgenvillageroad.f.a;
-                int i2 = worldgenvillageroad.f.f - worldgenvillageroad.f.c;
-                int j2 = l1 > i2 ? l1 : i2;
+                WorldGenVillageRoad worldgenvillageroad = new WorldGenVillageRoad(worldgenvillagestartpiece, l, random, structureboundingbox, enumdirection);
+                int i1 = (worldgenvillageroad.l.a + worldgenvillageroad.l.d) / 2;
+                int j1 = (worldgenvillageroad.l.c + worldgenvillageroad.l.f) / 2;
+                int k1 = worldgenvillageroad.l.d - worldgenvillageroad.l.a;
+                int l1 = worldgenvillageroad.l.f - worldgenvillageroad.l.c;
+                int i2 = k1 > l1 ? k1 : l1;
 
-                if (worldgenvillagestartpiece.e().a(j1, k1, j2 / 2 + 4, WorldGenVillage.e)) {
+                if (worldgenvillagestartpiece.e().a(i1, j1, i2 / 2 + 4, WorldGenVillage.d)) {
                     list.add(worldgenvillageroad);
-                    worldgenvillagestartpiece.j.add(worldgenvillageroad);
+                    worldgenvillagestartpiece.g.add(worldgenvillageroad);
                     return worldgenvillageroad;
                 }
             }
@@ -189,11 +190,11 @@ public class WorldGenVillagePieces {
         }
     }
 
-    static StructurePiece a(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, int l, int i1) {
-        return d(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+    static StructurePiece a(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
+        return d(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
     }
 
-    static StructurePiece b(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, int l, int i1) {
-        return e(worldgenvillagestartpiece, list, random, i, j, k, l, i1);
+    static StructurePiece b(WorldGenVillageStartPiece worldgenvillagestartpiece, List list, Random random, int i, int j, int k, EnumDirection enumdirection, int l) {
+        return e(worldgenvillagestartpiece, list, random, i, j, k, enumdirection, l);
     }
 }

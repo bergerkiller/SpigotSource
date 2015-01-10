@@ -2,6 +2,7 @@ package org.spigotmc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.Chunk;
 import net.minecraft.server.Entity;
@@ -19,6 +20,7 @@ import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityProjectile;
 import net.minecraft.server.EntitySheep;
+import net.minecraft.server.EntitySlice;
 import net.minecraft.server.EntitySlime;
 import net.minecraft.server.EntityTNTPrimed;
 import net.minecraft.server.EntityVillager;
@@ -88,26 +90,6 @@ public class ActivationRange
     }
 
     /**
-     * Utility method to grow an AABB without creating a new AABB or touching
-     * the pool, so we can re-use ones we have.
-     *
-     * @param target
-     * @param source
-     * @param x
-     * @param y
-     * @param z
-     */
-    public static void growBB(AxisAlignedBB target, AxisAlignedBB source, int x, int y, int z)
-    {
-        target.a = source.a - x;
-        target.b = source.b - y;
-        target.c = source.c - z;
-        target.d = source.d + x;
-        target.e = source.e + y;
-        target.f = source.f + z;
-    }
-
-    /**
      * Find what entities are in range of the players in the world and set
      * active if in range.
      *
@@ -128,10 +110,10 @@ public class ActivationRange
         {
 
             player.activatedTick = MinecraftServer.currentTick;
-            growBB( maxBB, player.boundingBox, maxRange, 256, maxRange );
-            growBB( miscBB, player.boundingBox, miscActivationRange, 256, miscActivationRange );
-            growBB( animalBB, player.boundingBox, animalActivationRange, 256, animalActivationRange );
-            growBB( monsterBB, player.boundingBox, monsterActivationRange, 256, monsterActivationRange );
+            maxBB = player.getBoundingBox().grow( maxRange, 256, maxRange );
+            miscBB = player.getBoundingBox().grow( miscActivationRange, 256, miscActivationRange );
+            animalBB = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
+            monsterBB = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
 
             int i = MathHelper.floor( maxBB.a / 16.0D );
             int j = MathHelper.floor( maxBB.d / 16.0D );
@@ -159,9 +141,9 @@ public class ActivationRange
      */
     private static void activateChunkEntities(Chunk chunk)
     {
-        for ( List<Entity> slice : chunk.entitySlices )
+        for ( EntitySlice slice : chunk.entitySlices )
         {
-            for ( Entity entity : slice )
+            for ( Entity entity : (Set<Entity>) slice )
             {
                 if ( MinecraftServer.currentTick > entity.activatedTick )
                 {
@@ -173,20 +155,20 @@ public class ActivationRange
                     switch ( entity.activationType )
                     {
                         case 1:
-                            if ( monsterBB.b( entity.boundingBox ) )
+                            if ( monsterBB.b( entity.getBoundingBox() ) )
                             {
                                 entity.activatedTick = MinecraftServer.currentTick;
                             }
                             break;
                         case 2:
-                            if ( animalBB.b( entity.boundingBox ) )
+                            if ( animalBB.b( entity.getBoundingBox() ) )
                             {
                                 entity.activatedTick = MinecraftServer.currentTick;
                             }
                             break;
                         case 3:
                         default:
-                            if ( miscBB.b( entity.boundingBox ) )
+                            if ( miscBB.b( entity.getBoundingBox() ) )
                             {
                                 entity.activatedTick = MinecraftServer.currentTick;
                             }
@@ -225,15 +207,15 @@ public class ActivationRange
         if ( entity instanceof EntityLiving )
         {
             EntityLiving living = (EntityLiving) entity;
-            if ( living.attackTicks > 0 || living.hurtTicks > 0 || living.effects.size() > 0 )
+            if ( /*TODO: Missed mapping? living.attackTicks > 0 || */ living.hurtTicks > 0 || living.effects.size() > 0 )
             {
                 return true;
             }
-            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).target != null )
+            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() != null )
             {
                 return true;
             }
-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).bY() /* Getter for first boolean */ )
+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
             {
                 return true;
             }

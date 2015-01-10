@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -7,7 +8,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
@@ -19,20 +20,20 @@ public class RegionFile {
     private RandomAccessFile c;
     private final int[] d = new int[1024];
     private final int[] e = new int[1024];
-    private ArrayList f;
+    private List f;
     private int g;
     private long h;
 
-    public RegionFile(File file1) {
-        this.b = file1;
+    public RegionFile(File file) {
+        this.b = file;
         this.g = 0;
 
         try {
-            if (file1.exists()) {
-                this.h = file1.lastModified();
+            if (file.exists()) {
+                this.h = file.lastModified();
             }
 
-            this.c = new RandomAccessFile(file1, "rw");
+            this.c = new RandomAccessFile(file, "rw");
             int i;
 
             if (this.c.length() < 4096L) {
@@ -54,7 +55,7 @@ public class RegionFile {
             }
 
             i = (int) this.c.length() / 4096;
-            this.f = new ArrayList(i);
+            this.f = Lists.newArrayListWithCapacity(i);
 
             int j;
 
@@ -86,7 +87,7 @@ public class RegionFile {
             ioexception.printStackTrace();
         }
     }
-
+    
     // CraftBukkit start - This is a copy (sort of) of the method below it, make sure they stay in sync
     public synchronized boolean chunkExists(int i, int j) {
         if (this.d(i, j)) {
@@ -234,7 +235,7 @@ public class RegionFile {
                     i1 = this.f.size();
 
                     for (j2 = 0; j2 < k1; ++j2) {
-                        this.c.write(a);
+                        this.c.write(RegionFile.a);
                         this.f.add(Boolean.valueOf(false));
                     }
 
@@ -244,10 +245,11 @@ public class RegionFile {
                 }
             }
 
-            this.b(i, j, (int) (MinecraftServer.ar() / 1000L));
+            this.b(i, j, (int) (MinecraftServer.ax() / 1000L));
         } catch (IOException ioexception) {
             ioexception.printStackTrace();
         }
+
     }
 
     private void a(int i, byte[] abyte, int j) throws IOException { // CraftBukkit - added throws
@@ -285,5 +287,6 @@ public class RegionFile {
         if (this.c != null) {
             this.c.close();
         }
+
     }
 }

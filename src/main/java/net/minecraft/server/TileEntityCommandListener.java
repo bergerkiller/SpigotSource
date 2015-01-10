@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit - package-private -> public
 public class TileEntityCommandListener extends CommandBlockListenerAbstract {
 
     final TileEntityCommand a;
@@ -10,8 +9,12 @@ public class TileEntityCommandListener extends CommandBlockListenerAbstract {
         sender = new org.bukkit.craftbukkit.command.CraftBlockCommandSender(this); // CraftBukkit - add sender
     }
 
-    public ChunkCoordinates getChunkCoordinates() {
-        return new ChunkCoordinates(this.a.x, this.a.y, this.a.z);
+    public BlockPosition getChunkCoordinates() {
+        return this.a.position;
+    }
+
+    public Vec3D d() {
+        return new Vec3D((double) this.a.position.getX() + 0.5D, (double) this.a.position.getY() + 0.5D, (double) this.a.position.getZ() + 0.5D);
     }
 
     public World getWorld() {
@@ -23,7 +26,11 @@ public class TileEntityCommandListener extends CommandBlockListenerAbstract {
         this.a.update();
     }
 
-    public void e() {
-        this.a.getWorld().notify(this.a.x, this.a.y, this.a.z);
+    public void h() {
+        this.a.getWorld().notify(this.a.position);
+    }
+
+    public Entity f() {
+        return null;
     }
 }

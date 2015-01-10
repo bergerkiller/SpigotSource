@@ -1,85 +1,108 @@
 package net.minecraft.server;
 
-import java.util.Random;
-
 public class BlockTNT extends Block {
+
+    public static final BlockStateBoolean EXPLODE = BlockStateBoolean.of("explode");
 
     public BlockTNT() {
         super(Material.TNT);
+        this.j(this.blockStateList.getBlockData().set(BlockTNT.EXPLODE, Boolean.valueOf(false)));
         this.a(CreativeModeTab.d);
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        super.onPlace(world, i, j, k);
-        if (world.isBlockIndirectlyPowered(i, j, k)) {
-            this.postBreak(world, i, j, k, 1);
-            world.setAir(i, j, k);
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        super.onPlace(world, blockposition, iblockdata);
+        if (world.isBlockIndirectlyPowered(blockposition)) {
+            this.postBreak(world, blockposition, iblockdata.set(BlockTNT.EXPLODE, Boolean.valueOf(true)));
+            world.setAir(blockposition);
         }
+
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        if (world.isBlockIndirectlyPowered(i, j, k)) {
-            this.postBreak(world, i, j, k, 1);
-            world.setAir(i, j, k);
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        if (world.isBlockIndirectlyPowered(blockposition)) {
+            this.postBreak(world, blockposition, iblockdata.set(BlockTNT.EXPLODE, Boolean.valueOf(true)));
+            world.setAir(blockposition);
         }
+
     }
 
-    public int a(Random random) {
-        return 1;
-    }
-
-    public void wasExploded(World world, int i, int j, int k, Explosion explosion) {
+    public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
         if (!world.isStatic) {
-            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), explosion.c());
+            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), explosion.c());
 
             entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
             world.addEntity(entitytntprimed);
         }
     }
 
-    public void postBreak(World world, int i, int j, int k, int l) {
-        this.a(world, i, j, k, l, (EntityLiving) null);
+    public void postBreak(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        this.a(world, blockposition, iblockdata, (EntityLiving) null);
     }
 
-    public void a(World world, int i, int j, int k, int l, EntityLiving entityliving) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving) {
         if (!world.isStatic) {
-            if ((l & 1) == 1) {
-                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), entityliving);
+            if (((Boolean) iblockdata.get(BlockTNT.EXPLODE)).booleanValue()) {
+                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), entityliving);
 
                 world.addEntity(entitytntprimed);
                 world.makeSound(entitytntprimed, "game.tnt.primed", 1.0F, 1.0F);
             }
+
         }
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        if (entityhuman.bF() != null && entityhuman.bF().getItem() == Items.FLINT_AND_STEEL) {
-            this.a(world, i, j, k, 1, (EntityLiving) entityhuman); // Spigot - Fix decompile error!
-            world.setAir(i, j, k);
-            entityhuman.bF().damage(1, entityhuman);
-            return true;
-        } else {
-            return super.interact(world, i, j, k, entityhuman, l, f, f1, f2);
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+        if (entityhuman.bY() != null) {
+            Item item = entityhuman.bY().getItem();
+
+            if (item == Items.FLINT_AND_STEEL || item == Items.FIRE_CHARGE) {
+                this.a(world, blockposition, iblockdata.set(BlockTNT.EXPLODE, Boolean.valueOf(true)), (EntityLiving) entityhuman);
+                world.setAir(blockposition);
+                if (item == Items.FLINT_AND_STEEL) {
+                    entityhuman.bY().damage(1, entityhuman);
+                } else if (!entityhuman.abilities.canInstantlyBuild) {
+                    --entityhuman.bY().count;
+                }
+
+                return true;
+            }
         }
+
+        return super.interact(world, blockposition, iblockdata, entityhuman, enumdirection, f, f1, f2);
     }
 
-    public void a(World world, int i, int j, int k, Entity entity) {
-        if (entity instanceof EntityArrow && !world.isStatic) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
+        if (!world.isStatic && entity instanceof EntityArrow) {
             EntityArrow entityarrow = (EntityArrow) entity;
 
             if (entityarrow.isBurning()) {
                 // CraftBukkit start
-                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityarrow, i, j, k, Blocks.AIR, 0).isCancelled()) {
+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityarrow, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
                     return;
                 }
                 // CraftBukkit end
-                this.a(world, i, j, k, 1, entityarrow.shooter instanceof EntityLiving ? (EntityLiving) entityarrow.shooter : null);
-                world.setAir(i, j, k);
+                this.a(world, blockposition, world.getType(blockposition).set(BlockTNT.EXPLODE, Boolean.valueOf(true)), entityarrow.shooter instanceof EntityLiving ? (EntityLiving) entityarrow.shooter : null);
+                world.setAir(blockposition);
             }
         }
+
     }
 
     public boolean a(Explosion explosion) {
         return false;
     }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockTNT.EXPLODE, Boolean.valueOf((i & 1) > 0));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        return ((Boolean) iblockdata.get(BlockTNT.EXPLODE)).booleanValue() ? 1 : 0;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockTNT.EXPLODE});
+    }
+
 }

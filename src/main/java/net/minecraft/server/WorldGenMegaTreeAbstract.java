@@ -27,31 +27,22 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         return i;
     }
 
-    private boolean b(World world, Random random, int i, int j, int k, int l) {
+    private boolean c(World world, BlockPosition blockposition, int i) {
         boolean flag = true;
 
-        if (j >= 1 && j + l + 1 <= 256) {
-            for (int i1 = j; i1 <= j + 1 + l; ++i1) {
+        if (blockposition.getY() >= 1 && blockposition.getY() + i + 1 <= 256) {
+            for (int j = 0; j <= 1 + i; ++j) {
                 byte b0 = 2;
 
-                if (i1 == j) {
+                if (j == 0) {
                     b0 = 1;
-                }
-
-                if (i1 >= j + 1 + l - 2) {
+                } else if (j >= 1 + i - 2) {
                     b0 = 2;
                 }
 
-                for (int j1 = i - b0; j1 <= i + b0 && flag; ++j1) {
-                    for (int k1 = k - b0; k1 <= k + b0 && flag; ++k1) {
-                        if (i1 >= 0 && i1 < 256) {
-                            Block block = world.getType(j1, i1, k1);
-
-                            // CraftBukkit - ignore our own saplings
-                            if (block != Blocks.SAPLING && !this.a(block)) {
-                                flag = false;
-                            }
-                        } else {
+                for (int k = -b0; k <= b0 && flag; ++k) {
+                    for (int l = -b0; l <= b0 && flag; ++l) {
+                        if (blockposition.getY() + j < 0 || blockposition.getY() + j >= 256 || (!this.a(world.getType(blockposition.a(k, j, l)).getBlock()) && world.getType(blockposition.a(k, j, l)).getBlock() != Blocks.SAPLING)) { // CraftBukkit - ignore our own saplings
                             flag = false;
                         }
                     }
@@ -64,63 +55,61 @@ public abstract class WorldGenMegaTreeAbstract extends WorldGenTreeAbstract {
         }
     }
 
-    private boolean c(World world, Random random, int i, int j, int k) {
-        Block block = world.getType(i, j - 1, k);
+    private boolean a(BlockPosition blockposition, World world) {
+        BlockPosition blockposition1 = blockposition.down();
+        Block block = world.getType(blockposition1).getBlock();
 
-        if ((block == Blocks.GRASS || block == Blocks.DIRT) && j >= 2) {
-            world.setTypeAndData(i, j - 1, k, Blocks.DIRT, 0, 2);
-            world.setTypeAndData(i + 1, j - 1, k, Blocks.DIRT, 0, 2);
-            world.setTypeAndData(i, j - 1, k + 1, Blocks.DIRT, 0, 2);
-            world.setTypeAndData(i + 1, j - 1, k + 1, Blocks.DIRT, 0, 2);
+        if ((block == Blocks.GRASS || block == Blocks.DIRT) && blockposition.getY() >= 2) {
+            this.a(world, blockposition1);
+            this.a(world, blockposition1.east());
+            this.a(world, blockposition1.south());
+            this.a(world, blockposition1.south().east());
             return true;
         } else {
             return false;
         }
     }
 
-    protected boolean a(World world, Random random, int i, int j, int k, int l) {
-        return this.b(world, random, i, j, k, l) && this.c(world, random, i, j, k);
+    protected boolean a(World world, Random random, BlockPosition blockposition, int i) {
+        return this.c(world, blockposition, i) && this.a(blockposition, world);
     }
 
-    protected void a(World world, int i, int j, int k, int l, Random random) {
-        int i1 = l * l;
+    protected void a(World world, BlockPosition blockposition, int i) {
+        int j = i * i;
 
-        for (int j1 = i - l; j1 <= i + l + 1; ++j1) {
-            int k1 = j1 - i;
+        for (int k = -i; k <= i + 1; ++k) {
+            for (int l = -i; l <= i + 1; ++l) {
+                int i1 = k - 1;
+                int j1 = l - 1;
 
-            for (int l1 = k - l; l1 <= k + l + 1; ++l1) {
-                int i2 = l1 - k;
-                int j2 = k1 - 1;
-                int k2 = i2 - 1;
+                if (k * k + l * l <= j || i1 * i1 + j1 * j1 <= j || k * k + j1 * j1 <= j || i1 * i1 + l * l <= j) {
+                    BlockPosition blockposition1 = blockposition.a(k, 0, l);
+                    Material material = world.getType(blockposition1).getBlock().getMaterial();
 
-                if (k1 * k1 + i2 * i2 <= i1 || j2 * j2 + k2 * k2 <= i1 || k1 * k1 + k2 * k2 <= i1 || j2 * j2 + i2 * i2 <= i1) {
-                    Block block = world.getType(j1, j, l1);
-
-                    if (block.getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) {
-                        this.setTypeAndData(world, j1, j, l1, Blocks.LEAVES, this.c);
+                    if (material == Material.AIR || material == Material.LEAVES) {
+                        this.a(world, blockposition1, (Block) Blocks.LEAVES, this.c);
                     }
                 }
             }
         }
+
     }
 
-    protected void b(World world, int i, int j, int k, int l, Random random) {
-        int i1 = l * l;
+    protected void b(World world, BlockPosition blockposition, int i) {
+        int j = i * i;
 
-        for (int j1 = i - l; j1 <= i + l; ++j1) {
-            int k1 = j1 - i;
+        for (int k = -i; k <= i; ++k) {
+            for (int l = -i; l <= i; ++l) {
+                if (k * k + l * l <= j) {
+                    BlockPosition blockposition1 = blockposition.a(k, 0, l);
+                    Material material = world.getType(blockposition1).getBlock().getMaterial();
 
-            for (int l1 = k - l; l1 <= k + l; ++l1) {
-                int i2 = l1 - k;
-
-                if (k1 * k1 + i2 * i2 <= i1) {
-                    Block block = world.getType(j1, j, l1);
-
-                    if (block.getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) {
-                        this.setTypeAndData(world, j1, j, l1, Blocks.LEAVES, this.c);
+                    if (material == Material.AIR || material == Material.LEAVES) {
+                        this.a(world, blockposition1, (Block) Blocks.LEAVES, this.c);
                     }
                 }
             }
         }
+
     }
 }

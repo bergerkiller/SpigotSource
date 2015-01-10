@@ -4,12 +4,15 @@ import java.util.Random;
 
 public class BlockDispenser extends BlockContainer {
 
-    public static final IRegistry a = new RegistryDefault(new DispenseBehaviorItem());
-    protected Random b = new Random();
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing");
+    public static final BlockStateBoolean TRIGGERED = BlockStateBoolean.of("triggered");
+    public static final RegistryDefault M = new RegistryDefault(new DispenseBehaviorItem());
+    protected Random N = new Random();
     public static boolean eventFired = false; // CraftBukkit
 
     protected BlockDispenser() {
         super(Material.STONE);
+        this.j(this.blockStateList.getBlockData().set(BlockDispenser.FACING, EnumDirection.NORTH).set(BlockDispenser.TRIGGERED, Boolean.valueOf(false)));
         this.a(CreativeModeTab.d);
     }
 
@@ -17,173 +20,170 @@ public class BlockDispenser extends BlockContainer {
         return 4;
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        super.onPlace(world, i, j, k);
-        this.m(world, i, j, k);
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        super.onPlace(world, blockposition, iblockdata);
+        this.e(world, blockposition, iblockdata);
     }
 
-    private void m(World world, int i, int j, int k) {
+    private void e(World world, BlockPosition blockposition, IBlockData iblockdata) {
         if (!world.isStatic) {
-            Block block = world.getType(i, j, k - 1);
-            Block block1 = world.getType(i, j, k + 1);
-            Block block2 = world.getType(i - 1, j, k);
-            Block block3 = world.getType(i + 1, j, k);
-            byte b0 = 3;
+            EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockDispenser.FACING);
+            boolean flag = world.getType(blockposition.north()).getBlock().m();
+            boolean flag1 = world.getType(blockposition.south()).getBlock().m();
 
-            if (block.j() && !block1.j()) {
-                b0 = 3;
+            if (enumdirection == EnumDirection.NORTH && flag && !flag1) {
+                enumdirection = EnumDirection.SOUTH;
+            } else if (enumdirection == EnumDirection.SOUTH && flag1 && !flag) {
+                enumdirection = EnumDirection.NORTH;
+            } else {
+                boolean flag2 = world.getType(blockposition.west()).getBlock().m();
+                boolean flag3 = world.getType(blockposition.east()).getBlock().m();
+
+                if (enumdirection == EnumDirection.WEST && flag2 && !flag3) {
+                    enumdirection = EnumDirection.EAST;
+                } else if (enumdirection == EnumDirection.EAST && flag3 && !flag2) {
+                    enumdirection = EnumDirection.WEST;
+                }
             }
 
-            if (block1.j() && !block.j()) {
-                b0 = 2;
-            }
-
-            if (block2.j() && !block3.j()) {
-                b0 = 5;
-            }
-
-            if (block3.j() && !block2.j()) {
-                b0 = 4;
-            }
-
-            world.setData(i, j, k, b0, 2);
+            world.setTypeAndData(blockposition, iblockdata.set(BlockDispenser.FACING, enumdirection).set(BlockDispenser.TRIGGERED, Boolean.valueOf(false)), 2);
         }
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
         if (world.isStatic) {
             return true;
         } else {
-            TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-            if (tileentitydispenser != null) {
-                entityhuman.openDispenser(tileentitydispenser);
+            if (tileentity instanceof TileEntityDispenser) {
+                entityhuman.openContainer((TileEntityDispenser) tileentity);
             }
 
             return true;
         }
     }
 
-    // CraftBukkit - protected -> public
-    public void dispense(World world, int i, int j, int k) {
-        SourceBlock sourceblock = new SourceBlock(world, i, j, k);
+    public void dispense(World world, BlockPosition blockposition) {
+        SourceBlock sourceblock = new SourceBlock(world, blockposition);
         TileEntityDispenser tileentitydispenser = (TileEntityDispenser) sourceblock.getTileEntity();
 
         if (tileentitydispenser != null) {
-            int l = tileentitydispenser.i();
+            int i = tileentitydispenser.m();
 
-            if (l < 0) {
-                world.triggerEffect(1001, i, j, k, 0);
+            if (i < 0) {
+                world.triggerEffect(1001, blockposition, 0);
             } else {
-                ItemStack itemstack = tileentitydispenser.getItem(l);
+                ItemStack itemstack = tileentitydispenser.getItem(i);
                 IDispenseBehavior idispensebehavior = this.a(itemstack);
 
                 if (idispensebehavior != IDispenseBehavior.a) {
                     ItemStack itemstack1 = idispensebehavior.a(sourceblock, itemstack);
                     eventFired = false; // CraftBukkit - reset event status
 
-                    tileentitydispenser.setItem(l, itemstack1.count == 0 ? null : itemstack1);
+                    tileentitydispenser.setItem(i, itemstack1.count == 0 ? null : itemstack1);
                 }
+
             }
         }
     }
 
     protected IDispenseBehavior a(ItemStack itemstack) {
-        return (IDispenseBehavior) a.get(itemstack.getItem());
+        return (IDispenseBehavior) BlockDispenser.M.get(itemstack == null ? null : itemstack.getItem());
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        boolean flag = world.isBlockIndirectlyPowered(i, j, k) || world.isBlockIndirectlyPowered(i, j + 1, k);
-        int l = world.getData(i, j, k);
-        boolean flag1 = (l & 8) != 0;
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        boolean flag = world.isBlockIndirectlyPowered(blockposition) || world.isBlockIndirectlyPowered(blockposition.up());
+        boolean flag1 = ((Boolean) iblockdata.get(BlockDispenser.TRIGGERED)).booleanValue();
 
         if (flag && !flag1) {
-            world.a(i, j, k, this, this.a(world));
-            world.setData(i, j, k, l | 8, 4);
+            world.a(blockposition, (Block) this, this.a(world));
+            world.setTypeAndData(blockposition, iblockdata.set(BlockDispenser.TRIGGERED, Boolean.valueOf(true)), 4);
         } else if (!flag && flag1) {
-            world.setData(i, j, k, l & -9, 4);
+            world.setTypeAndData(blockposition, iblockdata.set(BlockDispenser.TRIGGERED, Boolean.valueOf(false)), 4);
         }
+
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
         if (!world.isStatic) {
-            this.dispense(world, i, j, k);
+            this.dispense(world, blockposition);
         }
+
     }
 
     public TileEntity a(World world, int i) {
         return new TileEntityDispenser();
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
-        int l = BlockPiston.a(world, i, j, k, entityliving);
-
-        world.setData(i, j, k, l, 2);
-        if (itemstack.hasName()) {
-            ((TileEntityDispenser) world.getTileEntity(i, j, k)).a(itemstack.getName());
-        }
+    public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
+        return this.getBlockData().set(BlockDispenser.FACING, BlockPiston.a(world, blockposition, entityliving)).set(BlockDispenser.TRIGGERED, Boolean.valueOf(false));
     }
 
-    public void remove(World world, int i, int j, int k, Block block, int l) {
-        TileEntityDispenser tileentitydispenser = (TileEntityDispenser) world.getTileEntity(i, j, k);
+    public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
+        world.setTypeAndData(blockposition, iblockdata.set(BlockDispenser.FACING, BlockPiston.a(world, blockposition, entityliving)), 2);
+        if (itemstack.hasName()) {
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentitydispenser != null) {
-            for (int i1 = 0; i1 < tileentitydispenser.getSize(); ++i1) {
-                ItemStack itemstack = tileentitydispenser.getItem(i1);
-
-                if (itemstack != null) {
-                    float f = this.b.nextFloat() * 0.8F + 0.1F;
-                    float f1 = this.b.nextFloat() * 0.8F + 0.1F;
-                    float f2 = this.b.nextFloat() * 0.8F + 0.1F;
-
-                    while (itemstack.count > 0) {
-                        int j1 = this.b.nextInt(21) + 10;
-
-                        if (j1 > itemstack.count) {
-                            j1 = itemstack.count;
-                        }
-
-                        itemstack.count -= j1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.getItem(), j1, itemstack.getData()));
-
-                        if (itemstack.hasTag()) {
-                            entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
-                        }
-
-                        float f3 = 0.05F;
-
-                        entityitem.motX = (double) ((float) this.b.nextGaussian() * f3);
-                        entityitem.motY = (double) ((float) this.b.nextGaussian() * f3 + 0.2F);
-                        entityitem.motZ = (double) ((float) this.b.nextGaussian() * f3);
-                        world.addEntity(entityitem);
-                    }
-                }
+            if (tileentity instanceof TileEntityDispenser) {
+                ((TileEntityDispenser) tileentity).a(itemstack.getName());
             }
-
-            world.updateAdjacentComparators(i, j, k, block);
         }
 
-        super.remove(world, i, j, k, block, l);
+    }
+
+    public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
+
+        if (tileentity instanceof TileEntityDispenser) {
+            InventoryUtils.dropInventory(world, blockposition, (TileEntityDispenser) tileentity);
+            world.updateAdjacentComparators(blockposition, this);
+        }
+
+        super.remove(world, blockposition, iblockdata);
     }
 
     public static IPosition a(ISourceBlock isourceblock) {
-        EnumFacing enumfacing = b(isourceblock.h());
-        double d0 = isourceblock.getX() + 0.7D * (double) enumfacing.getAdjacentX();
-        double d1 = isourceblock.getY() + 0.7D * (double) enumfacing.getAdjacentY();
-        double d2 = isourceblock.getZ() + 0.7D * (double) enumfacing.getAdjacentZ();
+        EnumDirection enumdirection = b(isourceblock.f());
+        double d0 = isourceblock.getX() + 0.7D * (double) enumdirection.getAdjacentX();
+        double d1 = isourceblock.getY() + 0.7D * (double) enumdirection.getAdjacentY();
+        double d2 = isourceblock.getZ() + 0.7D * (double) enumdirection.getAdjacentZ();
 
         return new Position(d0, d1, d2);
     }
 
-    public static EnumFacing b(int i) {
-        return EnumFacing.a(i & 7);
+    public static EnumDirection b(int i) {
+        return EnumDirection.fromType1(i & 7);
     }
 
     public boolean isComplexRedstone() {
         return true;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
-        return Container.b((IInventory) world.getTileEntity(i, j, k));
+    public int l(World world, BlockPosition blockposition) {
+        return Container.a(world.getTileEntity(blockposition));
+    }
+
+    public int b() {
+        return 3;
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockDispenser.FACING, b(i)).set(BlockDispenser.TRIGGERED, Boolean.valueOf((i & 8) > 0));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        byte b0 = 0;
+        int i = b0 | ((EnumDirection) iblockdata.get(BlockDispenser.FACING)).a();
+
+        if (((Boolean) iblockdata.get(BlockDispenser.TRIGGERED)).booleanValue()) {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockDispenser.FACING, BlockDispenser.TRIGGERED});
     }
 }

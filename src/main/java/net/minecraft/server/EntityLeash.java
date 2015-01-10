@@ -11,23 +11,32 @@ public class EntityLeash extends EntityHanging {
         super(world);
     }
 
-    public EntityLeash(World world, int i, int j, int k) {
-        super(world, i, j, k, 0);
-        this.setPosition((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D);
+    public EntityLeash(World world, BlockPosition blockposition) {
+        super(world, blockposition);
+        this.setPosition((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
+        float f = 0.125F;
+        float f1 = 0.1875F;
+        float f2 = 0.25F;
+
+        this.a(new AxisAlignedBB(this.locX - 0.1875D, this.locY - 0.25D + 0.125D, this.locZ - 0.1875D, this.locX + 0.1875D, this.locY + 0.25D + 0.125D, this.locZ + 0.1875D));
     }
 
-    protected void c() {
-        super.c();
+    protected void h() {
+        super.h();
     }
 
-    public void setDirection(int i) {}
+    public void setDirection(EnumDirection enumdirection) {}
 
-    public int f() {
+    public int l() {
         return 9;
     }
 
-    public int i() {
+    public int m() {
         return 9;
+    }
+
+    public float getHeadHeight() {
+        return -0.0625F;
     }
 
     public void b(Entity entity) {}
@@ -40,32 +49,30 @@ public class EntityLeash extends EntityHanging {
 
     public void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean c(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.be();
+    public boolean e(EntityHuman entityhuman) {
+        ItemStack itemstack = entityhuman.bz();
         boolean flag = false;
         double d0;
         List list;
         Iterator iterator;
         EntityInsentient entityinsentient;
 
-        if (itemstack != null && itemstack.getItem() == Items.LEASH && !this.world.isStatic) {
+        if (itemstack != null && itemstack.getItem() == Items.LEAD && !this.world.isStatic) {
             d0 = 7.0D;
-            list = this.world.a(EntityInsentient.class, AxisAlignedBB.a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + d0, this.locZ + d0));
-            if (list != null) {
-                iterator = list.iterator();
+            list = this.world.a(EntityInsentient.class, new AxisAlignedBB(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + d0, this.locZ + d0));
+            iterator = list.iterator();
 
-                while (iterator.hasNext()) {
-                    entityinsentient = (EntityInsentient) iterator.next();
-                    if (entityinsentient.bN() && entityinsentient.getLeashHolder() == entityhuman) {
-                        // CraftBukkit start
-                        if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman).isCancelled()) {
-                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, entityinsentient, entityinsentient.getLeashHolder()));
-                            continue;
-                        }
-                        // CraftBukkit end
-                        entityinsentient.setLeashHolder(this, true);
-                        flag = true;
+            while (iterator.hasNext()) {
+                entityinsentient = (EntityInsentient) iterator.next();
+                if (entityinsentient.cb() && entityinsentient.getLeashHolder() == entityhuman) {
+                    // CraftBukkit start
+                    if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman).isCancelled()) {
+                        ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutAttachEntity(1, entityinsentient, entityinsentient.getLeashHolder()));
+                        continue;
                     }
+                    // CraftBukkit end
+                    entityinsentient.setLeashHolder(this, true);
+                    flag = true;
                 }
             }
         }
@@ -77,21 +84,19 @@ public class EntityLeash extends EntityHanging {
             // CraftBukkit end
             if (true || entityhuman.abilities.canInstantlyBuild) { // CraftBukkit - Process for non-creative as well
                 d0 = 7.0D;
-                list = this.world.a(EntityInsentient.class, AxisAlignedBB.a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + d0, this.locZ + d0));
-                if (list != null) {
-                    iterator = list.iterator();
+                list = this.world.a(EntityInsentient.class, new AxisAlignedBB(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + d0, this.locZ + d0));
+                iterator = list.iterator();
 
-                    while (iterator.hasNext()) {
-                        entityinsentient = (EntityInsentient) iterator.next();
-                        if (entityinsentient.bN() && entityinsentient.getLeashHolder() == this) {
-                            // CraftBukkit start
-                            if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, entityhuman).isCancelled()) {
-                                die = false;
-                                continue;
-                            }
-                            entityinsentient.unleash(true, !entityhuman.abilities.canInstantlyBuild); // false -> survival mode boolean
-                            // CraftBukkit end
+                while (iterator.hasNext()) {
+                    entityinsentient = (EntityInsentient) iterator.next();
+                    if (entityinsentient.cb() && entityinsentient.getLeashHolder() == this) {
+                        // CraftBukkit start
+                        if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, entityhuman).isCancelled()) {
+                            die = false;
+                            continue;
                         }
+                        entityinsentient.unleash(true, !entityhuman.abilities.canInstantlyBuild); // false -> survival mode boolean
+                        // CraftBukkit end
                     }
                 }
             }
@@ -106,32 +111,34 @@ public class EntityLeash extends EntityHanging {
     }
 
     public boolean survives() {
-        return this.world.getType(this.x, this.y, this.z).b() == 11;
+        return this.world.getType(this.blockPosition).getBlock() instanceof BlockFence;
     }
 
-    public static EntityLeash a(World world, int i, int j, int k) {
-        EntityLeash entityleash = new EntityLeash(world, i, j, k);
+    public static EntityLeash a(World world, BlockPosition blockposition) {
+        EntityLeash entityleash = new EntityLeash(world, blockposition);
 
         entityleash.attachedToPlayer = true;
         world.addEntity(entityleash);
         return entityleash;
     }
 
-    public static EntityLeash b(World world, int i, int j, int k) {
-        List list = world.a(EntityLeash.class, AxisAlignedBB.a((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D, (double) k + 1.0D));
+    public static EntityLeash b(World world, BlockPosition blockposition) {
+        int i = blockposition.getX();
+        int j = blockposition.getY();
+        int k = blockposition.getZ();
+        List list = world.a(EntityLeash.class, new AxisAlignedBB((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D, (double) k + 1.0D));
+        Iterator iterator = list.iterator();
 
-        if (list != null) {
-            Iterator iterator = list.iterator();
+        EntityLeash entityleash;
 
-            while (iterator.hasNext()) {
-                EntityLeash entityleash = (EntityLeash) iterator.next();
-
-                if (entityleash.x == i && entityleash.y == j && entityleash.z == k) {
-                    return entityleash;
-                }
+        do {
+            if (!iterator.hasNext()) {
+                return null;
             }
-        }
 
-        return null;
+            entityleash = (EntityLeash) iterator.next();
+        } while (!entityleash.getBlockPosition().equals(blockposition));
+
+        return entityleash;
     }
 }

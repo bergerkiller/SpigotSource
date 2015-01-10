@@ -7,6 +7,7 @@ public class EntityMushroomCow extends EntityCow {
     public EntityMushroomCow(World world) {
         super(world);
         this.a(0.9F, 1.3F);
+        this.bl = Blocks.MYCELIUM;
     }
 
     public boolean a(EntityHuman entityhuman) {
@@ -14,11 +15,11 @@ public class EntityMushroomCow extends EntityCow {
 
         if (itemstack != null && itemstack.getItem() == Items.BOWL && this.getAge() >= 0) {
             if (itemstack.count == 1) {
-                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, new ItemStack(Items.MUSHROOM_SOUP));
+                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, new ItemStack(Items.MUSHROOM_STEW));
                 return true;
             }
 
-            if (entityhuman.inventory.pickup(new ItemStack(Items.MUSHROOM_SOUP)) && !entityhuman.abilities.canInstantlyBuild) {
+            if (entityhuman.inventory.pickup(new ItemStack(Items.MUSHROOM_STEW)) && !entityhuman.abilities.canInstantlyBuild) {
                 entityhuman.inventory.splitStack(entityhuman.inventory.itemInHandIndex, 1);
                 return true;
             }
@@ -33,15 +34,19 @@ public class EntityMushroomCow extends EntityCow {
                 return false;
             }
             // CraftBukkit end
-
+            
             this.die();
-            this.world.addParticle("largeexplode", this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
+            this.world.addParticle(EnumParticle.EXPLOSION_LARGE, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D, new int[0]);
             if (!this.world.isStatic) {
                 EntityCow entitycow = new EntityCow(this.world);
 
                 entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
                 entitycow.setHealth(this.getHealth());
-                entitycow.aM = this.aM;
+                entitycow.aG = this.aG;
+                if (this.hasCustomName()) {
+                    entitycow.setCustomName(this.getCustomName());
+                }
+
                 this.world.addEntity(entitycow);
 
                 for (int i = 0; i < 5; ++i) {

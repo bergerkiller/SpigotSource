@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import net.minecraft.server.AttributeRanged;
 import net.minecraft.server.GenericAttributes;
-import net.minecraft.util.gnu.trove.map.hash.TObjectIntHashMap;
 import net.minecraft.server.MinecraftServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -69,8 +69,8 @@ public class SpigotConfig
 
         commands = new HashMap<String, Command>();
 
-        version = getInt( "config-version", 7 );
-        set( "config-version", 7 );
+        version = getInt( "config-version", 8 );
+        set( "config-version", 8 );
         readConfig( SpigotConfig.class, null );
     }
 
@@ -187,7 +187,7 @@ public class SpigotConfig
     public static String whitelistMessage;
     public static String unknownCommandMessage;
     public static String serverFullMessage;
-    public static String outdatedClientMessage = "Outdated client! Please use {}";
+    public static String outdatedClientMessage = "Outdated client! Please use {0}";
     public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
     private static String transform(String s)
     {
@@ -195,7 +195,7 @@ public class SpigotConfig
     }
     private static void messages()
     {
-        if (version < 4)
+        if (version < 8)
         {
             set( "messages.outdated-client", outdatedClientMessage );
             set( "messages.outdated-server", outdatedServerMessage );

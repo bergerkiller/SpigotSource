@@ -261,8 +261,8 @@ class CraftMetaItem implements ItemMeta, Repairable {
             NBTTagList nbttaglist = tag.getList(ATTRIBUTES.NBT, 10);
 
             // Spigot start
-            net.minecraft.util.gnu.trove.map.hash.TObjectDoubleHashMap<String> attributeTracker = new net.minecraft.util.gnu.trove.map.hash.TObjectDoubleHashMap<String>();
-            net.minecraft.util.gnu.trove.map.hash.TObjectDoubleHashMap<String> attributeTrackerX = new net.minecraft.util.gnu.trove.map.hash.TObjectDoubleHashMap<String>();
+            gnu.trove.map.hash.TObjectDoubleHashMap<String> attributeTracker = new gnu.trove.map.hash.TObjectDoubleHashMap<String>();
+            gnu.trove.map.hash.TObjectDoubleHashMap<String> attributeTrackerX = new gnu.trove.map.hash.TObjectDoubleHashMap<String>();
             Map<String, IAttribute> attributesByName = new HashMap<String, IAttribute>();
             attributeTracker.put( "generic.maxHealth", 20.0 );
             attributesByName.put( "generic.maxHealth", GenericAttributes.maxHealth );

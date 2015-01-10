@@ -1,17 +1,14 @@
 package net.minecraft.server;
 
-import java.net.InetSocketAddress;
-
 // CraftBukkit start
+import com.mojang.authlib.GameProfile;
+import java.net.InetSocketAddress;
 import java.util.Iterator;
 
 import org.bukkit.craftbukkit.util.CraftIconCache;
 import org.bukkit.entity.Player;
 
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 // CraftBukkit end
-
-import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
 
 public class PacketStatusListener implements PacketStatusInListener {
 
@@ -25,15 +22,8 @@ public class PacketStatusListener implements PacketStatusInListener {
 
     public void a(IChatBaseComponent ichatbasecomponent) {}
 
-    public void a(EnumProtocol enumprotocol, EnumProtocol enumprotocol1) {
-        if (enumprotocol1 != EnumProtocol.STATUS) {
-            throw new UnsupportedOperationException("Unexpected change in protocol to " + enumprotocol1);
-        }
-    }
-
-    public void a() {}
-
     public void a(PacketStatusInStart packetstatusinstart) {
+        // this.networkManager.handle(new PacketStatusOutServerInfo(this.minecraftServer.aE()));
         // CraftBukkit start - fire ping event
         final Object[] players = minecraftServer.getPlayerList().players.toArray();
         class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
@@ -123,13 +113,13 @@ public class PacketStatusListener implements PacketStatusInListener {
         ping.setFavicon(event.icon.value);
         ping.setMOTD(new ChatComponentText(event.getMotd()));
         ping.setPlayerSample(playerSample);
-        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), networkManager.getVersion())); // TODO: Update when protocol changes
+        ping.setServerInfo(new ServerPingServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), 47)); // TODO: Update when protocol changes
 
-        this.networkManager.handle(new PacketStatusOutServerInfo(ping), new GenericFutureListener[0]);
+        this.networkManager.handle(new PacketStatusOutServerInfo(ping));
         // CraftBukkit end
     }
 
     public void a(PacketStatusInPing packetstatusinping) {
-        this.networkManager.handle(new PacketStatusOutPong(packetstatusinping.c()), new GenericFutureListener[0]);
+        this.networkManager.handle(new PacketStatusOutPong(packetstatusinping.a()));
     }
 }

@@ -11,14 +11,14 @@ public class ItemLeash extends Item {
         this.a(CreativeModeTab.i);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        Block block = world.getType(i, j, k);
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+        Block block = world.getType(blockposition).getBlock();
 
-        if (block.b() == 11) {
+        if (block instanceof BlockFence) {
             if (world.isStatic) {
                 return true;
             } else {
-                a(entityhuman, world, i, j, k);
+                a(entityhuman, world, blockposition);
                 return true;
             }
         } else {
@@ -26,42 +26,42 @@ public class ItemLeash extends Item {
         }
     }
 
-    public static boolean a(EntityHuman entityhuman, World world, int i, int j, int k) {
-        EntityLeash entityleash = EntityLeash.b(world, i, j, k);
+    public static boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition) {
+        EntityLeash entityleash = EntityLeash.b(world, blockposition);
         boolean flag = false;
         double d0 = 7.0D;
-        List list = world.a(EntityInsentient.class, AxisAlignedBB.a((double) i - d0, (double) j - d0, (double) k - d0, (double) i + d0, (double) j + d0, (double) k + d0));
+        int i = blockposition.getX();
+        int j = blockposition.getY();
+        int k = blockposition.getZ();
+        List list = world.a(EntityInsentient.class, new AxisAlignedBB((double) i - d0, (double) j - d0, (double) k - d0, (double) i + d0, (double) j + d0, (double) k + d0));
+        Iterator iterator = list.iterator();
 
-        if (list != null) {
-            Iterator iterator = list.iterator();
+        while (iterator.hasNext()) {
+            EntityInsentient entityinsentient = (EntityInsentient) iterator.next();
 
-            while (iterator.hasNext()) {
-                EntityInsentient entityinsentient = (EntityInsentient) iterator.next();
+            if (entityinsentient.cb() && entityinsentient.getLeashHolder() == entityhuman) {
+                if (entityleash == null) {
+                    entityleash = EntityLeash.a(world, blockposition);
 
-                if (entityinsentient.bN() && entityinsentient.getLeashHolder() == entityhuman) {
-                    if (entityleash == null) {
-                        entityleash = EntityLeash.a(world, i, j, k);
+                    // CraftBukkit start - fire HangingPlaceEvent
+                    HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, world.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
+                    world.getServer().getPluginManager().callEvent(event);
 
-                        // CraftBukkit start - fire HangingPlaceEvent
-                        HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, world.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
-                        world.getServer().getPluginManager().callEvent(event);
-
-                        if (event.isCancelled()) {
-                            entityleash.die();
-                            return false;
-                        }
-                        // CraftBukkit end
-                    }
-
-                    // CraftBukkit start
-                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, entityleash, entityhuman).isCancelled()) {
-                        continue;
+                    if (event.isCancelled()) {
+                        entityleash.die();
+                        return false;
                     }
                     // CraftBukkit end
-
-                    entityinsentient.setLeashHolder(entityleash, true);
-                    flag = true;
                 }
+
+                // CraftBukkit start
+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, entityleash, entityhuman).isCancelled()) {
+                    continue;
+                }
+                // CraftBukkit end
+
+                entityinsentient.setLeashHolder(entityleash, true);
+                flag = true;
             }
         }
 

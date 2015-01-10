@@ -13,31 +13,35 @@ public class WorldGenGroundBush extends WorldGenTrees {
         this.a = j;
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
+    public boolean generate(World world, Random random, BlockPosition blockposition) {
         Block block;
 
-        while (((block = world.getType(i, j, k)).getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) && j > 0) {
-            --j;
+        while (((block = world.getType(blockposition).getBlock()).getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) && blockposition.getY() > 0) {
+            blockposition = blockposition.down();
         }
 
-        Block block1 = world.getType(i, j, k);
+        Block block1 = world.getType(blockposition).getBlock();
 
         if (block1 == Blocks.DIRT || block1 == Blocks.GRASS) {
-            ++j;
-            this.setTypeAndData(world, i, j, k, Blocks.LOG, this.b);
+            blockposition = blockposition.up();
+            this.a(world, blockposition, Blocks.LOG, this.b);
 
-            for (int l = j; l <= j + 2; ++l) {
-                int i1 = l - j;
-                int j1 = 2 - i1;
+            for (int i = blockposition.getY(); i <= blockposition.getY() + 2; ++i) {
+                int j = i - blockposition.getY();
+                int k = 2 - j;
 
-                for (int k1 = i - j1; k1 <= i + j1; ++k1) {
-                    int l1 = k1 - i;
+                for (int l = blockposition.getX() - k; l <= blockposition.getX() + k; ++l) {
+                    int i1 = l - blockposition.getX();
 
-                    for (int i2 = k - j1; i2 <= k + j1; ++i2) {
-                        int j2 = i2 - k;
+                    for (int j1 = blockposition.getZ() - k; j1 <= blockposition.getZ() + k; ++j1) {
+                        int k1 = j1 - blockposition.getZ();
 
-                        if ((Math.abs(l1) != j1 || Math.abs(j2) != j1 || random.nextInt(2) != 0) && !world.getType(k1, l, i2).j()) {
-                            this.setTypeAndData(world, k1, l, i2, Blocks.LEAVES, this.a);
+                        if (Math.abs(i1) != k || Math.abs(k1) != k || random.nextInt(2) != 0) {
+                            BlockPosition blockposition1 = new BlockPosition(l, i, j1);
+
+                            if (!world.getType(blockposition1).getBlock().m()) {
+                                this.a(world, blockposition1, Blocks.LEAVES, this.a);
+                            }
                         }
                     }
                 }

@@ -295,7 +295,7 @@ public class SpigotWorldConfig
     public int maxBulkChunk;
     private void bulkChunkCount()
     {
-        maxBulkChunk = getInt( "max-bulk-chunks", 5 );
+        maxBulkChunk = getInt( "max-bulk-chunks", 10 );
         log( "Sending up to " + maxBulkChunk + " chunks per packet" );
     }
 

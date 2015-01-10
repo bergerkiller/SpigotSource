@@ -6,10 +6,11 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
-public class ContainerEnchantTableInventory extends InventorySubcontainer { // CraftBukkit -> public
+// CraftBukkit -> public
+public class ContainerEnchantTableInventory extends InventorySubcontainer {
 
     final ContainerEnchantTable enchantTable;
-
+    
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public org.bukkit.entity.Player player;
@@ -43,7 +44,6 @@ public class ContainerEnchantTableInventory extends InventorySubcontainer { // C
     ContainerEnchantTableInventory(ContainerEnchantTable containerenchanttable, String s, boolean flag, int i) {
         super(s, flag, i);
         this.enchantTable = containerenchanttable;
-        this.setMaxStackSize(1); // CraftBukkit
     }
 
     public int getMaxStackSize() {

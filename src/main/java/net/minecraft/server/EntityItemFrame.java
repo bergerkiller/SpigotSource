@@ -2,34 +2,38 @@ package net.minecraft.server;
 
 public class EntityItemFrame extends EntityHanging {
 
-    private float e = 1.0F;
+    private float c = 1.0F;
 
     public EntityItemFrame(World world) {
         super(world);
     }
 
-    public EntityItemFrame(World world, int i, int j, int k, int l) {
-        super(world, i, j, k, l);
-        this.setDirection(l);
+    public EntityItemFrame(World world, BlockPosition blockposition, EnumDirection enumdirection) {
+        super(world, blockposition);
+        this.setDirection(enumdirection);
     }
 
-    protected void c() {
-        this.getDataWatcher().add(2, 5);
-        this.getDataWatcher().a(3, Byte.valueOf((byte) 0));
+    protected void h() {
+        this.getDataWatcher().add(8, 5);
+        this.getDataWatcher().a(9, Byte.valueOf((byte) 0));
+    }
+
+    public float ao() {
+        return 0.0F;
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
-        if (this.isInvulnerable()) {
+        if (this.isInvulnerable(damagesource)) {
             return false;
-        } else if (this.getItem() != null) {
+        } else if (!damagesource.isExplosion() && this.getItem() != null) {
             if (!this.world.isStatic) {
                 // CraftBukkit start - fire EntityDamageEvent
                 if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false) || this.dead) {
                     return true;
                 }
                 // CraftBukkit end
-
-                this.b(damagesource.getEntity(), false);
+                
+                this.a(damagesource.getEntity(), false);
                 this.setItem((ItemStack) null);
             }
 
@@ -39,44 +43,47 @@ public class EntityItemFrame extends EntityHanging {
         }
     }
 
-    public int f() {
-        return 9;
+    public int l() {
+        return 12;
     }
 
-    public int i() {
-        return 9;
+    public int m() {
+        return 12;
     }
 
     public void b(Entity entity) {
-        this.b(entity, true);
+        this.a(entity, true);
     }
 
-    public void b(Entity entity, boolean flag) {
-        ItemStack itemstack = this.getItem();
+    public void a(Entity entity, boolean flag) {
+        if (this.world.getGameRules().getBoolean("doTileDrops")) {
+            ItemStack itemstack = this.getItem();
 
-        if (entity instanceof EntityHuman) {
-            EntityHuman entityhuman = (EntityHuman) entity;
+            if (entity instanceof EntityHuman) {
+                EntityHuman entityhuman = (EntityHuman) entity;
 
-            if (entityhuman.abilities.canInstantlyBuild) {
-                this.b(itemstack);
-                return;
+                if (entityhuman.abilities.canInstantlyBuild) {
+                    this.b(itemstack);
+                    return;
+                }
             }
-        }
 
-        if (flag) {
-            this.a(new ItemStack(Items.ITEM_FRAME), 0.0F);
-        }
+            if (flag) {
+                this.a(new ItemStack(Items.ITEM_FRAME), 0.0F);
+            }
 
-        if (itemstack != null && this.random.nextFloat() < this.e) {
-            itemstack = itemstack.cloneItemStack();
-            this.b(itemstack);
-            this.a(itemstack, 0.0F);
+            if (itemstack != null && this.random.nextFloat() < this.c) {
+                itemstack = itemstack.cloneItemStack();
+                this.b(itemstack);
+                this.a(itemstack, 0.0F);
+            }
+
         }
     }
 
     private void b(ItemStack itemstack) {
         if (itemstack != null) {
-            if (itemstack.getItem() == Items.MAP) {
+            if (itemstack.getItem() == Items.FILLED_MAP) {
                 WorldMap worldmap = ((ItemWorldMap) itemstack.getItem()).getSavedMap(itemstack, this.world);
 
                 worldmap.decorations.remove("frame-" + this.getId());
@@ -87,33 +94,49 @@ public class EntityItemFrame extends EntityHanging {
     }
 
     public ItemStack getItem() {
-        return this.getDataWatcher().getItemStack(2);
+        return this.getDataWatcher().getItemStack(8);
     }
 
     public void setItem(ItemStack itemstack) {
+        this.setItem(itemstack, true);
+    }
+
+    private void setItem(ItemStack itemstack, boolean flag) {
         if (itemstack != null) {
             itemstack = itemstack.cloneItemStack();
             itemstack.count = 1;
             itemstack.a(this);
         }
 
-        this.getDataWatcher().watch(2, itemstack);
-        this.getDataWatcher().update(2);
+        this.getDataWatcher().watch(8, itemstack);
+        this.getDataWatcher().update(8);
+        if (flag && this.blockPosition != null) {
+            this.world.updateAdjacentComparators(this.blockPosition, Blocks.AIR);
+        }
+
     }
 
     public int getRotation() {
-        return this.getDataWatcher().getByte(3);
+        return this.getDataWatcher().getByte(9);
     }
 
     public void setRotation(int i) {
-        this.getDataWatcher().watch(3, Byte.valueOf((byte) (i % 4)));
+        this.setRotation(i, true);
+    }
+
+    private void setRotation(int i, boolean flag) {
+        this.getDataWatcher().watch(9, Byte.valueOf((byte) (i % 8)));
+        if (flag && this.blockPosition != null) {
+            this.world.updateAdjacentComparators(this.blockPosition, Blocks.AIR);
+        }
+
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         if (this.getItem() != null) {
             nbttagcompound.set("Item", this.getItem().save(new NBTTagCompound()));
             nbttagcompound.setByte("ItemRotation", (byte) this.getRotation());
-            nbttagcompound.setFloat("ItemDropChance", this.e);
+            nbttagcompound.setFloat("ItemDropChance", this.c);
         }
 
         super.b(nbttagcompound);
@@ -123,19 +146,23 @@ public class EntityItemFrame extends EntityHanging {
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Item");
 
         if (nbttagcompound1 != null && !nbttagcompound1.isEmpty()) {
-            this.setItem(ItemStack.createStack(nbttagcompound1));
-            this.setRotation(nbttagcompound.getByte("ItemRotation"));
+            this.setItem(ItemStack.createStack(nbttagcompound1), false);
+            this.setRotation(nbttagcompound.getByte("ItemRotation"), false);
             if (nbttagcompound.hasKeyOfType("ItemDropChance", 99)) {
-                this.e = nbttagcompound.getFloat("ItemDropChance");
+                this.c = nbttagcompound.getFloat("ItemDropChance");
+            }
+
+            if (nbttagcompound.hasKey("Direction")) {
+                this.setRotation(this.getRotation() * 2, false);
             }
         }
 
         super.a(nbttagcompound);
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean e(EntityHuman entityhuman) {
         if (this.getItem() == null) {
-            ItemStack itemstack = entityhuman.be();
+            ItemStack itemstack = entityhuman.bz();
 
             if (itemstack != null && !this.world.isStatic) {
                 this.setItem(itemstack);
@@ -148,5 +175,9 @@ public class EntityItemFrame extends EntityHanging {
         }
 
         return true;
+    }
+
+    public int q() {
+        return this.getItem() == null ? 0 : this.getRotation() % 8 + 1;
     }
 }

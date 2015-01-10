@@ -5,10 +5,12 @@ import java.util.Random;
 
 public class BlockBrewingStand extends BlockContainer {
 
-    private Random a = new Random();
+    public static final BlockStateBoolean[] HAS_BOTTLE = new BlockStateBoolean[] { BlockStateBoolean.of("has_bottle_0"), BlockStateBoolean.of("has_bottle_1"), BlockStateBoolean.of("has_bottle_2")};
+    private final Random b = new Random();
 
     public BlockBrewingStand() {
         super(Material.ORE);
+        this.j(this.blockStateList.getBlockData().set(BlockBrewingStand.HAS_BOTTLE[0], Boolean.valueOf(false)).set(BlockBrewingStand.HAS_BOTTLE[1], Boolean.valueOf(false)).set(BlockBrewingStand.HAS_BOTTLE[2], Boolean.valueOf(false)));
     }
 
     public boolean c() {
@@ -16,7 +18,7 @@ public class BlockBrewingStand extends BlockContainer {
     }
 
     public int b() {
-        return 25;
+        return 3;
     }
 
     public TileEntity a(World world, int i) {
@@ -27,81 +29,53 @@ public class BlockBrewingStand extends BlockContainer {
         return false;
     }
 
-    public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, List list, Entity entity) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, AxisAlignedBB axisalignedbb, List list, Entity entity) {
         this.a(0.4375F, 0.0F, 0.4375F, 0.5625F, 0.875F, 0.5625F);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
-        this.g();
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
+        this.h();
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
     }
 
-    public void g() {
+    public void h() {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F);
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
         if (world.isStatic) {
             return true;
         } else {
-            TileEntityBrewingStand tileentitybrewingstand = (TileEntityBrewingStand) world.getTileEntity(i, j, k);
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-            if (tileentitybrewingstand != null) {
-                entityhuman.openBrewingStand(tileentitybrewingstand);
+            if (tileentity instanceof TileEntityBrewingStand) {
+                entityhuman.openContainer((TileEntityBrewingStand) tileentity);
             }
 
             return true;
         }
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
+    public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
         if (itemstack.hasName()) {
-            ((TileEntityBrewingStand) world.getTileEntity(i, j, k)).a(itemstack.getName());
-        }
-    }
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-    public void remove(World world, int i, int j, int k, Block block, int l) {
-        TileEntity tileentity = world.getTileEntity(i, j, k);
-
-        if (tileentity instanceof TileEntityBrewingStand) {
-            TileEntityBrewingStand tileentitybrewingstand = (TileEntityBrewingStand) tileentity;
-
-            for (int i1 = 0; i1 < tileentitybrewingstand.getSize(); ++i1) {
-                ItemStack itemstack = tileentitybrewingstand.getItem(i1);
-
-                if (itemstack != null) {
-                    float f = this.a.nextFloat() * 0.8F + 0.1F;
-                    float f1 = this.a.nextFloat() * 0.8F + 0.1F;
-                    float f2 = this.a.nextFloat() * 0.8F + 0.1F;
-
-                    while (itemstack.count > 0) {
-                        int j1 = this.a.nextInt(21) + 10;
-
-                        if (j1 > itemstack.count) {
-                            j1 = itemstack.count;
-                        }
-
-                        itemstack.count -= j1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.getItem(), j1, itemstack.getData()));
-                        float f3 = 0.05F;
-
-                        entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);
-                        entityitem.motY = (double) ((float) this.a.nextGaussian() * f3 + 0.2F);
-                        entityitem.motZ = (double) ((float) this.a.nextGaussian() * f3);
-                        // Spigot Start
-                        if ( itemstack.hasTag() )
-                        {
-                            entityitem.getItemStack().setTag( (NBTTagCompound) itemstack.getTag().clone() );
-                        }
-                        // Spigot End
-                        world.addEntity( entityitem );
-                    }
-                }
+            if (tileentity instanceof TileEntityBrewingStand) {
+                ((TileEntityBrewingStand) tileentity).a(itemstack.getName());
             }
         }
 
-        super.remove(world, i, j, k, block, l);
     }
 
-    public Item getDropType(int i, Random random, int j) {
+    public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
+
+        if (tileentity instanceof TileEntityBrewingStand) {
+            InventoryUtils.dropInventory(world, blockposition, (TileEntityBrewingStand) tileentity);
+        }
+
+        super.remove(world, blockposition, iblockdata);
+    }
+
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return Items.BREWING_STAND;
     }
 
@@ -109,7 +83,34 @@ public class BlockBrewingStand extends BlockContainer {
         return true;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
-        return Container.b((IInventory) world.getTileEntity(i, j, k));
+    public int l(World world, BlockPosition blockposition) {
+        return Container.a(world.getTileEntity(blockposition));
     }
+
+    public IBlockData fromLegacyData(int i) {
+        IBlockData iblockdata = this.getBlockData();
+
+        for (int j = 0; j < 3; ++j) {
+            iblockdata = iblockdata.set(BlockBrewingStand.HAS_BOTTLE[j], Boolean.valueOf((i & 1 << j) > 0));
+        }
+
+        return iblockdata;
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        int i = 0;
+
+        for (int j = 0; j < 3; ++j) {
+            if (((Boolean) iblockdata.get(BlockBrewingStand.HAS_BOTTLE[j])).booleanValue()) {
+                i |= 1 << j;
+            }
+        }
+
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockBrewingStand.HAS_BOTTLE[0], BlockBrewingStand.HAS_BOTTLE[1], BlockBrewingStand.HAS_BOTTLE[2]});
+    }
+
 }

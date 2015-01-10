@@ -7,14 +7,14 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerDispenser extends Container {
 
-    public TileEntityDispenser items; // CraftBukkit - private -> public
+    public IInventory items; // CraftBukkit - private -> public
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
     // CraftBukkit end
 
-    public ContainerDispenser(IInventory iinventory, TileEntityDispenser tileentitydispenser) {
-        this.items = tileentitydispenser;
+    public ContainerDispenser(IInventory iinventory, IInventory iinventory1) {
+        this.items = iinventory1;
         // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory)iinventory;
@@ -25,7 +25,7 @@ public class ContainerDispenser extends Container {
 
         for (i = 0; i < 3; ++i) {
             for (j = 0; j < 3; ++j) {
-                this.a(new Slot(tileentitydispenser, j + i * 3, 62 + j * 18, 17 + i * 18));
+                this.a(new Slot(iinventory1, j + i * 3, 62 + j * 18, 17 + i * 18));
             }
         }
 
@@ -38,6 +38,7 @@ public class ContainerDispenser extends Container {
         for (i = 0; i < 9; ++i) {
             this.a(new Slot(iinventory, i, 8 + i * 18, 142));
         }
+
     }
 
     public boolean a(EntityHuman entityhuman) {
@@ -78,6 +79,7 @@ public class ContainerDispenser extends Container {
     }
 
     // CraftBukkit start
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;

@@ -2,23 +2,23 @@ package net.minecraft.server;
 
 public class PathfinderGoalPanic extends PathfinderGoal {
 
-    private EntityCreature a;
-    private double b;
+    private EntityCreature b;
+    protected double a;
     private double c;
     private double d;
     private double e;
 
     public PathfinderGoalPanic(EntityCreature entitycreature, double d0) {
-        this.a = entitycreature;
-        this.b = d0;
+        this.b = entitycreature;
+        this.a = d0;
         this.a(1);
     }
 
     public boolean a() {
-        if (this.a.getLastDamager() == null && !this.a.isBurning()) {
+        if (this.b.getLastDamager() == null && !this.b.isBurning()) {
             return false;
         } else {
-            Vec3D vec3d = RandomPositionGenerator.a(this.a, 5, 4);
+            Vec3D vec3d = RandomPositionGenerator.a(this.b, 5, 4);
 
             if (vec3d == null) {
                 return false;
@@ -32,16 +32,16 @@ public class PathfinderGoalPanic extends PathfinderGoal {
     }
 
     public void c() {
-        this.a.getNavigation().a(this.c, this.d, this.e, this.b);
+        this.b.getNavigation().a(this.c, this.d, this.e, this.a);
     }
 
     public boolean b() {
         // CraftBukkit start - introduce a temporary timeout hack until this is fixed properly
-        if ((this.a.ticksLived - this.a.aK()) > 100) {
-            this.a.b((EntityLiving) null);
+        if ((this.b.ticksLived - this.b.bd/*getHurtTimestamp*/()) > 100) {
+            this.b.b((EntityLiving) null);
             return false;
         }
         // CraftBukkit end
-        return !this.a.getNavigation().g();
+        return !this.b.getNavigation().m();
     }
 }

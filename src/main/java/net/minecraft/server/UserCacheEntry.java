@@ -1,8 +1,7 @@
 package net.minecraft.server;
 
+import com.mojang.authlib.GameProfile;
 import java.util.Date;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 class UserCacheEntry {
 

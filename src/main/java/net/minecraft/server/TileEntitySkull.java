@@ -1,13 +1,13 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Iterables;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import java.util.UUID;
 
-import net.minecraft.util.com.google.common.collect.Iterables;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.properties.Property;
-
 // Spigot start
-import com.google.common.cache.Cache;
+import com.google.common.base.Predicate;
+import com.google.common.cache.LoadingCache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import java.util.concurrent.Executor;
@@ -15,21 +15,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import net.minecraft.util.com.mojang.authlib.Agent;
+import com.mojang.authlib.Agent;
 // Spigot end
 
 public class TileEntitySkull extends TileEntity {
 
     private int a;
-    private int i;
-    private GameProfile j = null;
+    public int rotation;
+    private GameProfile g = null;
     // Spigot start
     public static final Executor executor = Executors.newFixedThreadPool(3,
             new ThreadFactoryBuilder()
                     .setNameFormat("Head Conversion Thread - %1$d")
                     .build()
     );
-    public static final Cache<String, GameProfile> skinCache = CacheBuilder.newBuilder()
+    public static final LoadingCache<String, GameProfile> skinCache = CacheBuilder.newBuilder()
             .maximumSize( 5000 )
             .expireAfterAccess( 60, TimeUnit.MINUTES )
             .build( new CacheLoader<String, GameProfile>()
@@ -55,7 +55,7 @@ public class TileEntitySkull extends TileEntity {
 
                         if ( property == null )
                         {
-                            profile = MinecraftServer.getServer().av().fillProfileProperties( profile, true );
+                            profile = MinecraftServer.getServer().aB().fillProfileProperties( profile, true );
                         }
                     }
 
@@ -63,6 +63,7 @@ public class TileEntitySkull extends TileEntity {
                     return profile;
                 }
             } );
+    
     // Spigot end
 
     public TileEntitySkull() {}
@@ -70,102 +71,122 @@ public class TileEntitySkull extends TileEntity {
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setByte("SkullType", (byte) (this.a & 255));
-        nbttagcompound.setByte("Rot", (byte) (this.i & 255));
-        if (this.j != null) {
+        nbttagcompound.setByte("Rot", (byte) (this.rotation & 255));
+        if (this.g != null) {
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-            GameProfileSerializer.serialize(nbttagcompound1, this.j);
+            GameProfileSerializer.serialize(nbttagcompound1, this.g);
             nbttagcompound.set("Owner", nbttagcompound1);
-            nbttagcompound.setString("ExtraType", nbttagcompound1.getString("Name")); // Spigot
         }
+
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         this.a = nbttagcompound.getByte("SkullType");
-        this.i = nbttagcompound.getByte("Rot");
+        this.rotation = nbttagcompound.getByte("Rot");
         if (this.a == 3) {
             if (nbttagcompound.hasKeyOfType("Owner", 10)) {
-                this.j = GameProfileSerializer.deserialize(nbttagcompound.getCompound("Owner"));
-            } else if (nbttagcompound.hasKeyOfType("ExtraType", 8) && !UtilColor.b(nbttagcompound.getString("ExtraType"))) {
-                this.j = new GameProfile((UUID) null, nbttagcompound.getString("ExtraType"));
-                this.d();
+                this.g = GameProfileSerializer.deserialize(nbttagcompound.getCompound("Owner"));
+            } else if (nbttagcompound.hasKeyOfType("ExtraType", 8)) {
+                String s = nbttagcompound.getString("ExtraType");
+
+                if (!UtilColor.b(s)) {
+                    this.g = new GameProfile((UUID) null, s);
+                    this.e();
+                }
             }
         }
+
     }
 
     public GameProfile getGameProfile() {
-        return this.j;
+        return this.g;
     }
 
     public Packet getUpdatePacket() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
         this.b(nbttagcompound);
-        return new PacketPlayOutTileEntityData(this.x, this.y, this.z, 4, nbttagcompound);
+        return new PacketPlayOutTileEntityData(this.position, 4, nbttagcompound);
     }
 
     public void setSkullType(int i) {
         this.a = i;
-        this.j = null;
+        this.g = null;
     }
 
     public void setGameProfile(GameProfile gameprofile) {
         this.a = 3;
-        this.j = gameprofile;
-        this.d();
+        this.g = gameprofile;
+        this.e();
     }
 
-    private void d() {
-        if (this.j != null && !UtilColor.b(this.j.getName())) {
-            if (!this.j.isComplete() || !this.j.getProperties().containsKey("textures")) {
-                // Spigot start - Handle async
-                final String name = this.j.getName();
-                setSkullType( 0 ); // Work around a client bug
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
+    private void e() {
+        // Spigot start
+        GameProfile profile = this.g;
+        setSkullType( 0 ); // Work around client bug
+        b(profile, new Predicate<GameProfile>() {
 
-                        GameProfile profile = skinCache.getUnchecked( name.toLowerCase() );
+            @Override
+            public boolean apply(GameProfile input) {
+                setSkullType( 3 ); // Work around client bug
+                g = input;
+                update();
+                world.notify(position);
+                return false;
+            }
+        }); 
+        // Spigot end
+    }
 
-                        if (profile != null) {
-                            final GameProfile finalProfile = profile;
+    // Spigot start - Support async lookups
+    public static void b(final GameProfile gameprofile, final Predicate<GameProfile> callback) {
+        if (gameprofile != null && !UtilColor.b(gameprofile.getName())) {
+            if (gameprofile.isComplete() && gameprofile.getProperties().containsKey("textures")) {
+                callback.apply(gameprofile);
+            } else if (MinecraftServer.getServer() == null) {
+                callback.apply(gameprofile);
+            } else {
+                GameProfile profile = skinCache.getIfPresent(gameprofile.getName());
+                if (profile != null) {
+                    callback.apply(profile);
+                } else {
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase());                            
                             MinecraftServer.getServer().processQueue.add(new Runnable() {
                                 @Override
                                 public void run() {
-                                    a = 3;
-                                    j = finalProfile;
-                                    world.notify( x, y, z );
-                                }
-                            });
-                        } else {
-                            MinecraftServer.getServer().processQueue.add(new Runnable() {
-                                @Override
-                                public void run() {
-                                    a = 3;
-                                    j = new GameProfile( null, name );
-                                    world.notify( x, y, z );
+                                    if (profile == null) {
+                                        callback.apply(gameprofile);
+                                    } else {
+                                        callback.apply(profile);
+                                    }
                                 }
                             });
                         }
-                    }
-                });
-                // Spigot end
+                    });
+                }
             }
+        } else {
+            callback.apply(gameprofile);
         }
     }
+    // Spigot end    
 
     public int getSkullType() {
         return this.a;
     }
 
     public void setRotation(int i) {
-        this.i = i;
+        this.rotation = i;
     }
 
     // CraftBukkit start - add method
     public int getRotation() {
-        return this.i;
+        return this.rotation;
     }
     // CraftBukkit end
 }

@@ -5,56 +5,67 @@ import java.util.Iterator;
 public class CommandDispatcher extends CommandHandler implements ICommandDispatcher {
 
     public CommandDispatcher() {
-        this.a(new CommandTime());
-        this.a(new CommandGamemode());
-        this.a(new CommandDifficulty());
-        this.a(new CommandGamemodeDefault());
-        this.a(new CommandKill());
-        this.a(new CommandToggleDownfall());
-        this.a(new CommandWeather());
-        this.a(new CommandXp());
-        this.a(new CommandTp());
-        this.a(new CommandGive());
-        this.a(new CommandEffect());
-        this.a(new CommandEnchant());
-        this.a(new CommandMe());
-        this.a(new CommandSeed());
-        this.a(new CommandHelp());
-        this.a(new CommandDebug());
-        this.a(new CommandTell());
-        this.a(new CommandSay());
-        this.a(new CommandSpawnpoint());
-        this.a(new CommandSetWorldSpawn());
-        this.a(new CommandGamerule());
-        this.a(new CommandClear());
-        this.a(new CommandTestFor());
-        this.a(new CommandSpreadPlayers());
-        this.a(new CommandPlaySound());
-        this.a(new CommandScoreboard());
-        this.a(new CommandAchievement());
-        this.a(new CommandSummon());
-        this.a(new CommandSetBlock());
-        this.a(new CommandTestForBlock());
-        this.a(new CommandTellRaw());
-        if (MinecraftServer.getServer().X()) {
-            this.a(new CommandOp());
-            this.a(new CommandDeop());
-            this.a(new CommandStop());
-            this.a(new CommandSaveAll());
-            this.a(new CommandSaveOff());
-            this.a(new CommandSaveOn());
-            this.a(new CommandBanIp());
-            this.a(new CommandPardonIP());
-            this.a(new CommandBan());
-            this.a(new CommandBanList());
-            this.a(new CommandPardon());
-            this.a(new CommandKick());
-            this.a(new CommandList());
-            this.a(new CommandWhitelist());
-            this.a(new CommandIdleTimeout());
-            this.a(new CommandNetstat());
+        this.a((ICommand) (new CommandTime()));
+        this.a((ICommand) (new CommandGamemode()));
+        this.a((ICommand) (new CommandDifficulty()));
+        this.a((ICommand) (new CommandGamemodeDefault()));
+        this.a((ICommand) (new CommandKill()));
+        this.a((ICommand) (new CommandToggleDownfall()));
+        this.a((ICommand) (new CommandWeather()));
+        this.a((ICommand) (new CommandXp()));
+        this.a((ICommand) (new CommandTp()));
+        this.a((ICommand) (new CommandGive()));
+        this.a((ICommand) (new CommandReplaceItem()));
+        this.a((ICommand) (new CommandStats()));
+        this.a((ICommand) (new CommandEffect()));
+        this.a((ICommand) (new CommandEnchant()));
+        this.a((ICommand) (new CommandParticle()));
+        this.a((ICommand) (new CommandMe()));
+        this.a((ICommand) (new CommandSeed()));
+        this.a((ICommand) (new CommandHelp()));
+        this.a((ICommand) (new CommandDebug()));
+        this.a((ICommand) (new CommandTell()));
+        this.a((ICommand) (new CommandSay()));
+        this.a((ICommand) (new CommandSpawnpoint()));
+        this.a((ICommand) (new CommandSetWorldSpawn()));
+        this.a((ICommand) (new CommandGamerule()));
+        this.a((ICommand) (new CommandClear()));
+        this.a((ICommand) (new CommandTestFor()));
+        this.a((ICommand) (new CommandSpreadPlayers()));
+        this.a((ICommand) (new CommandPlaySound()));
+        this.a((ICommand) (new CommandScoreboard()));
+        this.a((ICommand) (new CommandExecute()));
+        this.a((ICommand) (new CommandTrigger()));
+        this.a((ICommand) (new CommandAchievement()));
+        this.a((ICommand) (new CommandSummon()));
+        this.a((ICommand) (new CommandSetBlock()));
+        this.a((ICommand) (new CommandFill()));
+        this.a((ICommand) (new CommandClone()));
+        this.a((ICommand) (new CommandTestForBlocks()));
+        this.a((ICommand) (new CommandBlockData()));
+        this.a((ICommand) (new CommandTestForBlock()));
+        this.a((ICommand) (new CommandTellRaw()));
+        this.a((ICommand) (new CommandWorldBorder()));
+        this.a((ICommand) (new CommandTitle()));
+        this.a((ICommand) (new CommandEntityData()));
+        if (MinecraftServer.getServer().ad()) {
+            this.a((ICommand) (new CommandOp()));
+            this.a((ICommand) (new CommandDeop()));
+            this.a((ICommand) (new CommandStop()));
+            this.a((ICommand) (new CommandSaveAll()));
+            this.a((ICommand) (new CommandSaveOff()));
+            this.a((ICommand) (new CommandSaveOn()));
+            this.a((ICommand) (new CommandBanIp()));
+            this.a((ICommand) (new CommandPardonIP()));
+            this.a((ICommand) (new CommandBan()));
+            this.a((ICommand) (new CommandBanList()));
+            this.a((ICommand) (new CommandPardon()));
+            this.a((ICommand) (new CommandKick()));
+            this.a((ICommand) (new CommandList()));
+            this.a((ICommand) (new CommandWhitelist()));
+            this.a((ICommand) (new CommandIdleTimeout()));
         } else {
-            this.a(new CommandPublish());
+            this.a((ICommand) (new CommandPublish()));
         }
 
         CommandAbstract.a((ICommandDispatcher) this);
@@ -62,8 +73,9 @@ public class CommandDispatcher extends CommandHandler implements ICommandDispatc
 
     public void a(ICommandListener icommandlistener, ICommand icommand, int i, String s, Object... aobject) {
         boolean flag = true;
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
 
-        if (icommandlistener instanceof CommandBlockListenerAbstract && !MinecraftServer.getServer().worldServer[0].getGameRules().getBoolean("commandBlockOutput")) {
+        if (!icommandlistener.getSendCommandFeedback()) {
             flag = false;
         }
 
@@ -72,23 +84,30 @@ public class CommandDispatcher extends CommandHandler implements ICommandDispatc
         chatmessage.getChatModifier().setColor(EnumChatFormat.GRAY);
         chatmessage.getChatModifier().setItalic(Boolean.valueOf(true));
         if (flag) {
-            Iterator iterator = MinecraftServer.getServer().getPlayerList().players.iterator();
+            Iterator iterator = minecraftserver.getPlayerList().players.iterator();
 
             while (iterator.hasNext()) {
                 EntityHuman entityhuman = (EntityHuman) iterator.next();
 
-                if (entityhuman != icommandlistener && MinecraftServer.getServer().getPlayerList().isOp(entityhuman.getProfile()) && icommand.canUse(entityhuman) && (!(icommandlistener instanceof RemoteControlCommandListener) || MinecraftServer.getServer().m())) {
+                if (entityhuman != icommandlistener && minecraftserver.getPlayerList().isOp(entityhuman.getProfile()) && icommand.canUse(icommandlistener)) {
                     entityhuman.sendMessage(chatmessage);
                 }
             }
         }
 
-        if (icommandlistener != MinecraftServer.getServer() && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
-            MinecraftServer.getServer().sendMessage(chatmessage);
+        if (icommandlistener != minecraftserver && minecraftserver.worldServer[0].getGameRules().getBoolean("logAdminCommands") && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+            minecraftserver.sendMessage(chatmessage);
         }
 
-        if ((i & 1) != 1) {
+        boolean flag1 = minecraftserver.worldServer[0].getGameRules().getBoolean("sendCommandFeedback");
+
+        if (icommandlistener instanceof CommandBlockListenerAbstract) {
+            flag1 = ((CommandBlockListenerAbstract) icommandlistener).m();
+        }
+
+        if ((i & 1) != 1 && flag1) {
             icommandlistener.sendMessage(new ChatMessage(s, aobject));
         }
+
     }
 }

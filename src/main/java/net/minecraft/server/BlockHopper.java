@@ -1,150 +1,121 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
 import java.util.List;
-import java.util.Random;
 
 public class BlockHopper extends BlockContainer {
 
-    private final Random a = new Random();
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) (new BlockHopperInnerClass1()));
+    public static final BlockStateBoolean ENABLED = BlockStateBoolean.of("enabled");
 
     public BlockHopper() {
         super(Material.ORE);
+        this.j(this.blockStateList.getBlockData().set(BlockHopper.FACING, EnumDirection.DOWN).set(BlockHopper.ENABLED, Boolean.valueOf(true)));
         this.a(CreativeModeTab.d);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void a(World world, int i, int j, int k, AxisAlignedBB axisalignedbb, List list, Entity entity) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, AxisAlignedBB axisalignedbb, List list, Entity entity) {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.625F, 1.0F);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
         float f = 0.125F;
 
         this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
         this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
         this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
-        super.a(world, i, j, k, axisalignedbb, list, entity);
+        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public int getPlacedData(World world, int i, int j, int k, int l, float f, float f1, float f2, int i1) {
-        int j1 = Facing.OPPOSITE_FACING[l];
+    public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
+        EnumDirection enumdirection1 = enumdirection.opposite();
 
-        if (j1 == 1) {
-            j1 = 0;
+        if (enumdirection1 == EnumDirection.UP) {
+            enumdirection1 = EnumDirection.DOWN;
         }
 
-        return j1;
+        return this.getBlockData().set(BlockHopper.FACING, enumdirection1).set(BlockHopper.ENABLED, Boolean.valueOf(true));
     }
 
     public TileEntity a(World world, int i) {
         return new TileEntityHopper();
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
-        super.postPlace(world, i, j, k, entityliving, itemstack);
+    public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
+        super.postPlace(world, blockposition, iblockdata, entityliving, itemstack);
         if (itemstack.hasName()) {
-            TileEntityHopper tileentityhopper = e((IBlockAccess) world, i, j, k);
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-            tileentityhopper.a(itemstack.getName());
+            if (tileentity instanceof TileEntityHopper) {
+                ((TileEntityHopper) tileentity).a(itemstack.getName());
+            }
         }
+
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        super.onPlace(world, i, j, k);
-        this.e(world, i, j, k);
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        this.e(world, blockposition, iblockdata);
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
         if (world.isStatic) {
             return true;
         } else {
-            TileEntityHopper tileentityhopper = e((IBlockAccess) world, i, j, k);
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-            if (tileentityhopper != null) {
-                entityhuman.openHopper(tileentityhopper);
+            if (tileentity instanceof TileEntityHopper) {
+                entityhuman.openContainer((TileEntityHopper) tileentity);
             }
 
             return true;
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        this.e(world, i, j, k);
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        this.e(world, blockposition, iblockdata);
     }
 
-    private void e(World world, int i, int j, int k) {
-        int l = world.getData(i, j, k);
-        int i1 = b(l);
-        boolean flag = !world.isBlockIndirectlyPowered(i, j, k);
-        boolean flag1 = c(l);
+    private void e(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        boolean flag = !world.isBlockIndirectlyPowered(blockposition);
 
-        if (flag != flag1) {
-            world.setData(i, j, k, i1 | (flag ? 0 : 8), 4);
+        if (flag != ((Boolean) iblockdata.get(BlockHopper.ENABLED)).booleanValue()) {
+            world.setTypeAndData(blockposition, iblockdata.set(BlockHopper.ENABLED, Boolean.valueOf(flag)), 4);
             // Spigot start - When this hopper becomes unpowered, make it active.
             // Called when this block's power level changes. flag1 is the current
             // isNotPowered from metadata. flag is the recalculated isNotPowered.
             if (world.spigotConfig.altHopperTicking) {
             	// e returns the TileEntityHopper associated with this BlockHopper.
-                TileEntityHopper hopper = e((IBlockAccess) world, i, j, k);
+                TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
                 if (flag && hopper != null) {
                     hopper.makeTick();
                 }
             }
             // Spigot end
         }
+
     }
 
-    public void remove(World world, int i, int j, int k, Block block, int l) {
-        TileEntityHopper tileentityhopper = (TileEntityHopper) world.getTileEntity(i, j, k);
+    public void remove(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentityhopper != null) {
-            for (int i1 = 0; i1 < tileentityhopper.getSize(); ++i1) {
-                ItemStack itemstack = tileentityhopper.getItem(i1);
-
-                if (itemstack != null) {
-                    float f = this.a.nextFloat() * 0.8F + 0.1F;
-                    float f1 = this.a.nextFloat() * 0.8F + 0.1F;
-                    float f2 = this.a.nextFloat() * 0.8F + 0.1F;
-
-                    while (itemstack.count > 0) {
-                        int j1 = this.a.nextInt(21) + 10;
-
-                        if (j1 > itemstack.count) {
-                            j1 = itemstack.count;
-                        }
-
-                        itemstack.count -= j1;
-                        EntityItem entityitem = new EntityItem(world, (double) ((float) i + f), (double) ((float) j + f1), (double) ((float) k + f2), new ItemStack(itemstack.getItem(), j1, itemstack.getData()));
-
-                        if (itemstack.hasTag()) {
-                            entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
-                        }
-
-                        float f3 = 0.05F;
-
-                        entityitem.motX = (double) ((float) this.a.nextGaussian() * f3);
-                        entityitem.motY = (double) ((float) this.a.nextGaussian() * f3 + 0.2F);
-                        entityitem.motZ = (double) ((float) this.a.nextGaussian() * f3);
-                        world.addEntity(entityitem);
-                    }
-                }
-            }
-
-            world.updateAdjacentComparators(i, j, k, block);
+        if (tileentity instanceof TileEntityHopper) {
+            InventoryUtils.dropInventory(world, blockposition, (TileEntityHopper) tileentity);
+            world.updateAdjacentComparators(blockposition, this);
         }
 
-        super.remove(world, i, j, k, block, l);
+        super.remove(world, blockposition, iblockdata);
     }
 
     public int b() {
-        return 38;
+        return 3;
     }
 
     public boolean d() {
@@ -155,11 +126,11 @@ public class BlockHopper extends BlockContainer {
         return false;
     }
 
-    public static int b(int i) {
-        return Math.min(i & 7, 5); // CraftBukkit - Fix AIOOBE in callers
+    public static EnumDirection b(int i) {
+        return EnumDirection.fromType1(i & 7);
     }
 
-    public static boolean c(int i) {
+    public static boolean f(int i) {
         return (i & 8) != 8;
     }
 
@@ -167,20 +138,35 @@ public class BlockHopper extends BlockContainer {
         return true;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
-        return Container.b((IInventory) e((IBlockAccess) world, i, j, k));
+    public int l(World world, BlockPosition blockposition) {
+        return Container.a(world.getTileEntity(blockposition));
     }
 
-    public static TileEntityHopper e(IBlockAccess iblockaccess, int i, int j, int k) {
-        return (TileEntityHopper) iblockaccess.getTileEntity(i, j, k);
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockHopper.FACING, b(i)).set(BlockHopper.ENABLED, Boolean.valueOf(f(i)));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        byte b0 = 0;
+        int i = b0 | ((EnumDirection) iblockdata.get(BlockHopper.FACING)).a();
+
+        if (!((Boolean) iblockdata.get(BlockHopper.ENABLED)).booleanValue()) {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockHopper.FACING, BlockHopper.ENABLED});
     }
 
     // Spigot start - Use random block updates to make hoppers active.
     @Override
-    public void a(World world, int i, int j, int k, Random random) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, java.util.Random random) {
         if (world.spigotConfig.altHopperTicking) {
         	// e returns the TileEntityHopper associated with this BlockHopper.
-            TileEntityHopper hopper = e((IBlockAccess) world, i, j, k);
+            TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
             if (hopper != null) {
                 hopper.makeTick();
             }

@@ -1,13 +1,11 @@
 package net.minecraft.server;
 
+import com.mojang.authlib.GameProfile;
 import java.util.UUID;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 public class ItemSkull extends Item {
 
-    private static final String[] b = new String[] { "skeleton", "wither", "zombie", "char", "creeper"};
-    public static final String[] a = new String[] { "skeleton", "wither", "zombie", "steve", "creeper"};
+    private static final String[] a = new String[] { "skeleton", "wither", "zombie", "char", "creeper"};
 
     public ItemSkull() {
         this.a(CreativeModeTab.c);
@@ -15,75 +13,73 @@ public class ItemSkull extends Item {
         this.a(true);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (l == 0) {
-            return false;
-        } else if (!world.getType(i, j, k).getMaterial().isBuildable()) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+        if (enumdirection == EnumDirection.DOWN) {
             return false;
         } else {
-            if (l == 1) {
-                ++j;
-            }
+            IBlockData iblockdata = world.getType(blockposition);
+            Block block = iblockdata.getBlock();
+            boolean flag = block.f(world, blockposition);
 
-            if (l == 2) {
-                --k;
-            }
-
-            if (l == 3) {
-                ++k;
-            }
-
-            if (l == 4) {
-                --i;
-            }
-
-            if (l == 5) {
-                ++i;
-            }
-
-            if (!world.isStatic) {
-                // Spigot Start
-                if ( !Blocks.SKULL.canPlace( world, i, j, k ) )
-                {
+            if (!flag) {
+                if (!world.getType(blockposition).getBlock().getMaterial().isBuildable()) {
                     return false;
                 }
-                // Spigot End
-                world.setTypeAndData(i, j, k, Blocks.SKULL, l, 2);
-                int i1 = 0;
 
-                if (l == 1) {
-                    i1 = MathHelper.floor((double) (entityhuman.yaw * 16.0F / 360.0F) + 0.5D) & 15;
-                }
-
-                TileEntity tileentity = world.getTileEntity(i, j, k);
-
-                if (tileentity != null && tileentity instanceof TileEntitySkull) {
-                    if (itemstack.getData() == 3) {
-                        GameProfile gameprofile = null;
-
-                        if (itemstack.hasTag()) {
-                            NBTTagCompound nbttagcompound = itemstack.getTag();
-
-                            if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
-                                gameprofile = GameProfileSerializer.deserialize(nbttagcompound.getCompound("SkullOwner"));
-                            } else if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && nbttagcompound.getString("SkullOwner").length() > 0) {
-                                gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
-                            }
-                        }
-
-                        ((TileEntitySkull) tileentity).setGameProfile(gameprofile);
-                    } else {
-                        ((TileEntitySkull) tileentity).setSkullType(itemstack.getData());
-                    }
-
-                    ((TileEntitySkull) tileentity).setRotation(i1);
-                    ((BlockSkull) Blocks.SKULL).a(world, i, j, k, (TileEntitySkull) tileentity);
-                }
-
-                --itemstack.count;
+                blockposition = blockposition.shift(enumdirection);
             }
 
-            return true;
+            if (!entityhuman.a(blockposition, enumdirection, itemstack)) {
+                return false;
+            } else if (!Blocks.SKULL.canPlace(world, blockposition)) {
+                return false;
+            } else {
+                if (!world.isStatic) {
+                    // Spigot Start
+                    if ( !Blocks.SKULL.canPlace( world, blockposition ) )
+                    {
+                        return false;
+                    }
+                    // Spigot End
+                    world.setTypeAndData(blockposition, Blocks.SKULL.getBlockData().set(BlockSkull.FACING, enumdirection), 3);
+                    int i = 0;
+
+                    if (enumdirection == EnumDirection.UP) {
+                        i = MathHelper.floor((double) (entityhuman.yaw * 16.0F / 360.0F) + 0.5D) & 15;
+                    }
+
+                    TileEntity tileentity = world.getTileEntity(blockposition);
+
+                    if (tileentity instanceof TileEntitySkull) {
+                        TileEntitySkull tileentityskull = (TileEntitySkull) tileentity;
+
+                        if (itemstack.getData() == 3) {
+                            GameProfile gameprofile = null;
+
+                            if (itemstack.hasTag()) {
+                                NBTTagCompound nbttagcompound = itemstack.getTag();
+
+                                if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
+                                    gameprofile = GameProfileSerializer.deserialize(nbttagcompound.getCompound("SkullOwner"));
+                                } else if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && nbttagcompound.getString("SkullOwner").length() > 0) {
+                                    gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
+                                }
+                            }
+
+                            tileentityskull.setGameProfile(gameprofile);
+                        } else {
+                            tileentityskull.setSkullType(itemstack.getData());
+                        }
+
+                        tileentityskull.setRotation(i);
+                        Blocks.SKULL.a(world, blockposition, tileentityskull);
+                    }
+
+                    --itemstack.count;
+                }
+
+                return true;
+            }
         }
     }
 
@@ -91,27 +87,52 @@ public class ItemSkull extends Item {
         return i;
     }
 
-    public String a(ItemStack itemstack) {
+    public String e_(ItemStack itemstack) {
         int i = itemstack.getData();
 
-        if (i < 0 || i >= b.length) {
+        if (i < 0 || i >= ItemSkull.a.length) {
             i = 0;
         }
 
-        return super.getName() + "." + b[i];
+        return super.getName() + "." + ItemSkull.a[i];
     }
 
-    public String n(ItemStack itemstack) {
+    public String a(ItemStack itemstack) {
         if (itemstack.getData() == 3 && itemstack.hasTag()) {
-            if (itemstack.getTag().hasKeyOfType("SkullOwner", 10)) {
-                return LocaleI18n.get("item.skull.player.name", new Object[] { GameProfileSerializer.deserialize(itemstack.getTag().getCompound("SkullOwner")).getName()});
+            if (itemstack.getTag().hasKeyOfType("SkullOwner", 8)) {
+                return LocaleI18n.a("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")});
             }
 
-            if (itemstack.getTag().hasKeyOfType("SkullOwner", 8)) {
-                return LocaleI18n.get("item.skull.player.name", new Object[] { itemstack.getTag().getString("SkullOwner")});
+            if (itemstack.getTag().hasKeyOfType("SkullOwner", 10)) {
+                NBTTagCompound nbttagcompound = itemstack.getTag().getCompound("SkullOwner");
+
+                if (nbttagcompound.hasKeyOfType("Name", 8)) {
+                    return LocaleI18n.a("item.skull.player.name", new Object[] { nbttagcompound.getString("Name")});
+                }
             }
         }
 
-        return super.n(itemstack);
+        return super.a(itemstack);
+    }
+
+    public boolean a(final NBTTagCompound nbttagcompound) { // Spigot - make final
+        super.a(nbttagcompound);
+        if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && nbttagcompound.getString("SkullOwner").length() > 0) {
+            GameProfile gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
+
+            // Spigot start
+            TileEntitySkull.b(gameprofile, new com.google.common.base.Predicate<GameProfile>() {
+
+                @Override
+                public boolean apply(GameProfile gameprofile) {
+                    nbttagcompound.set("SkullOwner", GameProfileSerializer.serialize(new NBTTagCompound(), gameprofile));                    
+                    return false;
+                }
+            });
+            // Spigot end
+            return true;
+        } else {
+            return false;
+        }
     }
 }

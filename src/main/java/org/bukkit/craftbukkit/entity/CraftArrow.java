@@ -33,7 +33,7 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
     }
 
     public ProjectileSource getShooter() {
-        return getHandle().projectileSource;
+        return getHandle().projectileSource;   
     }
 
     public void setShooter(ProjectileSource shooter) {
@@ -78,7 +78,7 @@ public class CraftArrow extends AbstractProjectile implements Arrow {
         @Override
         public double getDamage()
         {
-            return getHandle().e();
+            return getHandle().j();
         }
 
         @Override

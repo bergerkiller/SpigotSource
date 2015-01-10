@@ -1,17 +1,16 @@
 package net.minecraft.server;
 
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
-
-import net.minecraft.util.com.google.gson.JsonDeserializationContext;
-import net.minecraft.util.com.google.gson.JsonDeserializer;
-import net.minecraft.util.com.google.gson.JsonElement;
-import net.minecraft.util.com.google.gson.JsonObject;
-import net.minecraft.util.com.google.gson.JsonSerializationContext;
-import net.minecraft.util.com.google.gson.JsonSerializer;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
 
 class BanEntrySerializer implements JsonDeserializer, JsonSerializer {
 

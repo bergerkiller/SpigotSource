@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -16,35 +16,38 @@ public class PortalTravelAgent {
     private final WorldServer a;
     private final Random b;
     private final LongHashMap c = new LongHashMap();
-    private final List d = new ArrayList();
+    private final List d = Lists.newArrayList();
 
     public PortalTravelAgent(WorldServer worldserver) {
         this.a = worldserver;
         this.b = new Random(worldserver.getSeed());
     }
 
-    public void a(Entity entity, double d0, double d1, double d2, float f) {
-        if (this.a.worldProvider.dimension != 1) {
-            if (!this.b(entity, d0, d1, d2, f)) {
+    public void a(Entity entity, float f) {
+        if (this.a.worldProvider.getDimension() != 1) {
+            if (!this.b(entity, f)) {
                 this.a(entity);
-                this.b(entity, d0, d1, d2, f);
+                this.b(entity, f);
             }
         } else {
+            int i = MathHelper.floor(entity.locX);
+            int j = MathHelper.floor(entity.locY) - 1;
+            int k = MathHelper.floor(entity.locZ);
             // CraftBukkit start - Modularize end portal creation
-            ChunkCoordinates created = this.createEndPortal(d0, d1, d2);
-            entity.setPositionRotation((double) created.x, (double) created.y, (double) created.z, entity.yaw, 0.0F);
+            BlockPosition created = this.createEndPortal(entity.locX, entity.locY, entity.locZ);
+            entity.setPositionRotation((double) created.getX(), (double) created.getY(), (double) created.getZ(), entity.yaw, 0.0F);
             entity.motX = entity.motY = entity.motZ = 0.0D;
         }
     }
 
     // Split out from original a(Entity, double, double, double, float) method in order to enable being called from createPortal
-    private ChunkCoordinates createEndPortal(double x, double y, double z) {
+    private BlockPosition createEndPortal(double x, double y, double z) {
             int i = MathHelper.floor(x);
             int j = MathHelper.floor(y) - 1;
             int k = MathHelper.floor(z);
-            // CraftBukkit end
             byte b0 = 1;
             byte b1 = 0;
+            // CraftBukkit end
 
             for (int l = -2; l <= 2; ++l) {
                 for (int i1 = -2; i1 <= 2; ++i1) {
@@ -54,20 +57,20 @@ public class PortalTravelAgent {
                         int i2 = k + i1 * b1 - l * b0;
                         boolean flag = j1 < 0;
 
-                        this.a.setTypeUpdate(k1, l1, i2, flag ? Blocks.OBSIDIAN : Blocks.AIR);
+                        this.a.setTypeUpdate(new BlockPosition(k1, l1, i2), flag ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
                     }
                 }
             }
 
         // CraftBukkit start
-        return new ChunkCoordinates(i, j, k);
+        return new BlockPosition(i, k, k);
     }
 
     // use logic based on creation to verify end portal
-    private ChunkCoordinates findEndPortal(ChunkCoordinates portal) {
-        int i = portal.x;
-        int j = portal.y - 1;
-        int k = portal.z;
+    private BlockPosition findEndPortal(BlockPosition portal) {
+        int i = portal.getX();
+        int j = portal.getY() - 1;
+        int k = portal.getZ();
         byte b0 = 1;
         byte b1 = 0;
 
@@ -79,24 +82,24 @@ public class PortalTravelAgent {
                     int i2 = k + i1 * b1 - l * b0;
                     boolean flag = j1 < 0;
 
-                    if (this.a.getType(k1, l1, i2) != (flag ? Blocks.OBSIDIAN : Blocks.AIR)) {
+                    if (this.a.getType(new BlockPosition(k1, l1, i2)).getBlock() != (flag ? Blocks.OBSIDIAN : Blocks.AIR)) {
                         return null;
                     }
                 }
             }
         }
-        return new ChunkCoordinates(i, j, k);
+        return new BlockPosition(i, j, k);
     }
     // CraftBukkit end
 
-    public boolean b(Entity entity, double d0, double d1, double d2, float f) {
+    public boolean b(Entity entity, float f) {
         // CraftBukkit start - Modularize portal search process and entity teleportation
-        ChunkCoordinates found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
+        BlockPosition found = this.findPortal(entity.locX, entity.locY, entity.locZ, 128);
         if (found == null) {
             return false;
         }
 
-        Location exit = new Location(this.a.getWorld(), found.x, found.y, found.z, f, entity.pitch);
+        Location exit = new Location(this.a.getWorld(), found.getX(), found.getY(), found.getZ(), f, entity.pitch);
         Vector velocity = entity.getBukkitEntity().getVelocity();
         this.adjustExit(entity, exit, velocity);
         entity.setPositionRotation(exit.getX(), exit.getY(), exit.getZ(), exit.getYaw(), exit.getPitch());
@@ -106,54 +109,46 @@ public class PortalTravelAgent {
         return true;
     }
 
-    public ChunkCoordinates findPortal(double x, double y, double z, int short1) {
+    public BlockPosition findPortal(double x, double y, double z, int short1) {
         if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
             return this.findEndPortal(this.a.worldProvider.h());
         }
         // CraftBukkit end
-        double d3 = -1.0D;
-        int i = 0;
-        int j = 0;
-        int k = 0;
+        double d0 = -1.0D;
         // CraftBukkit start
-        int l = MathHelper.floor(x);
-        int i1 = MathHelper.floor(z);
+        int i = MathHelper.floor(x);
+        int j = MathHelper.floor(z);
         // CraftBukkit end
-        long j1 = ChunkCoordIntPair.a(l, i1);
-        boolean flag = true;
-        double d4;
-        int k1;
+        boolean flag1 = true;
+        Object object = BlockPosition.ZERO;
+        long k = ChunkCoordIntPair.a(i, j);
 
-        if (this.c.contains(j1)) {
-            ChunkCoordinatesPortal chunkcoordinatesportal = (ChunkCoordinatesPortal) this.c.getEntry(j1);
+        if (this.c.contains(k)) {
+            ChunkCoordinatesPortal chunkcoordinatesportal = (ChunkCoordinatesPortal) this.c.getEntry(k);
 
-            d3 = 0.0D;
-            i = chunkcoordinatesportal.x;
-            j = chunkcoordinatesportal.y;
-            k = chunkcoordinatesportal.z;
-            chunkcoordinatesportal.d = this.a.getTime();
-            flag = false;
+            d0 = 0.0D;
+            object = chunkcoordinatesportal;
+            chunkcoordinatesportal.b = this.a.getTime();
+            flag1 = false;
         } else {
-            for (k1 = l - short1; k1 <= l + short1; ++k1) {
-                double d5 = (double) k1 + 0.5D - x; // CraftBukkit
+            BlockPosition blockposition = new BlockPosition(x, y, z);
 
-                for (int l1 = i1 - short1; l1 <= i1 + short1; ++l1) {
-                    double d6 = (double) l1 + 0.5D - z; // CraftBukkit
+            for (int l = -128; l <= 128; ++l) {
+                BlockPosition blockposition1;
 
-                    for (int i2 = this.a.S() - 1; i2 >= 0; --i2) {
-                        if (this.a.getType(k1, i2, l1) == Blocks.PORTAL) {
-                            while (this.a.getType(k1, i2 - 1, l1) == Blocks.PORTAL) {
-                                --i2;
+                for (int i1 = -128; i1 <= 128; ++i1) {
+                    for (BlockPosition blockposition2 = blockposition.a(l, this.a.V() - 1 - blockposition.getY(), i1); blockposition2.getY() >= 0; blockposition2 = blockposition1) {
+                        blockposition1 = blockposition2.down();
+                        if (this.a.getType(blockposition2).getBlock() == Blocks.PORTAL) {
+                            while (this.a.getType(blockposition1 = blockposition2.down()).getBlock() == Blocks.PORTAL) {
+                                blockposition2 = blockposition1;
                             }
 
-                            d4 = (double) i2 + 0.5D - y; // CraftBukkit
-                            double d7 = d5 * d5 + d4 * d4 + d6 * d6;
+                            double d1 = blockposition2.i(blockposition);
 
-                            if (d3 < 0.0D || d7 < d3) {
-                                d3 = d7;
-                                i = k1;
-                                j = i2;
-                                k = l1;
+                            if (d0 < 0.0D || d1 < d0) {
+                                d0 = d1;
+                                object = blockposition2;
                             }
                         }
                     }
@@ -161,24 +156,23 @@ public class PortalTravelAgent {
             }
         }
 
-        if (d3 >= 0.0D) {
-            if (flag) {
-                this.c.put(j1, new ChunkCoordinatesPortal(this, i, j, k, this.a.getTime()));
-                this.d.add(Long.valueOf(j1));
+        if (d0 >= 0.0D) {
+            if (flag1) {
+                this.c.put(k, new ChunkCoordinatesPortal(this, (BlockPosition) object, this.a.getTime()));
+                this.d.add(Long.valueOf(k));
             }
-            // CraftBukkit start - Moved entity teleportation logic into exit
-            return new ChunkCoordinates(i, j, k);
+            // CraftBukkit start - Move entity teleportation logic into exit
+            return (BlockPosition) object;
         } else {
             return null;
         }
     }
+
     // Entity repositioning logic split out from original b method and combined with repositioning logic for The End from original a method
     public void adjustExit(Entity entity, Location position, Vector velocity) {
         Location from = position.clone();
         Vector before = velocity.clone();
-        int i = position.getBlockX();
-        int j = position.getBlockY();
-        int k = position.getBlockZ();
+        BlockPosition object = new BlockPosition(position.getBlockX(), position.getBlockY(), position.getBlockZ());
         float f = position.getYaw();
 
         if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
@@ -189,84 +183,74 @@ public class PortalTravelAgent {
             velocity.setY(0);
             velocity.setZ(0);
         } else {
-            double d4;
-            int k1;
             // CraftBukkit end
+            double d2 = (double) ((BlockPosition) object).getX() + 0.5D;
+            double d3 = (double) ((BlockPosition) object).getY() + 0.5D;
+            double d4 = (double) ((BlockPosition) object).getZ() + 0.5D;
+            EnumDirection enumdirection = null;
 
-            double d8 = (double) i + 0.5D;
-            double d9 = (double) j + 0.5D;
-
-            d4 = (double) k + 0.5D;
-            int j2 = -1;
-
-            if (this.a.getType(i - 1, j, k) == Blocks.PORTAL) {
-                j2 = 2;
+            if (this.a.getType(((BlockPosition) object).west()).getBlock() == Blocks.PORTAL) {
+                enumdirection = EnumDirection.NORTH;
             }
 
-            if (this.a.getType(i + 1, j, k) == Blocks.PORTAL) {
-                j2 = 0;
+            if (this.a.getType(((BlockPosition) object).east()).getBlock() == Blocks.PORTAL) {
+                enumdirection = EnumDirection.SOUTH;
             }
 
-            if (this.a.getType(i, j, k - 1) == Blocks.PORTAL) {
-                j2 = 3;
+            if (this.a.getType(((BlockPosition) object).north()).getBlock() == Blocks.PORTAL) {
+                enumdirection = EnumDirection.EAST;
             }
 
-            if (this.a.getType(i, j, k + 1) == Blocks.PORTAL) {
-                j2 = 1;
+            if (this.a.getType(((BlockPosition) object).south()).getBlock() == Blocks.PORTAL) {
+                enumdirection = EnumDirection.WEST;
             }
 
-            int k2 = entity.ay();
+            EnumDirection enumdirection1 = EnumDirection.fromType2(entity.aG());
 
-            if (j2 > -1) {
-                int l2 = Direction.h[j2];
-                int i3 = Direction.a[j2];
-                int j3 = Direction.b[j2];
-                int k3 = Direction.a[l2];
-                int l3 = Direction.b[l2];
-                boolean flag1 = !this.a.isEmpty(i + i3 + k3, j, k + j3 + l3) || !this.a.isEmpty(i + i3 + k3, j + 1, k + j3 + l3);
-                boolean flag2 = !this.a.isEmpty(i + i3, j, k + j3) || !this.a.isEmpty(i + i3, j + 1, k + j3);
+            if (enumdirection != null) {
+                EnumDirection enumdirection2 = enumdirection.f();
+                BlockPosition blockposition3 = ((BlockPosition) object).shift(enumdirection);
+                boolean flag2 = this.a(blockposition3);
+                boolean flag3 = this.a(blockposition3.shift(enumdirection2));
 
-                if (flag1 && flag2) {
-                    j2 = Direction.f[j2];
-                    l2 = Direction.f[l2];
-                    i3 = Direction.a[j2];
-                    j3 = Direction.b[j2];
-                    k3 = Direction.a[l2];
-                    l3 = Direction.b[l2];
-                    k1 = i - k3;
-                    d8 -= (double) k3;
-                    int i4 = k - l3;
+                if (flag3 && flag2) {
+                    object = ((BlockPosition) object).shift(enumdirection2);
+                    enumdirection = enumdirection.opposite();
+                    enumdirection2 = enumdirection2.opposite();
+                    BlockPosition blockposition4 = ((BlockPosition) object).shift(enumdirection);
 
-                    d4 -= (double) l3;
-                    flag1 = !this.a.isEmpty(k1 + i3 + k3, j, i4 + j3 + l3) || !this.a.isEmpty(k1 + i3 + k3, j + 1, i4 + j3 + l3);
-                    flag2 = !this.a.isEmpty(k1 + i3, j, i4 + j3) || !this.a.isEmpty(k1 + i3, j + 1, i4 + j3);
+                    flag2 = this.a(blockposition4);
+                    flag3 = this.a(blockposition4.shift(enumdirection2));
                 }
 
                 float f1 = 0.5F;
                 float f2 = 0.5F;
 
-                if (!flag1 && flag2) {
+                if (!flag3 && flag2) {
                     f1 = 1.0F;
-                } else if (flag1 && !flag2) {
+                } else if (flag3 && !flag2) {
                     f1 = 0.0F;
-                } else if (flag1 && flag2) {
+                } else if (flag3) {
                     f2 = 0.0F;
                 }
 
-                d8 += (double) ((float) k3 * f1 + f2 * (float) i3);
-                d4 += (double) ((float) l3 * f1 + f2 * (float) j3);
+                d2 = (double) ((BlockPosition) object).getX() + 0.5D;
+                d3 = (double) ((BlockPosition) object).getY() + 0.5D;
+                d4 = (double) ((BlockPosition) object).getZ() + 0.5D;
+                d2 += (double) ((float) enumdirection2.getAdjacentX() * f1 + (float) enumdirection.getAdjacentX() * f2);
+                d4 += (double) ((float) enumdirection2.getAdjacentZ() * f1 + (float) enumdirection.getAdjacentZ() * f2);
                 float f3 = 0.0F;
                 float f4 = 0.0F;
                 float f5 = 0.0F;
                 float f6 = 0.0F;
 
-                if (j2 == k2) {
+                if (enumdirection == enumdirection1) {
                     f3 = 1.0F;
                     f4 = 1.0F;
-                } else if (j2 == Direction.f[k2]) {
+                } else if (enumdirection == enumdirection1.opposite()) {
                     f3 = -1.0F;
                     f4 = -1.0F;
-                } else if (j2 == Direction.g[k2]) {
+                } else if (enumdirection == enumdirection1.e()) {
                     f5 = 1.0F;
                     f6 = -1.0F;
                 } else {
@@ -275,28 +259,26 @@ public class PortalTravelAgent {
                 }
 
                 // CraftBukkit start
-                double d10 = velocity.getX();
-                double d11 = velocity.getZ();
+                double d5 = velocity.getX();
+                double d6 = velocity.getZ();
                 // CraftBukkit end
 
                 // CraftBukkit start - Adjust position and velocity instances instead of entity
-                velocity.setX(d10 * (double) f3 + d11 * (double) f6);
-                velocity.setZ(d10 * (double) f5 + d11 * (double) f4);
-                f = f - (float) (k2 * 90) + (float) (j2 * 90);
+                velocity.setX(d5 * (double) f3 + d6 * (double) f6);
+                velocity.setZ(d5 * (double) f5 + d6 * (double) f4);
+                f = f - (float) (enumdirection1.b() * 90) + (float) (enumdirection.b() * 90);
             } else {
-                // entity.motX = entity.motY = entity.motZ = 0.0D;
                 velocity.setX(0);
                 velocity.setY(0);
                 velocity.setZ(0);
             }
 
-            // entity.setPositionRotation(d8, d9, d4, entity.yaw, entity.pitch);
-            position.setX(d8);
-            position.setY(d9);
+            // entity.setPositionRotation(d2, d3, d4, entity.yaw, entity.pitch);
+            position.setX(d2);
+            position.setY(d3);
             position.setZ(d4);
             position.setYaw(f);
         }
-
         EntityPortalExitEvent event = new EntityPortalExitEvent(entity.getBukkitEntity(), from, position, before, velocity);
         this.a.getServer().getPluginManager().callEvent(event);
         Location to = event.getTo();
@@ -318,6 +300,10 @@ public class PortalTravelAgent {
         // CraftBukkit end
     }
 
+    private boolean a(BlockPosition blockposition) {
+        return !this.a.isEmpty(blockposition) || !this.a.isEmpty(blockposition.up());
+    }
+
     public boolean a(Entity entity) {
         // CraftBukkit start - Allow for portal creation to be based on coordinates instead of entity
         return this.createPortal(entity.locX, entity.locY, entity.locZ, 16);
@@ -325,7 +311,7 @@ public class PortalTravelAgent {
 
     public boolean createPortal(double x, double y, double z, int b0) {
         if (this.a.getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
-            this.createEndPortal(x, y, z);
+            createEndPortal(x, y, z);
             return true;
         }
         // CraftBukkit end
@@ -343,8 +329,8 @@ public class PortalTravelAgent {
 
         int i2;
         double d1;
-        double d2;
         int j2;
+        double d2;
         int k2;
         int l2;
         int i3;
@@ -363,30 +349,30 @@ public class PortalTravelAgent {
             for (j2 = k - b0; j2 <= k + b0; ++j2) {
                 d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
-                label274:
-                for (k2 = this.a.S() - 1; k2 >= 0; --k2) {
-                    if (this.a.isEmpty(i2, k2, j2)) {
-                        while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
+                label271:
+                for (k2 = this.a.V() - 1; k2 >= 0; --k2) {
+                    if (this.a.isEmpty(new BlockPosition(i2, k2, j2))) {
+                        while (k2 > 0 && this.a.isEmpty(new BlockPosition(i2, k2 - 1, j2))) {
                             --k2;
                         }
 
-                        for (i3 = l1; i3 < l1 + 4; ++i3) {
-                            l2 = i3 % 2;
-                            k3 = 1 - l2;
-                            if (i3 % 4 >= 2) {
-                                l2 = -l2;
-                                k3 = -k3;
+                        for (l2 = l1; l2 < l1 + 4; ++l2) {
+                            i3 = l2 % 2;
+                            j3 = 1 - i3;
+                            if (l2 % 4 >= 2) {
+                                i3 = -i3;
+                                j3 = -j3;
                             }
 
-                            for (j3 = 0; j3 < 3; ++j3) {
-                                for (i4 = 0; i4 < 4; ++i4) {
-                                    for (l3 = -1; l3 < 4; ++l3) {
-                                        k4 = i2 + (i4 - 1) * l2 + j3 * k3;
-                                        j4 = k2 + l3;
-                                        int l4 = j2 + (i4 - 1) * k3 - j3 * l2;
+                            for (k3 = 0; k3 < 3; ++k3) {
+                                for (l3 = 0; l3 < 4; ++l3) {
+                                    for (i4 = -1; i4 < 4; ++i4) {
+                                        j4 = i2 + (l3 - 1) * i3 + k3 * j3;
+                                        k4 = k2 + i4;
+                                        int l4 = j2 + (l3 - 1) * j3 - k3 * i3;
 
-                                        if (l3 < 0 && !this.a.getType(k4, j4, l4).getMaterial().isBuildable() || l3 >= 0 && !this.a.isEmpty(k4, j4, l4)) {
-                                            continue label274;
+                                        if (i4 < 0 && !this.a.getType(new BlockPosition(j4, k4, l4)).getBlock().getMaterial().isBuildable() || i4 >= 0 && !this.a.isEmpty(new BlockPosition(j4, k4, l4))) {
+                                            continue label271;
                                         }
                                     }
                                 }
@@ -399,7 +385,7 @@ public class PortalTravelAgent {
                                 l = i2;
                                 i1 = k2;
                                 j1 = j2;
-                                k1 = i3 % 4;
+                                k1 = l2 % 4;
                             }
                         }
                     }
@@ -414,24 +400,24 @@ public class PortalTravelAgent {
                 for (j2 = k - b0; j2 <= k + b0; ++j2) {
                     d2 = (double) j2 + 0.5D - z; // CraftBukkit
 
-                    label222:
-                    for (k2 = this.a.S() - 1; k2 >= 0; --k2) {
-                        if (this.a.isEmpty(i2, k2, j2)) {
-                            while (k2 > 0 && this.a.isEmpty(i2, k2 - 1, j2)) {
+                    label219:
+                    for (k2 = this.a.V() - 1; k2 >= 0; --k2) {
+                        if (this.a.isEmpty(new BlockPosition(i2, k2, j2))) {
+                            while (k2 > 0 && this.a.isEmpty(new BlockPosition(i2, k2 - 1, j2))) {
                                 --k2;
                             }
 
-                            for (i3 = l1; i3 < l1 + 2; ++i3) {
-                                l2 = i3 % 2;
-                                k3 = 1 - l2;
+                            for (l2 = l1; l2 < l1 + 2; ++l2) {
+                                i3 = l2 % 2;
+                                j3 = 1 - i3;
 
-                                for (j3 = 0; j3 < 4; ++j3) {
-                                    for (i4 = -1; i4 < 4; ++i4) {
-                                        l3 = i2 + (j3 - 1) * l2;
-                                        k4 = k2 + i4;
-                                        j4 = j2 + (j3 - 1) * k3;
-                                        if (i4 < 0 && !this.a.getType(l3, k4, j4).getMaterial().isBuildable() || i4 >= 0 && !this.a.isEmpty(l3, k4, j4)) {
-                                            continue label222;
+                                for (k3 = 0; k3 < 4; ++k3) {
+                                    for (l3 = -1; l3 < 4; ++l3) {
+                                        i4 = i2 + (k3 - 1) * i3;
+                                        j4 = k2 + l3;
+                                        k4 = j2 + (k3 - 1) * j3;
+                                        if (l3 < 0 && !this.a.getType(new BlockPosition(i4, j4, k4)).getBlock().getMaterial().isBuildable() || l3 >= 0 && !this.a.isEmpty(new BlockPosition(i4, j4, k4))) {
+                                            continue label219;
                                         }
                                     }
                                 }
@@ -443,7 +429,7 @@ public class PortalTravelAgent {
                                     l = i2;
                                     i1 = k2;
                                     j1 = j2;
-                                    k1 = i3 % 2;
+                                    k1 = l2 % 2;
                                 }
                             }
                         }
@@ -464,49 +450,44 @@ public class PortalTravelAgent {
             l5 = -l5;
         }
 
-        boolean flag;
-
         if (d0 < 0.0D) {
-            if (i1 < 70) {
-                i1 = 70;
-            }
-
-            if (i1 > this.a.S() - 10) {
-                i1 = this.a.S() - 10;
-            }
-
+            i1 = MathHelper.clamp(i1, 70, this.a.V() - 10);
             j5 = i1;
 
             for (k2 = -1; k2 <= 1; ++k2) {
-                for (i3 = 1; i3 < 3; ++i3) {
-                    for (l2 = -1; l2 < 3; ++l2) {
-                        k3 = i5 + (i3 - 1) * k5 + k2 * l5;
-                        j3 = j5 + l2;
-                        i4 = j2 + (i3 - 1) * l5 - k2 * k5;
-                        flag = l2 < 0;
-                        this.a.setTypeUpdate(k3, j3, i4, flag ? Blocks.OBSIDIAN : Blocks.AIR);
+                for (l2 = 1; l2 < 3; ++l2) {
+                    for (i3 = -1; i3 < 3; ++i3) {
+                        j3 = i5 + (l2 - 1) * k5 + k2 * l5;
+                        k3 = j5 + i3;
+                        l3 = j2 + (l2 - 1) * l5 - k2 * k5;
+                        boolean flag = i3 < 0;
+
+                        this.a.setTypeUpdate(new BlockPosition(j3, k3, l3), flag ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
                     }
                 }
             }
         }
 
-        for (k2 = 0; k2 < 4; ++k2) {
+        IBlockData iblockdata = Blocks.PORTAL.getBlockData().set(BlockPortal.AXIS, k5 != 0 ? EnumAxis.X : EnumAxis.Z);
+
+        for (l2 = 0; l2 < 4; ++l2) {
             for (i3 = 0; i3 < 4; ++i3) {
-                for (l2 = -1; l2 < 4; ++l2) {
+                for (j3 = -1; j3 < 4; ++j3) {
                     k3 = i5 + (i3 - 1) * k5;
-                    j3 = j5 + l2;
+                    l3 = j5 + j3;
                     i4 = j2 + (i3 - 1) * l5;
-                    flag = i3 == 0 || i3 == 3 || l2 == -1 || l2 == 3;
-                    this.a.setTypeAndData(k3, j3, i4, flag ? Blocks.OBSIDIAN : Blocks.PORTAL, 0, 2);
+                    boolean flag1 = i3 == 0 || i3 == 3 || j3 == -1 || j3 == 3;
+
+                    this.a.setTypeAndData(new BlockPosition(k3, l3, i4), flag1 ? Blocks.OBSIDIAN.getBlockData() : iblockdata, 2);
                 }
             }
 
             for (i3 = 0; i3 < 4; ++i3) {
-                for (l2 = -1; l2 < 4; ++l2) {
+                for (j3 = -1; j3 < 4; ++j3) {
                     k3 = i5 + (i3 - 1) * k5;
-                    j3 = j5 + l2;
+                    l3 = j5 + j3;
                     i4 = j2 + (i3 - 1) * l5;
-                    this.a.applyPhysics(k3, j3, i4, this.a.getType(k3, j3, i4));
+                    this.a.applyPhysics(new BlockPosition(k3, l3, i4), this.a.getType(new BlockPosition(k3, l3, i4)).getBlock());
                 }
             }
         }
@@ -523,11 +504,12 @@ public class PortalTravelAgent {
                 Long olong = (Long) iterator.next();
                 ChunkCoordinatesPortal chunkcoordinatesportal = (ChunkCoordinatesPortal) this.c.getEntry(olong.longValue());
 
-                if (chunkcoordinatesportal == null || chunkcoordinatesportal.d < j) {
+                if (chunkcoordinatesportal == null || chunkcoordinatesportal.b < j) {
                     iterator.remove();
                     this.c.remove(olong.longValue());
                 }
             }
         }
+
     }
 }

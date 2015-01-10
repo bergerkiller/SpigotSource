@@ -1,6 +1,6 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -10,13 +10,13 @@ import java.util.Map.Entry;
 
 public class WorldGenLargeFeature extends StructureGenerator {
 
-    private static List e = Arrays.asList(new BiomeBase[] { BiomeBase.DESERT, BiomeBase.DESERT_HILLS, BiomeBase.JUNGLE, BiomeBase.JUNGLE_HILLS, BiomeBase.SWAMPLAND});
+    private static final List d = Arrays.asList(new BiomeBase[] { BiomeBase.DESERT, BiomeBase.DESERT_HILLS, BiomeBase.JUNGLE, BiomeBase.JUNGLE_HILLS, BiomeBase.SWAMPLAND});
     private List f;
     private int g;
     private int h;
 
     public WorldGenLargeFeature() {
-        this.f = new ArrayList();
+        this.f = Lists.newArrayList();
         this.g = 32;
         this.h = 8;
         this.f.add(new BiomeMeta(EntityWitch.class, 1, 1, 1));
@@ -33,6 +33,7 @@ public class WorldGenLargeFeature extends StructureGenerator {
                 this.g = MathHelper.a((String) entry.getValue(), this.g, this.h + 1);
             }
         }
+
     }
 
     public String a() {
@@ -53,15 +54,20 @@ public class WorldGenLargeFeature extends StructureGenerator {
 
         int i1 = i / this.g;
         int j1 = j / this.g;
-        Random random = this.c.A(i1, j1, this.c.spigotConfig.largeFeatureSeed); // Spigot
+        Random random = this.c.a(i1, j1, this.c.spigotConfig.largeFeatureSeed); // Spigot
 
         i1 *= this.g;
         j1 *= this.g;
         i1 += random.nextInt(this.g - this.h);
         j1 += random.nextInt(this.g - this.h);
         if (k == i1 && l == j1) {
-            BiomeBase biomebase = this.c.getWorldChunkManager().getBiome(k * 16 + 8, l * 16 + 8);
-            Iterator iterator = e.iterator();
+            BiomeBase biomebase = this.c.getWorldChunkManager().getBiome(new BlockPosition(k * 16 + 8, 0, l * 16 + 8));
+
+            if (biomebase == null) {
+                return false;
+            }
+
+            Iterator iterator = WorldGenLargeFeature.d.iterator();
 
             while (iterator.hasNext()) {
                 BiomeBase biomebase1 = (BiomeBase) iterator.next();
@@ -79,8 +85,8 @@ public class WorldGenLargeFeature extends StructureGenerator {
         return new WorldGenLargeFeatureStart(this.c, this.b, i, j);
     }
 
-    public boolean a(int i, int j, int k) {
-        StructureStart structurestart = this.c(i, j, k);
+    public boolean a(BlockPosition blockposition) {
+        StructureStart structurestart = this.c(blockposition);
 
         if (structurestart != null && structurestart instanceof WorldGenLargeFeatureStart && !structurestart.a.isEmpty()) {
             StructurePiece structurepiece = (StructurePiece) structurestart.a.getFirst();
@@ -94,4 +100,5 @@ public class WorldGenLargeFeature extends StructureGenerator {
     public List b() {
         return this.f;
     }
+
 }

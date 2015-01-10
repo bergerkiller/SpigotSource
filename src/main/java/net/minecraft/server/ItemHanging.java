@@ -15,24 +15,25 @@ public class ItemHanging extends Item {
         this.a(CreativeModeTab.c);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        if (l == 0) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+        if (enumdirection == EnumDirection.DOWN) {
             return false;
-        } else if (l == 1) {
+        } else if (enumdirection == EnumDirection.UP) {
             return false;
         } else {
-            int i1 = Direction.e[l];
-            EntityHanging entityhanging = this.a(world, i, j, k, i1);
+            BlockPosition blockposition1 = blockposition.shift(enumdirection);
 
-            if (!entityhuman.a(i, j, k, l, itemstack)) {
+            if (!entityhuman.a(blockposition1, enumdirection, itemstack)) {
                 return false;
             } else {
+                EntityHanging entityhanging = this.a(world, blockposition1, enumdirection);
+
                 if (entityhanging != null && entityhanging.survives()) {
                     if (!world.isStatic) {
                         // CraftBukkit start - fire HangingPlaceEvent
                         Player who = (entityhuman == null) ? null : (Player) entityhuman.getBukkitEntity();
-                        org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(i, j, k);
-                        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(l);
+                        org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection);
 
                         HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityhanging.getBukkitEntity(), who, blockClicked, blockFace);
                         world.getServer().getPluginManager().callEvent(event);
@@ -49,7 +50,6 @@ public class ItemHanging extends Item {
                             return false;
                         }
                         // CraftBukkit end
-
                         world.addEntity(entityhanging);
                     }
 
@@ -61,7 +61,7 @@ public class ItemHanging extends Item {
         }
     }
 
-    private EntityHanging a(World world, int i, int j, int k, int l) {
-        return (EntityHanging) (this.a == EntityPainting.class ? new EntityPainting(world, i, j, k, l) : (this.a == EntityItemFrame.class ? new EntityItemFrame(world, i, j, k, l) : null));
+    private EntityHanging a(World world, BlockPosition blockposition, EnumDirection enumdirection) {
+        return (EntityHanging) (this.a == EntityPainting.class ? new EntityPainting(world, blockposition, enumdirection) : (this.a == EntityItemFrame.class ? new EntityItemFrame(world, blockposition, enumdirection) : null));
     }
 }

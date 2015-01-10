@@ -1,5 +1,14 @@
 package net.minecraft.server;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.mojang.authlib.Agent;
+import com.mojang.authlib.GameProfile;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,17 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-
-import net.minecraft.util.com.google.common.base.Charsets;
-import net.minecraft.util.com.google.common.collect.Iterators;
-import net.minecraft.util.com.google.common.collect.Lists;
-import net.minecraft.util.com.google.common.collect.Maps;
-import net.minecraft.util.com.google.common.io.Files;
-import net.minecraft.util.com.google.gson.Gson;
-import net.minecraft.util.com.google.gson.GsonBuilder;
-import net.minecraft.util.com.mojang.authlib.Agent;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 public class UserCache {
 
@@ -39,9 +38,9 @@ public class UserCache {
     private final File g;
     private static final ParameterizedType h = new UserCacheEntryType();
 
-    public UserCache(MinecraftServer minecraftserver, File file1) {
+    public UserCache(MinecraftServer minecraftserver, File file) {
         this.f = minecraftserver;
-        this.g = file1;
+        this.g = file;
         GsonBuilder gsonbuilder = new GsonBuilder();
 
         gsonbuilder.registerTypeHierarchyAdapter(UserCacheEntry.class, new BanEntrySerializer(this, (GameProfileLookup) null));
@@ -81,22 +80,19 @@ public class UserCache {
 
         String s = gameprofile.getName().toLowerCase(Locale.ROOT);
         UserCacheEntry usercacheentry = new UserCacheEntry(this, gameprofile, date, (GameProfileLookup) null);
-        LinkedList linkedlist = this.e;
 
-        synchronized (this.e) {
-            if (this.d.containsKey(uuid)) {
-                UserCacheEntry usercacheentry1 = (UserCacheEntry) this.d.get(uuid);
+        if (this.d.containsKey(uuid)) {
+            UserCacheEntry usercacheentry1 = (UserCacheEntry) this.d.get(uuid);
 
-                this.c.remove(usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
-                this.c.put(gameprofile.getName().toLowerCase(Locale.ROOT), usercacheentry);
-                this.e.remove(gameprofile);
-            } else {
-                this.d.put(uuid, usercacheentry);
-                this.c.put(s, usercacheentry);
-            }
-
-            this.e.addFirst(gameprofile);
+            this.c.remove(usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
+            this.c.put(gameprofile.getName().toLowerCase(Locale.ROOT), usercacheentry);
+            this.e.remove(gameprofile);
+        } else {
+            this.d.put(uuid, usercacheentry);
+            this.c.put(s, usercacheentry);
         }
+
+        this.e.addFirst(gameprofile);
     }
 
     public GameProfile getProfile(String s) {
@@ -106,12 +102,7 @@ public class UserCache {
         if (usercacheentry != null && (new Date()).getTime() >= UserCacheEntry.a(usercacheentry).getTime()) {
             this.d.remove(usercacheentry.a().getId());
             this.c.remove(usercacheentry.a().getName().toLowerCase(Locale.ROOT));
-            LinkedList linkedlist = this.e;
-
-            synchronized (this.e) {
-                this.e.remove(usercacheentry.a());
-            }
-
+            this.e.remove(usercacheentry.a());
             usercacheentry = null;
         }
 
@@ -119,12 +110,8 @@ public class UserCache {
 
         if (usercacheentry != null) {
             gameprofile = usercacheentry.a();
-            LinkedList linkedlist1 = this.e;
-
-            synchronized (this.e) {
-                this.e.remove(gameprofile);
-                this.e.addFirst(gameprofile);
-            }
+            this.e.remove(gameprofile);
+            this.e.addFirst(gameprofile);
         } else {
             gameprofile = a(this.f, s); // Spigot - use correct case for offline players
             if (gameprofile != null) {
@@ -154,12 +141,9 @@ public class UserCache {
 
         if (usercacheentry != null) {
             GameProfile gameprofile = usercacheentry.a();
-            LinkedList linkedlist = this.e;
 
-            synchronized (this.e) {
-                this.e.remove(gameprofile);
-                this.e.addFirst(gameprofile);
-            }
+            this.e.remove(gameprofile);
+            this.e.addFirst(gameprofile);
         }
 
         return usercacheentry;
@@ -169,15 +153,15 @@ public class UserCache {
         List list = null;
         BufferedReader bufferedreader = null;
 
-        label81: {
+        label64: {
             try {
                 bufferedreader = Files.newReader(this.g, Charsets.UTF_8);
-                list = (List) this.b.fromJson(bufferedreader, h);
-                break label81;
+                list = (List) this.b.fromJson(bufferedreader, UserCache.h);
+                break label64;
             } catch (FileNotFoundException filenotfoundexception) {
                 ;
             // Spigot Start
-            } catch (net.minecraft.util.com.google.gson.JsonSyntaxException ex) {
+            } catch (com.google.gson.JsonSyntaxException ex) {
                 JsonList.a.warn( "Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues." );
                 this.g.delete();
             // Spigot End
@@ -191,12 +175,7 @@ public class UserCache {
         if (list != null) {
             this.c.clear();
             this.d.clear();
-            LinkedList linkedlist = this.e;
-
-            synchronized (this.e) {
-                this.e.clear();
-            }
-
+            this.e.clear();
             list = Lists.reverse(list);
             Iterator iterator = list.iterator();
 
@@ -208,6 +187,7 @@ public class UserCache {
                 }
             }
         }
+
     }
 
     public void c() {
@@ -225,17 +205,12 @@ public class UserCache {
         } finally {
             IOUtils.closeQuietly(bufferedwriter);
         }
+
     }
 
     private List a(int i) {
         ArrayList arraylist = Lists.newArrayList();
-        LinkedList linkedlist = this.e;
-        ArrayList arraylist1;
-
-        synchronized (this.e) {
-            arraylist1 = Lists.newArrayList(Iterators.limit(this.e.iterator(), i));
-        }
-
+        ArrayList arraylist1 = Lists.newArrayList(Iterators.limit(this.e.iterator(), i));
         Iterator iterator = arraylist1.iterator();
 
         while (iterator.hasNext()) {
@@ -249,4 +224,5 @@ public class UserCache {
 
         return arraylist;
     }
+
 }

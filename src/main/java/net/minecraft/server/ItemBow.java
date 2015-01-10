@@ -16,7 +16,7 @@ public class ItemBow extends Item {
         boolean flag = entityhuman.abilities.canInstantlyBuild || EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_INFINITE.id, itemstack) > 0;
 
         if (flag || entityhuman.inventory.b(Items.ARROW)) {
-            int j = this.d_(itemstack) - i;
+            int j = this.d(itemstack) - i;
             float f = (float) j / 20.0F;
 
             f = (f * f + f * 2.0F) / 3.0F;
@@ -37,7 +37,7 @@ public class ItemBow extends Item {
             int k = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_DAMAGE.id, itemstack);
 
             if (k > 0) {
-                entityarrow.b(entityarrow.e() + (double) k * 0.5D + 0.5D);
+                entityarrow.b(entityarrow.j() + (double) k * 0.5D + 0.5D);
             }
 
             int l = EnchantmentManager.getEnchantmentLevel(Enchantment.ARROW_KNOCKBACK.id, itemstack);
@@ -70,40 +70,42 @@ public class ItemBow extends Item {
             // CraftBukkit end
 
             itemstack.damage(1, entityhuman);
-            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (g.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+            world.makeSound(entityhuman, "random.bow", 1.0F, 1.0F / (ItemBow.g.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
             if (flag) {
                 entityarrow.fromPlayer = 2;
             } else {
                 entityhuman.inventory.a(Items.ARROW);
             }
 
+            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
             if (!world.isStatic) {
                 // world.addEntity(entityarrow); // CraftBukkit - moved up
             }
         }
+
     }
 
     public ItemStack b(ItemStack itemstack, World world, EntityHuman entityhuman) {
         return itemstack;
     }
 
-    public int d_(ItemStack itemstack) {
+    public int d(ItemStack itemstack) {
         return 72000;
     }
 
-    public EnumAnimation d(ItemStack itemstack) {
+    public EnumAnimation e(ItemStack itemstack) {
         return EnumAnimation.BOW;
     }
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         if (entityhuman.abilities.canInstantlyBuild || entityhuman.inventory.b(Items.ARROW)) {
-            entityhuman.a(itemstack, this.d_(itemstack));
+            entityhuman.a(itemstack, this.d(itemstack));
         }
 
         return itemstack;
     }
 
-    public int c() {
+    public int b() {
         return 1;
     }
 }

@@ -18,7 +18,7 @@ public class InventoryHorseChest extends InventorySubcontainer {
     private int maxStack = MAX_STACK;
 
     public InventoryHorseChest(String s, int i, EntityHorse horse) {
-        this(s, i);
+        super(s, false, i, (org.bukkit.craftbukkit.entity.CraftHorse) horse.getBukkitEntity());
         this.horse = horse;
     }
 

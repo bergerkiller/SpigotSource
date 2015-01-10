@@ -2,12 +2,12 @@ package net.minecraft.server;
 
 public class ControllerMove {
 
-    private EntityInsentient a;
-    private double b;
-    private double c;
-    private double d;
-    private double e;
-    private boolean f;
+    protected EntityInsentient a;
+    protected double b;
+    protected double c;
+    protected double d;
+    protected double e;
+    protected boolean f;
 
     public ControllerMove(EntityInsentient entityinsentient) {
         this.a = entityinsentient;
@@ -33,10 +33,10 @@ public class ControllerMove {
     }
 
     public void c() {
-        this.a.n(0.0F);
+        this.a.m(0.0F);
         if (this.f) {
             this.f = false;
-            int i = MathHelper.floor(this.a.boundingBox.b + 0.5D);
+            int i = MathHelper.floor(this.a.getBoundingBox().b + 0.5D);
             double d0 = this.b - this.a.locX;
             double d1 = this.d - this.a.locZ;
             double d2 = this.c - (double) i;
@@ -47,15 +47,16 @@ public class ControllerMove {
                 float f = (float) (org.bukkit.craftbukkit.TrigMath.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
 
                 this.a.yaw = this.a(this.a.yaw, f, 30.0F);
-                this.a.i((float) (this.e * this.a.getAttributeInstance(GenericAttributes.d).getValue()));
+                this.a.j((float) (this.e * this.a.getAttributeInstance(GenericAttributes.d).getValue()));
                 if (d2 > 0.0D && d0 * d0 + d1 * d1 < 1.0D) {
                     this.a.getControllerJump().a();
                 }
+
             }
         }
     }
 
-    private float a(float f, float f1, float f2) {
+    protected float a(float f, float f1, float f2) {
         float f3 = MathHelper.g(f1 - f);
 
         if (f3 > f2) {
@@ -66,6 +67,26 @@ public class ControllerMove {
             f3 = -f2;
         }
 
-        return f + f3;
+        float f4 = f + f3;
+
+        if (f4 < 0.0F) {
+            f4 += 360.0F;
+        } else if (f4 > 360.0F) {
+            f4 -= 360.0F;
+        }
+
+        return f4;
+    }
+
+    public double d() {
+        return this.b;
+    }
+
+    public double e() {
+        return this.c;
+    }
+
+    public double f() {
+        return this.d;
     }
 }

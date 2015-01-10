@@ -23,6 +23,7 @@ class ThreadCommandReader extends Thread {
         // CraftBukkit end
 
         jline.console.ConsoleReader bufferedreader = this.server.reader; // CraftBukkit
+
         String s;
 
         try {
@@ -33,13 +34,14 @@ class ThreadCommandReader extends Thread {
                 } else {
                     s = bufferedreader.readLine();
                 }
-                if (s != null) {
+                if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
                     this.server.issueCommand(s, this.server);
                 }
                 // CraftBukkit end
             }
         } catch (IOException ioexception) {
-            DedicatedServer.aF().error("Exception handling console input", ioexception);
+            DedicatedServer.aR().error("Exception handling console input", ioexception);
         }
+
     }
 }

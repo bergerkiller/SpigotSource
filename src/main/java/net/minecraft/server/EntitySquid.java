@@ -4,53 +4,59 @@ import org.bukkit.craftbukkit.TrigMath; // CraftBukkit
 
 public class EntitySquid extends EntityWaterAnimal {
 
-    public float bp;
-    public float bq;
-    public float br;
-    public float bs;
-    public float bt;
-    public float bu;
-    public float bv;
-    public float bw;
-    private float bx;
-    private float by;
-    private float bz;
-    private float bA;
-    private float bB;
-    private float bC;
+    public float a;
+    public float b;
+    public float c;
+    public float bi;
+    public float bj;
+    public float bk;
+    public float bl;
+    public float bm;
+    private float bn;
+    private float bo;
+    private float bp;
+    private float bq;
+    private float br;
+    private float bs;
 
     public EntitySquid(World world) {
         super(world);
         this.a(0.95F, 0.95F);
-        this.by = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+        this.random.setSeed((long) (1 + this.getId()));
+        this.bo = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+        this.goalSelector.a(0, new PathfinderGoalSquid(this));
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aW() {
+        super.aW();
         this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
     }
 
-    protected String t() {
+    public float getHeadHeight() {
+        return this.length * 0.5F;
+    }
+
+    protected String z() {
         return null;
     }
 
-    protected String aT() {
+    protected String bn() {
         return null;
     }
 
-    protected String aU() {
+    protected String bo() {
         return null;
     }
 
-    protected float bf() {
+    protected float bA() {
         return 0.4F;
     }
 
     protected Item getLoot() {
-        return Item.getById(0);
+        return null;
     }
 
-    protected boolean g_() {
+    protected boolean r_() {
         return false;
     }
 
@@ -58,63 +64,70 @@ public class EntitySquid extends EntityWaterAnimal {
         int j = this.random.nextInt(3 + i) + 1;
 
         for (int k = 0; k < j; ++k) {
-            this.a(new ItemStack(Items.INK_SACK, 1, 0), 0.0F);
+            this.a(new ItemStack(Items.DYE, 1, EnumColor.BLACK.getInvColorIndex()), 0.0F);
         }
+
     }
 
     /* CraftBukkit start - Delegate to Entity to use existing inWater value
-    public boolean M() {
-        return this.world.a(this.boundingBox.grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, (Entity) this);
+    public boolean V() {
+        return this.world.a(this.getBoundingBox().grow(0.0D, -0.6000000238418579D, 0.0D), Material.WATER, (Entity) this);
     }
     // CraftBukkit end */
 
-    public void e() {
-        super.e();
-        this.bq = this.bp;
-        this.bs = this.br;
-        this.bu = this.bt;
-        this.bw = this.bv;
-        this.bt += this.by;
-        if (this.bt > 6.2831855F) {
-            this.bt -= 6.2831855F;
-            if (this.random.nextInt(10) == 0) {
-                this.by = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+    public void m() {
+        super.m();
+        this.b = this.a;
+        this.bi = this.c;
+        this.bk = this.bj;
+        this.bm = this.bl;
+        this.bj += this.bo;
+        if ((double) this.bj > 6.283185307179586D) {
+            if (this.world.isStatic) {
+                this.bj = 6.2831855F;
+            } else {
+                this.bj = (float) ((double) this.bj - 6.283185307179586D);
+                if (this.random.nextInt(10) == 0) {
+                    this.bo = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+                }
+
+                this.world.broadcastEntityEffect(this, (byte) 19);
             }
         }
 
-        if (this.M()) {
+        if (this.inWater) {
             float f;
 
-            if (this.bt < 3.1415927F) {
-                f = this.bt / 3.1415927F;
-                this.bv = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
+            if (this.bj < 3.1415927F) {
+                f = this.bj / 3.1415927F;
+                this.bl = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
                 if ((double) f > 0.75D) {
-                    this.bx = 1.0F;
-                    this.bz = 1.0F;
+                    this.bn = 1.0F;
+                    this.bp = 1.0F;
                 } else {
-                    this.bz *= 0.8F;
+                    this.bp *= 0.8F;
                 }
             } else {
-                this.bv = 0.0F;
-                this.bx *= 0.9F;
-                this.bz *= 0.99F;
+                this.bl = 0.0F;
+                this.bn *= 0.9F;
+                this.bp *= 0.99F;
             }
 
             if (!this.world.isStatic) {
-                this.motX = (double) (this.bA * this.bx);
-                this.motY = (double) (this.bB * this.bx);
-                this.motZ = (double) (this.bC * this.bx);
+                this.motX = (double) (this.bq * this.bn);
+                this.motY = (double) (this.br * this.bn);
+                this.motZ = (double) (this.bs * this.bn);
             }
 
             f = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
             // CraftBukkit - Math -> TrigMath
-            this.aM += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aM) * 0.1F;
-            this.yaw = this.aM;
-            this.br += 3.1415927F * this.bz * 1.5F;
+            this.aG += (-((float) TrigMath.atan2(this.motX, this.motZ)) * 180.0F / 3.1415927F - this.aG) * 0.1F;
+            this.yaw = this.aG;
+            this.c = (float) ((double) this.c + 3.141592653589793D * (double) this.bp * 1.5D);
             // CraftBukkit - Math -> TrigMath
-            this.bp += (-((float) TrigMath.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.bp) * 0.1F;
+            this.a += (-((float) TrigMath.atan2((double) f, this.motY)) * 180.0F / 3.1415927F - this.a) * 0.1F;
         } else {
-            this.bv = MathHelper.abs(MathHelper.sin(this.bt)) * 3.1415927F * 0.25F;
+            this.bl = MathHelper.e(MathHelper.sin(this.bj)) * 3.1415927F * 0.25F;
             if (!this.world.isStatic) {
                 this.motX = 0.0D;
                 this.motY -= 0.08D;
@@ -122,30 +135,30 @@ public class EntitySquid extends EntityWaterAnimal {
                 this.motZ = 0.0D;
             }
 
-            this.bp = (float) ((double) this.bp + (double) (-90.0F - this.bp) * 0.02D);
+            this.a = (float) ((double) this.a + (double) (-90.0F - this.a) * 0.02D);
         }
+
     }
 
-    public void e(float f, float f1) {
+    public void g(float f, float f1) {
         this.move(this.motX, this.motY, this.motZ);
     }
 
-    protected void bq() {
-        ++this.aU;
-        if (this.aU > 100) {
-            this.bA = this.bB = this.bC = 0.0F;
-        } else if (this.random.nextInt(50) == 0 || !this.inWater || this.bA == 0.0F && this.bB == 0.0F && this.bC == 0.0F) {
-            float f = this.random.nextFloat() * 3.1415927F * 2.0F;
-
-            this.bA = MathHelper.cos(f) * 0.2F;
-            this.bB = -0.1F + this.random.nextFloat() * 0.2F;
-            this.bC = MathHelper.sin(f) * 0.2F;
-        }
-
-        this.w();
+    public boolean bQ() {
+        return this.locY > 45.0D && this.locY < 63.0D && super.bQ();
     }
 
-    public boolean canSpawn() {
-        return this.locY > 45.0D && this.locY < 63.0D && super.canSpawn();
+    public void b(float f, float f1, float f2) {
+        this.bq = f;
+        this.br = f1;
+        this.bs = f2;
+    }
+
+    public boolean n() {
+        return this.bq != 0.0F || this.br != 0.0F || this.bs != 0.0F;
+    }
+
+    static boolean a(EntitySquid entitysquid) {
+        return entitysquid.inWater;
     }
 }

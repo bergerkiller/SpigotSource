@@ -6,117 +6,127 @@ import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
 
 public class BlockPortal extends BlockHalfTransparent {
 
-    public static final int[][] a = new int[][] { new int[0], { 3, 1}, { 2, 0}};
+    public static final BlockStateEnum AXIS = BlockStateEnum.of("axis", EnumAxis.class, new EnumAxis[] { EnumAxis.X, EnumAxis.Z});
 
     public BlockPortal() {
-        super("portal", Material.PORTAL, false);
+        super(Material.PORTAL, false);
+        this.j(this.blockStateList.getBlockData().set(BlockPortal.AXIS, EnumAxis.X));
         this.a(true);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        super.a(world, i, j, k, random);
-        if (world.spigotConfig.enableZombiePigmenPortalSpawns && world.worldProvider.d() && world.getGameRules().getBoolean("doMobSpawning") && random.nextInt(2000) < world.difficulty.a()) { // Spigot
-            int l;
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        super.b(world, blockposition, iblockdata, random);
+        if (world.spigotConfig.enableZombiePigmenPortalSpawns && world.worldProvider.d() && world.getGameRules().getBoolean("doMobSpawning") && random.nextInt(2000) < world.getDifficulty().a()) { // Spigot
+            int i = blockposition.getY();
 
-            for (l = j; !World.a((IBlockAccess) world, i, l, k) && l > 0; --l) {
+            BlockPosition blockposition1;
+
+            for (blockposition1 = blockposition; !World.a((IBlockAccess) world, blockposition1) && blockposition1.getY() > 0; blockposition1 = blockposition1.down()) {
                 ;
             }
 
-            if (l > 0 && !world.getType(i, l + 1, k).r()) {
+            if (i > 0 && !world.getType(blockposition1.up()).getBlock().isOccluding()) {
                 // CraftBukkit - set spawn reason to NETHER_PORTAL
-                Entity entity = ItemMonsterEgg.spawnCreature(world, 57, (double) i + 0.5D, (double) l + 1.1D, (double) k + 0.5D, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+                Entity entity = ItemMonsterEgg.spawnCreature(world, 57, (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 1.1D, (double) blockposition1.getZ() + 0.5D, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
 
                 if (entity != null) {
-                    entity.portalCooldown = entity.ai();
+                    entity.portalCooldown = entity.ar();
                 }
             }
         }
+
     }
 
-    public AxisAlignedBB a(World world, int i, int j, int k) {
+    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
         return null;
     }
 
-    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = b(iblockaccess.getData(i, j, k));
-
-        if (l == 0) {
-            if (iblockaccess.getType(i - 1, j, k) != this && iblockaccess.getType(i + 1, j, k) != this) {
-                l = 2;
-            } else {
-                l = 1;
-            }
-
-            if (iblockaccess instanceof World && !((World) iblockaccess).isStatic) {
-                ((World) iblockaccess).setData(i, j, k, l, 2);
-            }
-        }
-
+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        EnumAxis enumaxis = (EnumAxis) iblockaccess.getType(blockposition).get(BlockPortal.AXIS);
         float f = 0.125F;
         float f1 = 0.125F;
 
-        if (l == 1) {
+        if (enumaxis == EnumAxis.X) {
             f = 0.5F;
         }
 
-        if (l == 2) {
+        if (enumaxis == EnumAxis.Z) {
             f1 = 0.5F;
         }
 
         this.a(0.5F - f, 0.0F, 0.5F - f1, 0.5F + f, 1.0F, 0.5F + f1);
     }
 
+    public static int a(EnumAxis enumaxis) {
+        return enumaxis == EnumAxis.X ? 1 : (enumaxis == EnumAxis.Z ? 2 : 0);
+    }
+
     public boolean d() {
         return false;
     }
 
-    public boolean e(World world, int i, int j, int k) {
-        PortalCreator portalcreator = new PortalCreator(world, i, j, k, 1);
-        PortalCreator portalcreator1 = new PortalCreator(world, i, j, k, 2);
+    public boolean d(World world, BlockPosition blockposition) {
+        PortalCreator portalcreator = new PortalCreator(world, blockposition, EnumAxis.X);
 
         if (portalcreator.b() && PortalCreator.a(portalcreator) == 0) {
             // CraftBukkit start - return portalcreator
             return portalcreator.c();
             // return true;
-        } else if (portalcreator1.b() && PortalCreator.a(portalcreator1) == 0) {
-            return portalcreator1.c();
-            // return true;
-            // CraftBukkit end
         } else {
-            return false;
+            PortalCreator portalcreator1 = new PortalCreator(world, blockposition, EnumAxis.Z);
+
+            if (portalcreator1.b() && PortalCreator.a(portalcreator1) == 0) {
+                return portalcreator1.c();
+                // return true;
+                // CraftBukkit end
+            } else {
+                return false;
+            }
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        int l = b(world.getData(i, j, k));
-        PortalCreator portalcreator = new PortalCreator(world, i, j, k, 1);
-        PortalCreator portalcreator1 = new PortalCreator(world, i, j, k, 2);
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        EnumAxis enumaxis = (EnumAxis) iblockdata.get(BlockPortal.AXIS);
+        PortalCreator portalcreator;
 
-        if (l == 1 && (!portalcreator.b() || PortalCreator.a(portalcreator) < PortalCreator.b(portalcreator) * PortalCreator.c(portalcreator))) {
-            world.setTypeUpdate(i, j, k, Blocks.AIR);
-        } else if (l == 2 && (!portalcreator1.b() || PortalCreator.a(portalcreator1) < PortalCreator.b(portalcreator1) * PortalCreator.c(portalcreator1))) {
-            world.setTypeUpdate(i, j, k, Blocks.AIR);
-        } else if (l == 0 && !portalcreator.b() && !portalcreator1.b()) {
-            world.setTypeUpdate(i, j, k, Blocks.AIR);
+        if (enumaxis == EnumAxis.X) {
+            portalcreator = new PortalCreator(world, blockposition, EnumAxis.X);
+            if (!portalcreator.b() || PortalCreator.a(portalcreator) < PortalCreator.b(portalcreator) * PortalCreator.c(portalcreator)) {
+                world.setTypeUpdate(blockposition, Blocks.AIR.getBlockData());
+            }
+        } else if (enumaxis == EnumAxis.Z) {
+            portalcreator = new PortalCreator(world, blockposition, EnumAxis.Z);
+            if (!portalcreator.b() || PortalCreator.a(portalcreator) < PortalCreator.b(portalcreator) * PortalCreator.c(portalcreator)) {
+                world.setTypeUpdate(blockposition, Blocks.AIR.getBlockData());
+            }
         }
+
     }
 
     public int a(Random random) {
         return 0;
     }
 
-    public void a(World world, int i, int j, int k, Entity entity) {
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
         if (entity.vehicle == null && entity.passenger == null) {
             // CraftBukkit start - Entity in portal
-            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), i, j, k));
+            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
             world.getServer().getPluginManager().callEvent(event);
             // CraftBukkit end
-
-            entity.ah();
+            entity.aq();
         }
+
     }
 
-    public static int b(int i) {
-        return i & 3;
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockPortal.AXIS, (i & 3) == 2 ? EnumAxis.Z : EnumAxis.X);
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        return a((EnumAxis) iblockdata.get(BlockPortal.AXIS));
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockPortal.AXIS});
     }
 }

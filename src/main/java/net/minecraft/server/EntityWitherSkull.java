@@ -14,18 +14,18 @@ public class EntityWitherSkull extends EntityFireball {
         this.a(0.3125F, 0.3125F);
     }
 
-    protected float e() {
-        return this.isCharged() ? 0.73F : super.e();
+    protected float j() {
+        return this.isCharged() ? 0.73F : super.j();
     }
 
     public boolean isBurning() {
         return false;
     }
 
-    public float a(Explosion explosion, World world, int i, int j, int k, Block block) {
-        float f = super.a(explosion, world, i, j, k, block);
+    public float a(Explosion explosion, World world, BlockPosition blockposition, IBlockData iblockdata) {
+        float f = super.a(explosion, world, blockposition, iblockdata);
 
-        if (this.isCharged() && block != Blocks.BEDROCK && block != Blocks.ENDER_PORTAL && block != Blocks.ENDER_PORTAL_FRAME && block != Blocks.COMMAND) {
+        if (this.isCharged() && iblockdata.getBlock() != Blocks.BEDROCK && iblockdata.getBlock() != Blocks.END_PORTAL && iblockdata.getBlock() != Blocks.END_PORTAL_FRAME && iblockdata.getBlock() != Blocks.COMMAND_BLOCK) {
             f = Math.min(0.8F, f);
         }
 
@@ -39,8 +39,12 @@ public class EntityWitherSkull extends EntityFireball {
                 boolean didDamage = false;         	
                 if (this.shooter != null) {
                     didDamage = movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F);
-                    if (didDamage && !movingobjectposition.entity.isAlive()) {
-                        this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
+                    if (didDamage) {
+                        if (!movingobjectposition.entity.isAlive()) {
+                            this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
+                        } else {
+                            this.a(this.shooter, movingobjectposition.entity);
+                        }
                     }
                 } else {
                     didDamage = movingobjectposition.entity.damageEntity(DamageSource.MAGIC, 5.0F);
@@ -50,9 +54,9 @@ public class EntityWitherSkull extends EntityFireball {
                 // Spigot end
                     byte b0 = 0;
 
-                    if (this.world.difficulty == EnumDifficulty.NORMAL) {
+                    if (this.world.getDifficulty() == EnumDifficulty.NORMAL) {
                         b0 = 10;
-                    } else if (this.world.difficulty == EnumDifficulty.HARD) {
+                    } else if (this.world.getDifficulty() == EnumDifficulty.HARD) {
                         b0 = 40;
                     }
 
@@ -63,6 +67,7 @@ public class EntityWitherSkull extends EntityFireball {
             }
 
             // CraftBukkit start
+            // this.world.createExplosion(this, this.locX, this.locY, this.locZ, 1.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
             ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
             this.world.getServer().getPluginManager().callEvent(event);
 
@@ -70,12 +75,12 @@ public class EntityWitherSkull extends EntityFireball {
                 this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), this.world.getGameRules().getBoolean("mobGriefing"));
             }
             // CraftBukkit end
-
             this.die();
         }
+
     }
 
-    public boolean R() {
+    public boolean ad() {
         return false;
     }
 
@@ -83,7 +88,7 @@ public class EntityWitherSkull extends EntityFireball {
         return false;
     }
 
-    protected void c() {
+    protected void h() {
         this.datawatcher.a(10, Byte.valueOf((byte) 0));
     }
 

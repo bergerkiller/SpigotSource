@@ -6,22 +6,24 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockCommand extends BlockContainer {
 
+    public static final BlockStateBoolean TRIGGERED = BlockStateBoolean.of("triggered");
+
     public BlockCommand() {
         super(Material.ORE);
+        this.j(this.blockStateList.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf(false)));
     }
 
     public TileEntity a(World world, int i) {
         return new TileEntityCommand();
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
         if (!world.isStatic) {
-            boolean flag = world.isBlockIndirectlyPowered(i, j, k);
-            int l = world.getData(i, j, k);
-            boolean flag1 = (l & 1) != 0;
-
+            boolean flag = world.isBlockIndirectlyPowered(blockposition);
+            boolean flag1 = ((Boolean) iblockdata.get(BlockCommand.TRIGGERED)).booleanValue();
+            
             // CraftBukkit start
-            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(i, j, k);
+            org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
             int old = flag1 ? 15 : 0;
             int current = flag ? 15 : 0;
 
@@ -30,58 +32,89 @@ public class BlockCommand extends BlockContainer {
             // CraftBukkit end
 
             if (eventRedstone.getNewCurrent() > 0 && !(eventRedstone.getOldCurrent() > 0)) { // CraftBukkit
-                world.setData(i, j, k, l | 1, 4);
-                world.a(i, j, k, this, this.a(world));
+                world.setTypeAndData(blockposition, iblockdata.set(BlockCommand.TRIGGERED, Boolean.valueOf(true)), 4);
+                world.a(blockposition, (Block) this, this.a(world));
             } else if (!(eventRedstone.getNewCurrent() > 0) && eventRedstone.getOldCurrent() > 0) { // CraftBukkit
-                world.setData(i, j, k, l & -2, 4);
+                world.setTypeAndData(blockposition, iblockdata.set(BlockCommand.TRIGGERED, Boolean.valueOf(false)), 4);
             }
         }
+
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        TileEntity tileentity = world.getTileEntity(i, j, k);
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentity != null && tileentity instanceof TileEntityCommand) {
-            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).getCommandBlock();
-
-            commandblocklistenerabstract.a(world);
-            world.updateAdjacentComparators(i, j, k, this);
+        if (tileentity instanceof TileEntityCommand) {
+            ((TileEntityCommand) tileentity).getCommandBlock().a(world);
+            world.updateAdjacentComparators(blockposition, this);
         }
+
     }
 
     public int a(World world) {
         return 1;
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        TileEntityCommand tileentitycommand = (TileEntityCommand) world.getTileEntity(i, j, k);
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentitycommand != null) {
-            entityhuman.a((TileEntity) tileentitycommand);
-        }
-
-        return true;
+        return tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().a(entityhuman) : false;
     }
 
     public boolean isComplexRedstone() {
         return true;
     }
 
-    public int g(World world, int i, int j, int k, int l) {
-        TileEntity tileentity = world.getTileEntity(i, j, k);
+    public int l(World world, BlockPosition blockposition) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
 
-        return tileentity != null && tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().g() : 0;
+        return tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().j() : 0;
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
-        TileEntityCommand tileentitycommand = (TileEntityCommand) world.getTileEntity(i, j, k);
+    public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
+        TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (itemstack.hasName()) {
-            tileentitycommand.getCommandBlock().setName(itemstack.getName());
+        if (tileentity instanceof TileEntityCommand) {
+            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).getCommandBlock();
+
+            if (itemstack.hasName()) {
+                commandblocklistenerabstract.setName(itemstack.getName());
+            }
+
+            if (!world.isStatic) {
+                commandblocklistenerabstract.a(world.getGameRules().getBoolean("sendCommandFeedback"));
+            }
+
         }
     }
 
     public int a(Random random) {
         return 0;
+    }
+
+    public int b() {
+        return 3;
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf((i & 1) > 0));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        int i = 0;
+
+        if (((Boolean) iblockdata.get(BlockCommand.TRIGGERED)).booleanValue()) {
+            i |= 1;
+        }
+
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockCommand.TRIGGERED});
+    }
+
+    public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
+        return this.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf(false));
     }
 }

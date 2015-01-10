@@ -9,7 +9,7 @@ import org.bukkit.entity.HumanEntity;
 public class InventoryEnderChest extends InventorySubcontainer {
 
     private TileEntityEnderChest a;
-
+ 
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public org.bukkit.entity.Player player;
@@ -67,6 +67,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
                 this.setItem(j, ItemStack.createStack(nbttagcompound));
             }
         }
+
     }
 
     public NBTTagList h() {
@@ -91,20 +92,20 @@ public class InventoryEnderChest extends InventorySubcontainer {
         return this.a != null && !this.a.a(entityhuman) ? false : super.a(entityhuman);
     }
 
-    public void startOpen() {
-        if (this.a != null) {
-            this.a.a();
-        }
-
-        super.startOpen();
-    }
-
-    public void closeContainer() {
+    public void startOpen(EntityHuman entityhuman) {
         if (this.a != null) {
             this.a.b();
         }
 
-        super.closeContainer();
+        super.startOpen(entityhuman);
+    }
+
+    public void closeContainer(EntityHuman entityhuman) {
+        if (this.a != null) {
+            this.a.d();
+        }
+
+        super.closeContainer(entityhuman);
         this.a = null;
     }
 }

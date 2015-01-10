@@ -2,8 +2,6 @@ package net.minecraft.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -41,38 +39,7 @@ public class NBTCompressedStreamTools {
         } finally {
             dataoutputstream.close();
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); }
-    }
-
-    public static NBTTagCompound a(byte[] abyte, NBTReadLimiter nbtreadlimiter) {
-        try {
-        DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new org.spigotmc.LimitStream(new GZIPInputStream(new ByteArrayInputStream(abyte)), nbtreadlimiter))); // Spigot
-
-        NBTTagCompound nbttagcompound;
-
-        try {
-            nbttagcompound = a((DataInput) datainputstream, nbtreadlimiter);
-        } finally {
-            datainputstream.close();
-        }
-
-        return nbttagcompound;
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
-    }
-
-    public static byte[] a(NBTTagCompound nbttagcompound) {
-        try {
-        ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
-        DataOutputStream dataoutputstream = new DataOutputStream(new GZIPOutputStream(bytearrayoutputstream));
-
-        try {
-            a(nbttagcompound, (DataOutput) dataoutputstream);
-        } finally {
-            dataoutputstream.close();
-        }
-
-        return bytearrayoutputstream.toByteArray();
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
+        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } 
     }
 
     public static NBTTagCompound a(DataInputStream datainputstream) {
@@ -81,6 +48,12 @@ public class NBTCompressedStreamTools {
 
     public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) {
         try {
+        // Spigot start
+        if ( datainput instanceof io.netty.buffer.ByteBufInputStream )
+        {
+            datainput = new DataInputStream(new org.spigotmc.LimitStream((InputStream) datainput, nbtreadlimiter));
+        }
+        // Spigot end
         NBTBase nbtbase = a(datainput, 0, nbtreadlimiter);
 
         if (nbtbase instanceof NBTTagCompound) {
@@ -102,7 +75,7 @@ public class NBTCompressedStreamTools {
             dataoutput.writeUTF("");
             nbtbase.write(dataoutput);
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); }
+        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } 
     }
 
     private static NBTBase a(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) {
@@ -122,8 +95,8 @@ public class NBTCompressedStreamTools {
                 CrashReport crashreport = CrashReport.a(ioexception, "Loading NBT data");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("NBT Tag");
 
-                crashreportsystemdetails.a("Tag name", "[UNNAMED TAG]");
-                crashreportsystemdetails.a("Tag type", Byte.valueOf(b0));
+                crashreportsystemdetails.a("Tag name", (Object) "[UNNAMED TAG]");
+                crashreportsystemdetails.a("Tag type", (Object) Byte.valueOf(b0));
                 throw new ReportedException(crashreport);
             }
         }

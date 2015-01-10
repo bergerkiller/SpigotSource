@@ -1,12 +1,8 @@
 package net.minecraft.server;
 
-import net.minecraft.util.com.mojang.authlib.properties.Property; // Spigot
-import net.minecraft.util.io.netty.util.concurrent.GenericFutureListener;
-
 // CraftBukkit start
 import java.net.InetAddress;
 import java.util.HashMap;
-import net.minecraft.util.com.mojang.util.UUIDTypeAdapter;
 // CraftBukkit end
 
 public class HandshakeListener implements PacketHandshakingInListener {
@@ -26,17 +22,11 @@ public class HandshakeListener implements PacketHandshakingInListener {
     }
 
     public void a(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
-        // Spigot start
-        if ( NetworkManager.SUPPORTED_VERSIONS.contains( packethandshakinginsetprotocol.d() ) )
-        {
-            NetworkManager.a( this.b ).attr( NetworkManager.protocolVersion ).set( packethandshakinginsetprotocol.d() );
-        }
-        // Spigot end
-        switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.c().ordinal()]) {
+        switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.a().ordinal()]) {
         case 1:
             this.b.a(EnumProtocol.LOGIN);
             ChatComponentText chatcomponenttext;
-
+ 
             // CraftBukkit start - Connection throttle
             try {
                 long currentTime = System.currentTimeMillis();
@@ -47,7 +37,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
                         throttleTracker.put(address, currentTime);
                         chatcomponenttext = new ChatComponentText("Connection throttled! Please wait before reconnecting.");
-                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
                         this.b.close(chatcomponenttext);
                         return;
                     }
@@ -72,13 +62,13 @@ public class HandshakeListener implements PacketHandshakingInListener {
             }
             // CraftBukkit end
 
-            if (packethandshakinginsetprotocol.d() > 5) {
-                chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedServerMessage ); // Spigot
-                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+            if (packethandshakinginsetprotocol.b() > 47) {
+                chatcomponenttext = new ChatComponentText( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage, "1.8" ) ); // Spigot
+                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
                 this.b.close(chatcomponenttext);
-            } else if (packethandshakinginsetprotocol.d() < 4) {
-                chatcomponenttext = new ChatComponentText( org.spigotmc.SpigotConfig.outdatedClientMessage ); // Spigot
-                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+            } else if (packethandshakinginsetprotocol.b() < 47) {
+                chatcomponenttext = new ChatComponentText(java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage, "1.8" ) ); // Spigot
+                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
                 this.b.close(chatcomponenttext);
             } else {
                 this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
@@ -87,18 +77,18 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     String[] split = packethandshakinginsetprotocol.b.split("\00");
                     if ( split.length == 3 || split.length == 4 ) {
                         packethandshakinginsetprotocol.b = split[0];
-                        b.n = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
-                        b.spoofedUUID = UUIDTypeAdapter.fromString( split[2] );
+                        b.j = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
+                        b.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
                     } else
                     {
                         chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
-                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext), new GenericFutureListener[0]);
+                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
                         this.b.close(chatcomponenttext);
                         return;
                     }
                     if ( split.length == 4 )
                     {
-                        b.spoofedProfile = gson.fromJson(split[3], Property[].class);
+                        b.spoofedProfile = gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
                     }
                 }
                 // Spigot End
@@ -112,17 +102,10 @@ public class HandshakeListener implements PacketHandshakingInListener {
             break;
 
         default:
-            throw new UnsupportedOperationException("Invalid intention " + packethandshakinginsetprotocol.c());
+            throw new UnsupportedOperationException("Invalid intention " + packethandshakinginsetprotocol.a());
         }
+
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {}
-
-    public void a(EnumProtocol enumprotocol, EnumProtocol enumprotocol1) {
-        if (enumprotocol1 != EnumProtocol.LOGIN && enumprotocol1 != EnumProtocol.STATUS) {
-            throw new UnsupportedOperationException("Invalid state " + enumprotocol1);
-        }
-    }
-
-    public void a() {}
 }

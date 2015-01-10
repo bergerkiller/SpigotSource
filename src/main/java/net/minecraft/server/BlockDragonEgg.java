@@ -11,61 +11,61 @@ public class BlockDragonEgg extends Block {
         this.a(0.0625F, 0.0F, 0.0625F, 0.9375F, 1.0F, 0.9375F);
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        world.a(i, j, k, this, this.a(world));
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        world.a(blockposition, (Block) this, this.a(world));
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        world.a(i, j, k, this, this.a(world));
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        world.a(blockposition, (Block) this, this.a(world));
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        this.e(world, i, j, k);
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        this.d(world, blockposition);
     }
 
-    private void e(World world, int i, int j, int k) {
-        if (BlockFalling.canFall(world, i, j - 1, k) && j >= 0) {
+    private void d(World world, BlockPosition blockposition) {
+        if (BlockFalling.canFall(world, blockposition.down()) && blockposition.getY() >= 0) {
             byte b0 = 32;
 
-            if (!BlockFalling.instaFall && world.b(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
-                // CraftBukkit - added data
-                EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), this, world.getData(i, j, k));
-
-                world.addEntity(entityfallingblock);
+            if (!BlockFalling.instaFall && world.areChunksLoadedBetween(blockposition.a(-b0, -b0, -b0), blockposition.a(b0, b0, b0))) {
+                world.addEntity(new EntityFallingBlock(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), this.getBlockData()));
             } else {
-                world.setAir(i, j, k);
+                world.setAir(blockposition);
 
-                while (BlockFalling.canFall(world, i, j - 1, k) && j > 0) {
-                    --j;
+                BlockPosition blockposition1;
+
+                for (blockposition1 = blockposition; BlockFalling.canFall(world, blockposition1) && blockposition1.getY() > 0; blockposition1 = blockposition1.down()) {
+                    ;
                 }
 
-                if (j > 0) {
-                    world.setTypeAndData(i, j, k, this, 0, 2);
+                if (blockposition1.getY() > 0) {
+                    world.setTypeAndData(blockposition1, this.getBlockData(), 2);
                 }
             }
+
         }
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        this.m(world, i, j, k);
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+        this.e(world, blockposition);
         return true;
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
-        this.m(world, i, j, k);
+    public void attack(World world, BlockPosition blockposition, EntityHuman entityhuman) {
+        this.e(world, blockposition);
     }
 
-    private void m(World world, int i, int j, int k) {
-        if (world.getType(i, j, k) == this) {
-            for (int l = 0; l < 1000; ++l) {
-                int i1 = i + world.random.nextInt(16) - world.random.nextInt(16);
-                int j1 = j + world.random.nextInt(8) - world.random.nextInt(8);
-                int k1 = k + world.random.nextInt(16) - world.random.nextInt(16);
+    private void e(World world, BlockPosition blockposition) {
+        IBlockData iblockdata = world.getType(blockposition);
 
-                if (world.getType(i1, j1, k1).material == Material.AIR) {
+        if (iblockdata.getBlock() == this) {
+            for (int i = 0; i < 1000; ++i) {
+                BlockPosition blockposition1 = blockposition.a(world.random.nextInt(16) - world.random.nextInt(16), world.random.nextInt(8) - world.random.nextInt(8), world.random.nextInt(16) - world.random.nextInt(16));
+
+                if (world.getType(blockposition1).getBlock().material == Material.AIR) {
                     // CraftBukkit start
-                    org.bukkit.block.Block from = world.getWorld().getBlockAt(i, j, k);
-                    org.bukkit.block.Block to = world.getWorld().getBlockAt(i1, j1, k1);
+                    org.bukkit.block.Block from = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                    org.bukkit.block.Block to = world.getWorld().getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
                     BlockFromToEvent event = new BlockFromToEvent(from, to);
                     org.bukkit.Bukkit.getPluginManager().callEvent(event);
 
@@ -73,33 +73,29 @@ public class BlockDragonEgg extends Block {
                         return;
                     }
 
-                    i1 = event.getToBlock().getX();
-                    j1 = event.getToBlock().getY();
-                    k1 = event.getToBlock().getZ();
+                    blockposition1 = new BlockPosition(event.getToBlock().getX(), event.getToBlock().getY(), event.getToBlock().getZ());
                     // CraftBukkit end
-
-                    if (!world.isStatic) {
-                        world.setTypeAndData(i1, j1, k1, this, world.getData(i, j, k), 2);
-                        world.setAir(i, j, k);
-                    } else {
-                        short short1 = 128;
-
-                        for (int l1 = 0; l1 < short1; ++l1) {
+                    if (world.isStatic) {
+                        for (int j = 0; j < 128; ++j) {
                             double d0 = world.random.nextDouble();
                             float f = (world.random.nextFloat() - 0.5F) * 0.2F;
                             float f1 = (world.random.nextFloat() - 0.5F) * 0.2F;
                             float f2 = (world.random.nextFloat() - 0.5F) * 0.2F;
-                            double d1 = (double) i1 + (double) (i - i1) * d0 + (world.random.nextDouble() - 0.5D) * 1.0D + 0.5D;
-                            double d2 = (double) j1 + (double) (j - j1) * d0 + world.random.nextDouble() * 1.0D - 0.5D;
-                            double d3 = (double) k1 + (double) (k - k1) * d0 + (world.random.nextDouble() - 0.5D) * 1.0D + 0.5D;
+                            double d1 = (double) blockposition1.getX() + (double) (blockposition.getX() - blockposition1.getX()) * d0 + (world.random.nextDouble() - 0.5D) * 1.0D + 0.5D;
+                            double d2 = (double) blockposition1.getY() + (double) (blockposition.getY() - blockposition1.getY()) * d0 + world.random.nextDouble() * 1.0D - 0.5D;
+                            double d3 = (double) blockposition1.getZ() + (double) (blockposition.getZ() - blockposition1.getZ()) * d0 + (world.random.nextDouble() - 0.5D) * 1.0D + 0.5D;
 
-                            world.addParticle("portal", d1, d2, d3, (double) f, (double) f1, (double) f2);
+                            world.addParticle(EnumParticle.PORTAL, d1, d2, d3, (double) f, (double) f1, (double) f2, new int[0]);
                         }
+                    } else {
+                        world.setTypeAndData(blockposition1, iblockdata, 2);
+                        world.setAir(blockposition);
                     }
 
                     return;
                 }
             }
+
         }
     }
 
@@ -113,9 +109,5 @@ public class BlockDragonEgg extends Block {
 
     public boolean d() {
         return false;
-    }
-
-    public int b() {
-        return 27;
     }
 }

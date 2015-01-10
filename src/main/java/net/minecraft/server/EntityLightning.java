@@ -9,7 +9,7 @@ public class EntityLightning extends EntityWeather {
     private int lifeTicks;
     public long a;
     private int c;
-
+ 
     // CraftBukkit start
     public boolean isEffect = false;
 
@@ -26,35 +26,30 @@ public class EntityLightning extends EntityWeather {
 
         // CraftBukkit - Set isEffect
         this.isEffect = isEffect;
-
+        
         this.setPositionRotation(d0, d1, d2, 0.0F, 0.0F);
         this.lifeTicks = 2;
         this.a = this.random.nextLong();
         this.c = this.random.nextInt(3) + 1;
-
         // CraftBukkit - add "!isEffect"
-        if (!isEffect && !world.isStatic && world.getGameRules().getBoolean("doFireTick") && (world.difficulty == EnumDifficulty.NORMAL || world.difficulty == EnumDifficulty.HARD) && world.areChunksLoaded(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2), 10)) {
-            int i = MathHelper.floor(d0);
-            int j = MathHelper.floor(d1);
-            int k = MathHelper.floor(d2);
+        if (!isEffect && !world.isStatic && world.getGameRules().getBoolean("doFireTick") && (world.getDifficulty() == EnumDifficulty.NORMAL || world.getDifficulty() == EnumDifficulty.HARD) && world.areChunksLoaded(new BlockPosition(this), 10)) {
+            BlockPosition blockposition = new BlockPosition(this);
 
-            if (world.getType(i, j, k).getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, i, j, k)) {
+            if (world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition)) {               
                 // CraftBukkit start
-                if (!CraftEventFactory.callBlockIgniteEvent(world, i, j, k, this).isCancelled()) {
-                    world.setTypeUpdate(i, j, k, Blocks.FIRE);
+                if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
+                    world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
                 }
                 // CraftBukkit end
             }
 
-            for (i = 0; i < 4; ++i) {
-                j = MathHelper.floor(d0) + this.random.nextInt(3) - 1;
-                k = MathHelper.floor(d1) + this.random.nextInt(3) - 1;
-                int l = MathHelper.floor(d2) + this.random.nextInt(3) - 1;
+            for (int i = 0; i < 4; ++i) {
+                BlockPosition blockposition1 = blockposition.a(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
 
-                if (world.getType(j, k, l).getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, j, k, l)) {
+                if (world.getType(blockposition1).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(world, blockposition1)) {                    
                     // CraftBukkit start
-                    if (!CraftEventFactory.callBlockIgniteEvent(world, j, k, l, this).isCancelled()) {
-                        world.setTypeUpdate(j, k, l, Blocks.FIRE);
+                    if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ(), this).isCancelled()) {
+                        world.setTypeUpdate(blockposition1, Blocks.FIRE.getBlockData());
                     }
                     // CraftBukkit end
                 }
@@ -70,8 +65,8 @@ public class EntityLightning extends EntityWeather {
     }
     // Spigot end
 
-    public void h() {
-        super.h();
+    public void s_() {
+        super.s_();
         if (!isSilent && this.lifeTicks == 2) { // Spigot
             // CraftBukkit start - Use relative location for far away sounds
             //this.world.makeSound(this.locX, this.locY, this.locZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.random.nextFloat() * 0.2F);
@@ -102,40 +97,36 @@ public class EntityLightning extends EntityWeather {
                 --this.c;
                 this.lifeTicks = 1;
                 this.a = this.random.nextLong();
+                BlockPosition blockposition = new BlockPosition(this);
                 // CraftBukkit - add "!isEffect"
-                if (!isEffect && !this.world.isStatic && this.world.getGameRules().getBoolean("doFireTick") && this.world.areChunksLoaded(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ), 10)) {
-                    int i = MathHelper.floor(this.locX);
-                    int j = MathHelper.floor(this.locY);
-                    int k = MathHelper.floor(this.locZ);
-
-                    if (this.world.getType(i, j, k).getMaterial() == Material.AIR && Blocks.FIRE.canPlace(this.world, i, j, k)) {
-                        // CraftBukkit start
-                        if (!CraftEventFactory.callBlockIgniteEvent(world, i, j, k, this).isCancelled()) {
-                            this.world.setTypeUpdate(i, j, k, Blocks.FIRE);
-                        }
-                        // CraftBukkit end
+                if (!isEffect && !this.world.isStatic && this.world.getGameRules().getBoolean("doFireTick") && this.world.areChunksLoaded(blockposition, 10) && this.world.getType(blockposition).getBlock().getMaterial() == Material.AIR && Blocks.FIRE.canPlace(this.world, blockposition)) {                    
+                    // CraftBukkit start
+                    if (!CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
+                        this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
                     }
+                    // CraftBukkit end
                 }
             }
         }
 
         if (this.lifeTicks >= 0 && !this.isEffect) { // CraftBukkit - add !this.isEffect
             if (this.world.isStatic) {
-                this.world.q = 2;
+                this.world.c(2);
             } else {
                 double d0 = 3.0D;
-                List list = this.world.getEntities(this, AxisAlignedBB.a(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
+                List list = this.world.getEntities(this, new AxisAlignedBB(this.locX - d0, this.locY - d0, this.locZ - d0, this.locX + d0, this.locY + 6.0D + d0, this.locZ + d0));
 
-                for (int l = 0; l < list.size(); ++l) {
-                    Entity entity = (Entity) list.get(l);
+                for (int i = 0; i < list.size(); ++i) {
+                    Entity entity = (Entity) list.get(i);
 
-                    entity.a(this);
+                    entity.onLightningStrike(this);
                 }
             }
         }
+
     }
 
-    protected void c() {}
+    protected void h() {}
 
     protected void a(NBTTagCompound nbttagcompound) {}
 

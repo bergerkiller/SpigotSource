@@ -7,12 +7,13 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerChest extends Container {
 
-    public IInventory container; // CraftBukkit - private->public
+    public IInventory container;
     private int f;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
 
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;
@@ -32,11 +33,12 @@ public class ContainerChest extends Container {
     }
     // CraftBukkit end
 
-    public ContainerChest(IInventory iinventory, IInventory iinventory1) {
+    public ContainerChest(IInventory iinventory, IInventory iinventory1, EntityHuman entityhuman) {
         this.container = iinventory1;
         this.f = iinventory1.getSize() / 9;
-        iinventory1.startOpen();
+        iinventory1.startOpen(entityhuman);
         int i = (this.f - 4) * 18;
+        
         // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory) iinventory;
@@ -60,6 +62,7 @@ public class ContainerChest extends Container {
         for (j = 0; j < 9; ++j) {
             this.a(new Slot(iinventory, j, 8 + j * 18, 161 + i));
         }
+
     }
 
     public boolean a(EntityHuman entityhuman) {
@@ -95,7 +98,7 @@ public class ContainerChest extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.container.closeContainer();
+        this.container.closeContainer(entityhuman);
     }
 
     public IInventory e() {

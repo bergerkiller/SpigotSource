@@ -10,10 +10,11 @@ import org.bukkit.event.inventory.InventoryType;
 
 public class InventoryCrafting implements IInventory {
 
-    private ItemStack[] items;
-    private int b;
-    private Container c;
-
+    private final ItemStack[] items;
+    private final int b;
+    private final int c;
+    private final Container d;
+    
     // CraftBukkit start - add fields
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public IRecipe currentRecipe;
@@ -54,14 +55,15 @@ public class InventoryCrafting implements IInventory {
         this(container, i, j);
         this.owner = player;
     }
-    // CraftBukkit end
+    // CraftBukkit end    
 
     public InventoryCrafting(Container container, int i, int j) {
         int k = i * j;
 
         this.items = new ItemStack[k];
-        this.c = container;
+        this.d = container;
         this.b = i;
+        this.c = j;
     }
 
     public int getSize() {
@@ -72,22 +74,20 @@ public class InventoryCrafting implements IInventory {
         return i >= this.getSize() ? null : this.items[i];
     }
 
-    public ItemStack b(int i, int j) {
-        if (i >= 0 && i < this.b) {
-            int k = i + j * this.b;
-
-            return this.getItem(k);
-        } else {
-            return null;
-        }
+    public ItemStack c(int i, int j) {
+        return i >= 0 && i < this.b && j >= 0 && j <= this.c ? this.getItem(i + j * this.b) : null;
     }
 
-    public String getInventoryName() {
+    public String getName() {
         return "container.crafting";
     }
 
-    public boolean k_() {
+    public boolean hasCustomName() {
         return false;
+    }
+
+    public IChatBaseComponent getScoreboardDisplayName() {
+        return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
     public ItemStack splitWithoutUpdate(int i) {
@@ -108,7 +108,7 @@ public class InventoryCrafting implements IInventory {
             if (this.items[i].count <= j) {
                 itemstack = this.items[i];
                 this.items[i] = null;
-                this.c.a((IInventory) this);
+                this.d.a((IInventory) this);
                 return itemstack;
             } else {
                 itemstack = this.items[i].a(j);
@@ -116,7 +116,7 @@ public class InventoryCrafting implements IInventory {
                     this.items[i] = null;
                 }
 
-                this.c.a((IInventory) this);
+                this.d.a((IInventory) this);
                 return itemstack;
             }
         } else {
@@ -126,11 +126,11 @@ public class InventoryCrafting implements IInventory {
 
     public void setItem(int i, ItemStack itemstack) {
         this.items[i] = itemstack;
-        this.c.a((IInventory) this);
+        this.d.a((IInventory) this);
     }
 
     public int getMaxStackSize() {
-        return maxStack; // CraftBukkit
+        return 64;
     }
 
     public void update() {}
@@ -139,11 +139,36 @@ public class InventoryCrafting implements IInventory {
         return true;
     }
 
-    public void startOpen() {}
+    public void startOpen(EntityHuman entityhuman) {}
 
-    public void closeContainer() {}
+    public void closeContainer(EntityHuman entityhuman) {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
+    }
+
+    public int getProperty(int i) {
+        return 0;
+    }
+
+    public void b(int i, int j) {}
+
+    public int g() {
+        return 0;
+    }
+
+    public void l() {
+        for (int i = 0; i < this.items.length; ++i) {
+            this.items[i] = null;
+        }
+
+    }
+
+    public int h() {
+        return this.c;
+    }
+
+    public int i() {
+        return this.b;
     }
 }

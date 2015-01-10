@@ -1,18 +1,17 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import net.minecraft.util.org.apache.commons.io.IOUtils;
-import net.minecraft.util.org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +21,7 @@ public class CrashReport {
     private final String b;
     private final Throwable c;
     private final CrashReportSystemDetails d = new CrashReportSystemDetails(this, "System Details");
-    private final List e = new ArrayList();
+    private final List e = Lists.newArrayList();
     private File f;
     private boolean g = true;
     private StackTraceElement[] h = new StackTraceElement[0];
@@ -40,7 +39,6 @@ public class CrashReport {
         this.d.a("Java VM Version", (Callable) (new CrashReportJavaVMVersion(this)));
         this.d.a("Memory", (Callable) (new CrashReportMemory(this)));
         this.d.a("JVM Flags", (Callable) (new CrashReportJVMFlags(this)));
-        this.d.a("AABB Pool Size", (Callable) (new CrashReportAABBPoolSize(this)));
         this.d.a("IntCache", (Callable) (new CrashReportIntCacheSize(this)));
         this.d.a("CraftBukkit Information", (Callable) (new org.bukkit.craftbukkit.CraftCrashReport())); // CraftBukkit
     }
@@ -143,23 +141,23 @@ public class CrashReport {
         return stringbuilder.toString();
     }
 
-    public boolean a(File file1) {
+    public boolean a(File file) {
         if (this.f != null) {
             return false;
         } else {
-            if (file1.getParentFile() != null) {
-                file1.getParentFile().mkdirs();
+            if (file.getParentFile() != null) {
+                file.getParentFile().mkdirs();
             }
 
             try {
-                FileWriter filewriter = new FileWriter(file1);
+                FileWriter filewriter = new FileWriter(file);
 
                 filewriter.write(this.e());
                 filewriter.close();
-                this.f = file1;
+                this.f = file;
                 return true;
             } catch (Throwable throwable) {
-                a.error("Could not save crash report to " + file1, throwable);
+                CrashReport.a.error("Could not save crash report to " + file, throwable);
                 return false;
             }
         }
@@ -200,7 +198,7 @@ public class CrashReport {
 
                 crashreportsystemdetails1.b(j);
             } else if (astacktraceelement != null && astacktraceelement.length >= j && 0 <= k && k < astacktraceelement.length) {
-                this.h = new StackTraceElement[astacktraceelement.length - j];
+                this.h = new StackTraceElement[k];
                 System.arraycopy(astacktraceelement, 0, this.h, 0, this.h.length);
             } else {
                 this.g = false;

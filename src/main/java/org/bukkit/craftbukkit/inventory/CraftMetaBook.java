@@ -16,6 +16,9 @@ import org.bukkit.inventory.meta.BookMeta;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
+import net.minecraft.server.ChatSerializer;
+import net.minecraft.server.NBTTagString;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 // Spigot start
 import static org.spigotmc.ValidateUtils.*;
@@ -26,12 +29,16 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
     static final ItemMetaKey BOOK_AUTHOR = new ItemMetaKey("author");
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
+    static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
+    static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
     static final int MAX_PAGE_LENGTH = 256;
     static final int MAX_TITLE_LENGTH = 0xffff;
 
     private String title;
     private String author;
     private List<String> pages = new ArrayList<String>();
+    private Boolean resolved;
+    private Integer generation;
 
     CraftMetaBook(CraftMetaItem meta) {
         super(meta);
@@ -43,6 +50,8 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         this.title = bookMeta.title;
         this.author = bookMeta.author;
         pages.addAll(bookMeta.pages);
+        this.resolved = bookMeta.resolved;
+        this.generation = bookMeta.generation;
     }
 
     CraftMetaBook(NBTTagCompound tag) {
@@ -55,14 +64,25 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         if (tag.hasKey(BOOK_AUTHOR.NBT)) {
             this.author = limit( tag.getString(BOOK_AUTHOR.NBT), 1024 ); // Spigot
         }
+        
+        if (tag.hasKey(RESOLVED.NBT)) {
+            resolved = tag.getBoolean(RESOLVED.NBT);
+        }
+        
+        if (tag.hasKey(GENERATION.NBT)) {
+            generation = tag.getInt(GENERATION.NBT);
+        }
 
         if (tag.hasKey(BOOK_PAGES.NBT)) {
             NBTTagList pages = tag.getList(BOOK_PAGES.NBT, 8);
             String[] pageArray = new String[pages.size()];
 
             for (int i = 0; i < pages.size(); i++) {
-                String page = limit( pages.getString(i), 2048 ); // Spigot
-                pageArray[i] = page;
+                String page = pages.getString(i);
+                if (resolved != null && resolved) {
+                    page = CraftChatMessage.fromComponent(ChatSerializer.a(page));
+                }
+                pageArray[i] = limit( page, 2048 ); // Spigot
             }
 
             addPage(pageArray);
@@ -78,6 +98,9 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
         Iterable<?> pages = SerializableMeta.getObject(Iterable.class, map, BOOK_PAGES.BUKKIT, true);
         CraftMetaItem.safelyAdd(pages, this.pages, MAX_PAGE_LENGTH);
+        
+        resolved = SerializableMeta.getObject(Boolean.class, map, RESOLVED.BUKKIT, true);
+        generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
     }
 
     @Override
@@ -93,7 +116,25 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
         }
 
         if (hasPages()) {
-            itemData.set(BOOK_PAGES.NBT, createStringList(pages));
+            NBTTagList list = new NBTTagList();
+            for (String page : pages) {
+                if (resolved != null && resolved) {                    
+                    list.add(new NBTTagString(
+                        ChatSerializer.a(CraftChatMessage.fromString(page, true)[0])
+                    ));
+                } else {
+                    list.add(new NBTTagString(page));
+                }
+            }
+            itemData.set(BOOK_PAGES.NBT, list);
+        }
+        
+        if (resolved != null) {
+            itemData.setBoolean(RESOLVED.NBT, resolved);
+        }
+        
+        if (generation != null) {
+            itemData.setInt(GENERATION.NBT, generation);
         }
     }
 
@@ -258,6 +299,14 @@ class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
         if (hasPages()) {
             builder.put(BOOK_PAGES.BUKKIT, pages);
+        }
+        
+        if (resolved != null) {
+            builder.put(RESOLVED.BUKKIT, resolved);
+        }
+        
+        if (generation != null) {
+            builder.put(GENERATION.BUKKIT, generation);
         }
 
         return builder;

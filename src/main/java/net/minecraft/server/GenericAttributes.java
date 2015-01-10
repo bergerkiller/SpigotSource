@@ -3,20 +3,19 @@ package net.minecraft.server;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class GenericAttributes {
 
     private static final Logger f = LogManager.getLogger();
-    // Spigot Start
-    public static final IAttribute maxHealth = (new AttributeRanged("generic.maxHealth", 20.0D, 0.1D, org.spigotmc.SpigotConfig.maxHealth)).a("Max Health").a(true); // Spigot
-    public static final IAttribute b = (new AttributeRanged("generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
-    public static final IAttribute c = (new AttributeRanged("generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
-    public static final IAttribute d = (new AttributeRanged("generic.movementSpeed", 0.699999988079071D, 0.0D, org.spigotmc.SpigotConfig.movementSpeed)).a("Movement Speed").a(true);
-    public static final IAttribute e = new AttributeRanged("generic.attackDamage", 2.0D, 0.0D, org.spigotmc.SpigotConfig.attackDamage);
-    // Spigot End
+    // Spigot start
+    public static final IAttribute maxHealth = (new AttributeRanged((IAttribute) null, "generic.maxHealth", 20.0D, 0.1D, org.spigotmc.SpigotConfig.maxHealth)).a("Max Health").a(true); 
+    public static final IAttribute b = (new AttributeRanged((IAttribute) null, "generic.followRange", 32.0D, 0.0D, 2048.0D)).a("Follow Range");
+    public static final IAttribute c = (new AttributeRanged((IAttribute) null, "generic.knockbackResistance", 0.0D, 0.0D, 1.0D)).a("Knockback Resistance");
+    public static final IAttribute d = (new AttributeRanged((IAttribute) null, "generic.movementSpeed", 0.699999988079071D, 0.0D, org.spigotmc.SpigotConfig.movementSpeed)).a("Movement Speed").a(true);
+    public static final IAttribute e = new AttributeRanged((IAttribute) null, "generic.attackDamage", 2.0D, 0.0D, org.spigotmc.SpigotConfig.attackDamage);
+    // Spigot end
 
     public static NBTTagList a(AttributeMapBase attributemapbase) {
         NBTTagList nbttaglist = new NBTTagList();
@@ -76,9 +75,10 @@ public class GenericAttributes {
             if (attributeinstance != null) {
                 a(attributeinstance, nbttagcompound);
             } else {
-                f.warn("Ignoring unknown attribute \'" + nbttagcompound.getString("Name") + "\'");
+                GenericAttributes.f.warn("Ignoring unknown attribute \'" + nbttagcompound.getString("Name") + "\'");
             }
         }
+
     }
 
     private static void a(AttributeInstance attributeinstance, NBTTagCompound nbttagcompound) {
@@ -88,20 +88,30 @@ public class GenericAttributes {
 
             for (int i = 0; i < nbttaglist.size(); ++i) {
                 AttributeModifier attributemodifier = a(nbttaglist.get(i));
-                AttributeModifier attributemodifier1 = attributeinstance.a(attributemodifier.a());
 
-                if (attributemodifier1 != null) {
-                    attributeinstance.b(attributemodifier1);
+                if (attributemodifier != null) {
+                    AttributeModifier attributemodifier1 = attributeinstance.a(attributemodifier.a());
+
+                    if (attributemodifier1 != null) {
+                        attributeinstance.c(attributemodifier1);
+                    }
+
+                    attributeinstance.b(attributemodifier);
                 }
-
-                attributeinstance.a(attributemodifier);
             }
         }
+
     }
 
     public static AttributeModifier a(NBTTagCompound nbttagcompound) {
         UUID uuid = new UUID(nbttagcompound.getLong("UUIDMost"), nbttagcompound.getLong("UUIDLeast"));
 
-        return new AttributeModifier(uuid, nbttagcompound.getString("Name"), nbttagcompound.getDouble("Amount"), nbttagcompound.getInt("Operation"));
+        try {
+            return new AttributeModifier(uuid, nbttagcompound.getString("Name"), nbttagcompound.getDouble("Amount"), nbttagcompound.getInt("Operation"));
+        } catch (Exception exception) {
+            GenericAttributes.f.warn("Unable to create attribute: " + exception.getMessage());
+            return null;
+        }
     }
+
 }

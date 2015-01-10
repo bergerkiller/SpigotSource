@@ -5,7 +5,7 @@ import java.util.List;
 
 public class VillageSiege {
 
-    private World world;
+    private World a;
     private boolean b;
     private int c = -1;
     private int d;
@@ -16,112 +16,105 @@ public class VillageSiege {
     private int i;
 
     public VillageSiege(World world) {
-        this.world = world;
+        this.a = world;
     }
 
     public void a() {
-        boolean flag = false;
-
-        if (flag) {
-            if (this.c == 2) {
-                this.d = 100;
-                return;
-            }
-        } else {
-            if (this.world.w()) {
-                this.c = 0;
-                return;
-            }
-
-            if (this.c == 2) {
-                return;
-            }
-
+        if (this.a.w()) {
+            this.c = 0;
+        } else if (this.c != 2) {
             if (this.c == 0) {
-                float f = this.world.c(0.0F);
+                float f = this.a.c(0.0F);
 
                 if ((double) f < 0.5D || (double) f > 0.501D) {
                     return;
                 }
 
-                this.c = this.world.random.nextInt(10) == 0 ? 1 : 2;
+                this.c = this.a.random.nextInt(10) == 0 ? 1 : 2;
                 this.b = false;
                 if (this.c == 2) {
                     return;
                 }
             }
-        }
 
-        if (!this.b) {
-            if (!this.b()) {
-                return;
-            }
+            if (this.c != -1) {
+                if (!this.b) {
+                    if (!this.b()) {
+                        return;
+                    }
 
-            this.b = true;
-        }
+                    this.b = true;
+                }
 
-        if (this.e > 0) {
-            --this.e;
-        } else {
-            this.e = 2;
-            if (this.d > 0) {
-                this.c();
-                --this.d;
-            } else {
-                this.c = 2;
+                if (this.e > 0) {
+                    --this.e;
+                } else {
+                    this.e = 2;
+                    if (this.d > 0) {
+                        this.c();
+                        --this.d;
+                    } else {
+                        this.c = 2;
+                    }
+
+                }
             }
         }
     }
 
     private boolean b() {
-        List list = this.world.players;
+        List list = this.a.players;
         Iterator iterator = list.iterator();
 
         while (iterator.hasNext()) {
             EntityHuman entityhuman = (EntityHuman) iterator.next();
 
-            this.f = this.world.villages.getClosestVillage((int) entityhuman.locX, (int) entityhuman.locY, (int) entityhuman.locZ, 1);
-            if (this.f != null && this.f.getDoorCount() >= 10 && this.f.d() >= 20 && this.f.getPopulationCount() >= 20) {
-                ChunkCoordinates chunkcoordinates = this.f.getCenter();
-                float f = (float) this.f.getSize();
-                boolean flag = false;
-                int i = 0;
+            if (!entityhuman.v()) {
+                this.f = this.a.ae().getClosestVillage(new BlockPosition(entityhuman), 1);
+                if (this.f != null && this.f.c() >= 10 && this.f.d() >= 20 && this.f.e() >= 20) {
+                    BlockPosition blockposition = this.f.a();
+                    float f = (float) this.f.b();
+                    boolean flag = false;
+                    int i = 0;
 
-                while (true) {
-                    if (i < 10) {
-                        this.g = chunkcoordinates.x + (int) ((double) (MathHelper.cos(this.world.random.nextFloat() * 3.1415927F * 2.0F) * f) * 0.9D);
-                        this.h = chunkcoordinates.y;
-                        this.i = chunkcoordinates.z + (int) ((double) (MathHelper.sin(this.world.random.nextFloat() * 3.1415927F * 2.0F) * f) * 0.9D);
-                        flag = false;
-                        Iterator iterator1 = this.world.villages.getVillages().iterator();
+                    while (true) {
+                        if (i < 10) {
+                            float f1 = this.a.random.nextFloat() * 3.1415927F * 2.0F;
 
-                        while (iterator1.hasNext()) {
-                            Village village = (Village) iterator1.next();
+                            this.g = blockposition.getX() + (int) ((double) (MathHelper.cos(f1) * f) * 0.9D);
+                            this.h = blockposition.getY();
+                            this.i = blockposition.getZ() + (int) ((double) (MathHelper.sin(f1) * f) * 0.9D);
+                            flag = false;
+                            Iterator iterator1 = this.a.ae().getVillages().iterator();
 
-                            if (village != this.f && village.a(this.g, this.h, this.i)) {
-                                flag = true;
-                                break;
+                            while (iterator1.hasNext()) {
+                                Village village = (Village) iterator1.next();
+
+                                if (village != this.f && village.a(new BlockPosition(this.g, this.h, this.i))) {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+
+                            if (flag) {
+                                ++i;
+                                continue;
                             }
                         }
 
                         if (flag) {
-                            ++i;
-                            continue;
+                            return false;
                         }
-                    }
 
-                    if (flag) {
-                        return false;
-                    }
+                        Vec3D vec3d = this.a(new BlockPosition(this.g, this.h, this.i));
 
-                    Vec3D vec3d = this.a(this.g, this.h, this.i);
-
-                    if (vec3d != null) {
-                        this.e = 0;
-                        this.d = 20;
-                        return true;
+                        if (vec3d != null) {
+                            this.e = 0;
+                            this.d = 20;
+                            return true;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -130,7 +123,7 @@ public class VillageSiege {
     }
 
     private boolean c() {
-        Vec3D vec3d = this.a(this.g, this.h, this.i);
+        Vec3D vec3d = this.a(new BlockPosition(this.g, this.h, this.i));
 
         if (vec3d == null) {
             return false;
@@ -138,32 +131,29 @@ public class VillageSiege {
             EntityZombie entityzombie;
 
             try {
-                entityzombie = new EntityZombie(this.world);
-                entityzombie.prepare((GroupDataEntity) null);
+                entityzombie = new EntityZombie(this.a);
+                entityzombie.prepare(this.a.E(new BlockPosition(entityzombie)), (GroupDataEntity) null);
                 entityzombie.setVillager(false);
             } catch (Exception exception) {
                 exception.printStackTrace();
                 return false;
             }
 
-            entityzombie.setPositionRotation(vec3d.a, vec3d.b, vec3d.c, this.world.random.nextFloat() * 360.0F, 0.0F);
-            this.world.addEntity(entityzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_INVASION); // CraftBukkit
-            ChunkCoordinates chunkcoordinates = this.f.getCenter();
+            entityzombie.setPositionRotation(vec3d.a, vec3d.b, vec3d.c, this.a.random.nextFloat() * 360.0F, 0.0F);
+            this.a.addEntity(entityzombie,  org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_INVASION); // CraftBukkit
+            BlockPosition blockposition = this.f.a();
 
-            entityzombie.a(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, this.f.getSize());
+            entityzombie.a(blockposition, this.f.b());
             return true;
         }
     }
 
-    private Vec3D a(int i, int j, int k) {
-        for (int l = 0; l < 10; ++l) {
-            int i1 = i + this.world.random.nextInt(16) - 8;
-            int j1 = j + this.world.random.nextInt(6) - 3;
-            int k1 = k + this.world.random.nextInt(16) - 8;
+    private Vec3D a(BlockPosition blockposition) {
+        for (int i = 0; i < 10; ++i) {
+            BlockPosition blockposition1 = blockposition.a(this.a.random.nextInt(16) - 8, this.a.random.nextInt(6) - 3, this.a.random.nextInt(16) - 8);
 
-            if (this.f.a(i1, j1, k1) && SpawnerCreature.a(EnumCreatureType.MONSTER, this.world, i1, j1, k1)) {
-                // CraftBukkit - add Return
-                return Vec3D.a((double) i1, (double) j1, (double) k1);
+            if (this.f.a(blockposition1) && SpawnerCreature.a(EnumEntityPositionType.ON_GROUND, this.a, blockposition1)) {
+                return new Vec3D((double) blockposition1.getX(), (double) blockposition1.getY(), (double) blockposition1.getZ());
             }
         }
 

@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Iterator;
 import java.util.Random;
 
 // CraftBukkit start
@@ -17,49 +18,39 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
         this.a(true);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        final int sourceX = i, sourceY = j, sourceZ = k; // CraftBukkit
-        if (random.nextInt(Math.max(1, (int) world.growthOdds / world.spigotConfig.mushroomModifier * 25)) == 0) { // Spigot
-            byte b0 = 4;
-            int l = 5;
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        final int sourceX = blockposition.getX(), sourceY = blockposition.getY(), sourceZ = blockposition.getZ(); // CraftBukkit
+        if (random.nextInt(Math.max(1, (int) world.growthOdds / world.spigotConfig.mushroomModifier * 25)) == 0) { // Spigot            int i = 5;
+            int i = 5;
+            boolean flag = true;
+            Iterator iterator = BlockPosition.b(blockposition.a(-4, -1, -4), blockposition.a(4, 1, 4)).iterator();
 
-            int i1;
-            int j1;
-            int k1;
+            while (iterator.hasNext()) {
+                BlockPosition blockposition1 = (BlockPosition) iterator.next();
 
-            for (i1 = i - b0; i1 <= i + b0; ++i1) {
-                for (j1 = k - b0; j1 <= k + b0; ++j1) {
-                    for (k1 = j - 1; k1 <= j + 1; ++k1) {
-                        if (world.getType(i1, k1, j1) == this) {
-                            --l;
-                            if (l <= 0) {
-                                return;
-                            }
-                        }
+                if (world.getType(blockposition1).getBlock() == this) {
+                    --i;
+                    if (i <= 0) {
+                        return;
                     }
                 }
             }
 
-            i1 = i + random.nextInt(3) - 1;
-            j1 = j + random.nextInt(2) - random.nextInt(2);
-            k1 = k + random.nextInt(3) - 1;
+            BlockPosition blockposition2 = blockposition.a(random.nextInt(3) - 1, random.nextInt(2) - random.nextInt(2), random.nextInt(3) - 1);
 
-            for (int l1 = 0; l1 < 4; ++l1) {
-                if (world.isEmpty(i1, j1, k1) && this.j(world, i1, j1, k1)) {
-                    i = i1;
-                    j = j1;
-                    k = k1;
+            for (int j = 0; j < 4; ++j) {
+                if (world.isEmpty(blockposition2) && this.f(world, blockposition2, this.getBlockData())) {
+                    blockposition = blockposition2;
                 }
 
-                i1 = i + random.nextInt(3) - 1;
-                j1 = j + random.nextInt(2) - random.nextInt(2);
-                k1 = k + random.nextInt(3) - 1;
+                blockposition2 = blockposition.a(random.nextInt(3) - 1, random.nextInt(2) - random.nextInt(2), random.nextInt(3) - 1);
             }
 
-            if (world.isEmpty(i1, j1, k1) && this.j(world, i1, j1, k1)) {
+            if (world.isEmpty(blockposition2) && this.f(world, blockposition2, this.getBlockData())) {             
                 // CraftBukkit start
+                // world.setTypeAndData(blockposition2, this.getBlockData(), 2);
                 org.bukkit.World bworld = world.getWorld();
-                BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+                BlockState blockState = bworld.getBlockAt(blockposition2.getX(), blockposition2.getY(), blockposition2.getZ()).getState();
                 blockState.setType(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this)); // nms: this.id, 0, 2
 
                 BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(sourceX, sourceY, sourceZ), blockState);
@@ -71,29 +62,29 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
                 // CraftBukkit end
             }
         }
+
     }
 
-    public boolean canPlace(World world, int i, int j, int k) {
-        return super.canPlace(world, i, j, k) && this.j(world, i, j, k);
+    public boolean canPlace(World world, BlockPosition blockposition) {
+        return super.canPlace(world, blockposition) && this.f(world, blockposition, this.getBlockData());
     }
 
-    protected boolean a(Block block) {
-        return block.j();
+    protected boolean c(Block block) {
+        return block.m();
     }
 
-    public boolean j(World world, int i, int j, int k) {
-        if (j >= 0 && j < 256) {
-            Block block = world.getType(i, j - 1, k);
+    public boolean f(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        if (blockposition.getY() >= 0 && blockposition.getY() < 256) {
+            IBlockData iblockdata1 = world.getType(blockposition.down());
 
-            return block == Blocks.MYCEL || block == Blocks.DIRT && world.getData(i, j - 1, k) == 2 || world.j(i, j, k) < 13 && this.a(block);
+            return iblockdata1.getBlock() == Blocks.MYCELIUM ? true : (iblockdata1.getBlock() == Blocks.DIRT && iblockdata1.get(BlockDirt.VARIANT) == EnumDirtVariant.PODZOL ? true : world.k(blockposition) < 13 && this.c(iblockdata1.getBlock()));
         } else {
             return false;
         }
     }
 
-    public boolean grow(World world, int i, int j, int k, Random random) {
-        int l = world.getData(i, j, k);
-        world.setAir(i, j, k);
+    public boolean d(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        world.setAir(blockposition);
         WorldGenHugeMushroom worldgenhugemushroom = null;
 
         if (this == Blocks.BROWN_MUSHROOM) {
@@ -104,23 +95,23 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
             worldgenhugemushroom = new WorldGenHugeMushroom(1);
         }
 
-        if (worldgenhugemushroom != null && worldgenhugemushroom.generate(world, random, i, j, k)) {
+        if (worldgenhugemushroom != null && worldgenhugemushroom.generate(world, random, blockposition)) {
             return true;
         } else {
-            world.setTypeAndData(i, j, k, this, l, 3);
+            world.setTypeAndData(blockposition, iblockdata, 3);
             return false;
         }
     }
 
-    public boolean a(World world, int i, int j, int k, boolean flag) {
+    public boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
         return true;
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
+    public boolean a(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
         return (double) random.nextFloat() < 0.4D;
     }
 
-    public void b(World world, Random random, int i, int j, int k) {
-        this.grow(world, i, j, k, random);
+    public void b(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
+        this.d(world, blockposition, iblockdata, random);
     }
 }

@@ -2,9 +2,6 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 // CraftBukkit start
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -15,20 +12,28 @@ import org.bukkit.event.block.BlockFadeEvent;
 
 public class BlockGrass extends Block implements IBlockFragilePlantElement {
 
-    private static final Logger a = LogManager.getLogger();
+    public static final BlockStateBoolean SNOWY = BlockStateBoolean.of("snowy");
 
     protected BlockGrass() {
         super(Material.GRASS);
+        this.j(this.blockStateList.getBlockData().set(BlockGrass.SNOWY, Boolean.valueOf(false)));
         this.a(true);
         this.a(CreativeModeTab.b);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public IBlockData updateState(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        Block block = iblockaccess.getType(blockposition.up()).getBlock();
+
+        return iblockdata.set(BlockGrass.SNOWY, Boolean.valueOf(block == Blocks.SNOW || block == Blocks.SNOW_LAYER));
+    }
+
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
         if (!world.isStatic) {
-            if (world.getLightLevel(i, j + 1, k) < 4 && world.getType(i, j + 1, k).k() > 2) {
+            if (world.getLightLevel(blockposition.up()) < 4 && world.getType(blockposition.up()).getBlock().n() > 2) {
                 // CraftBukkit start
+                // world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
                 org.bukkit.World bworld = world.getWorld();
-                BlockState blockState = bworld.getBlockAt(i, j, k).getState();
+                BlockState blockState = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState();
                 blockState.setType(CraftMagicNumbers.getMaterial(Blocks.DIRT));
 
                 BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
@@ -38,85 +43,94 @@ public class BlockGrass extends Block implements IBlockFragilePlantElement {
                     blockState.update(true);
                 }
                 // CraftBukkit end
-            } else if (world.getLightLevel(i, j + 1, k) >= 9) {
-                int numGrowth = Math.min(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); // Spigot
-                for (int l = 0; l < numGrowth; ++l) { // Spigot
-                    int i1 = i + random.nextInt(3) - 1;
-                    int j1 = j + random.nextInt(5) - 3;
-                    int k1 = k + random.nextInt(3) - 1;
-                    Block block = world.getType(i1, j1 + 1, k1);
+            } else {
+                if (world.getLightLevel(blockposition.up()) >= 9) {
+                    for (int i = 0; i < Math.min(4, Math.max(20, (int) (4 * 100F / world.growthOdds))); ++i) { // Spigot
+                        BlockPosition blockposition1 = blockposition.a(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
+                        Block block = world.getType(blockposition1.up()).getBlock();
+                        IBlockData iblockdata1 = world.getType(blockposition1);
 
-                    if (world.getType(i1, j1, k1) == Blocks.DIRT && world.getData(i1, j1, k1) == 0 && world.getLightLevel(i1, j1 + 1, k1) >= 4 && block.k() <= 2) {
-                        // CraftBukkit start
-                        org.bukkit.World bworld = world.getWorld();
-                        BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
-                        blockState.setType(CraftMagicNumbers.getMaterial(Blocks.GRASS));
+                        if (iblockdata1.getBlock() == Blocks.DIRT && iblockdata1.get(BlockDirt.VARIANT) == EnumDirtVariant.DIRT && world.getLightLevel(blockposition1.up()) >= 4 && block.n() <= 2) {
+                            // CraftBukkit start
+                            // world.setTypeUpdate(blockposition1, Blocks.GRASS.getBlockData());
+                            org.bukkit.World bworld = world.getWorld();
+                            BlockState blockState = bworld.getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()).getState();
+                            blockState.setType(CraftMagicNumbers.getMaterial(Blocks.GRASS));
 
-                        BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
-                        world.getServer().getPluginManager().callEvent(event);
+                            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), blockState);
+                            world.getServer().getPluginManager().callEvent(event);
 
-                        if (!event.isCancelled()) {
-                            blockState.update(true);
+                            if (!event.isCancelled()) {
+                                blockState.update(true);
+                            }
+                            // CraftBukkit end
                         }
-                        // CraftBukkit end
                     }
                 }
+
             }
         }
     }
 
-    public Item getDropType(int i, Random random, int j) {
-        return Blocks.DIRT.getDropType(0, random, j);
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
+        return Blocks.DIRT.getDropType(Blocks.DIRT.getBlockData().set(BlockDirt.VARIANT, EnumDirtVariant.DIRT), random, i);
     }
 
-    public boolean a(World world, int i, int j, int k, boolean flag) {
+    public boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
         return true;
     }
 
-    public boolean a(World world, Random random, int i, int j, int k) {
+    public boolean a(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
         return true;
     }
 
-    public void b(World world, Random random, int i, int j, int k) {
-        int l = 0;
+    public void b(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
+        BlockPosition blockposition1 = blockposition.up();
+        int i = 0;
 
-        while (l < 128) {
-            int i1 = i;
-            int j1 = j + 1;
-            int k1 = k;
-            int l1 = 0;
+        while (i < 128) {
+            BlockPosition blockposition2 = blockposition1;
+            int j = 0;
 
             while (true) {
-                if (l1 < l / 16) {
-                    i1 += random.nextInt(3) - 1;
-                    j1 += (random.nextInt(3) - 1) * random.nextInt(3) / 2;
-                    k1 += random.nextInt(3) - 1;
-                    if (world.getType(i1, j1 - 1, k1) == Blocks.GRASS && !world.getType(i1, j1, k1).r()) {
-                        ++l1;
+                if (j < i / 16) {
+                    blockposition2 = blockposition2.a(random.nextInt(3) - 1, (random.nextInt(3) - 1) * random.nextInt(3) / 2, random.nextInt(3) - 1);
+                    if (world.getType(blockposition2.down()).getBlock() == Blocks.GRASS && !world.getType(blockposition2).getBlock().isOccluding()) {
+                        ++j;
                         continue;
                     }
-                } else if (world.getType(i1, j1, k1).material == Material.AIR) {
-                    if (random.nextInt(8) != 0) {
-                        if (Blocks.LONG_GRASS.j(world, i1, j1, k1)) {
-                            CraftEventFactory.handleBlockGrowEvent(world, i1, j1, k1, Blocks.LONG_GRASS, 1); // CraftBukkit
+                } else if (world.getType(blockposition2).getBlock().material == Material.AIR) {
+                    if (random.nextInt(8) == 0) {
+                        EnumFlowerVarient enumflowervarient = world.getBiome(blockposition2).a(random, blockposition2);
+                        BlockFlowers blockflowers = enumflowervarient.a().a();
+                        IBlockData iblockdata1 = blockflowers.getBlockData().set(blockflowers.l(), enumflowervarient);
+
+                        if (blockflowers.f(world, blockposition2, iblockdata1)) {
+                            // world.setTypeAndData(blockposition2, iblockdata1, 3); // CraftBukkit
+                            CraftEventFactory.handleBlockGrowEvent(world, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), iblockdata1.getBlock(), iblockdata1.getBlock().toLegacyData(iblockdata1)); // CraftBukkit
                         }
                     } else {
-                        String s = world.getBiome(i1, k1).a(random, i1, j1, k1);
+                        IBlockData iblockdata2 = Blocks.TALLGRASS.getBlockData().set(BlockLongGrass.TYPE, EnumTallGrassType.GRASS);
 
-                        a.debug("Flower in " + world.getBiome(i1, k1).af + ": " + s);
-                        BlockFlowers blockflowers = BlockFlowers.e(s);
-
-                        if (blockflowers != null && blockflowers.j(world, i1, j1, k1)) {
-                            int i2 = BlockFlowers.f(s);
-
-                            CraftEventFactory.handleBlockGrowEvent(world, i1, j1, k1, blockflowers, i2); // CraftBukkit
+                        if (Blocks.TALLGRASS.f(world, blockposition2, iblockdata2)) {
+                            // world.setTypeAndData(blockposition2, iblockdata2, 3); // CRaftBukkit
+                            CraftEventFactory.handleBlockGrowEvent(world, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), iblockdata2.getBlock(), iblockdata2.getBlock().toLegacyData(iblockdata2)); // CraftBukkit
                         }
                     }
                 }
 
-                ++l;
+                ++i;
                 break;
             }
         }
+
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        return 0;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockGrass.SNOWY});
     }
 }

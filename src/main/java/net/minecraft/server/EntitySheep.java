@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Maps;
+import java.util.Map;
 import java.util.Random;
 
 // CraftBukkit start
@@ -9,61 +11,72 @@ import org.bukkit.event.player.PlayerShearEntityEvent;
 
 public class EntitySheep extends EntityAnimal {
 
-    private final InventoryCrafting bq = new InventoryCrafting(new ContainerSheepBreed(this), 2, 1);
-    public static final float[][] bp = new float[][] { { 1.0F, 1.0F, 1.0F}, { 0.85F, 0.5F, 0.2F}, { 0.7F, 0.3F, 0.85F}, { 0.4F, 0.6F, 0.85F}, { 0.9F, 0.9F, 0.2F}, { 0.5F, 0.8F, 0.1F}, { 0.95F, 0.5F, 0.65F}, { 0.3F, 0.3F, 0.3F}, { 0.6F, 0.6F, 0.6F}, { 0.3F, 0.5F, 0.6F}, { 0.5F, 0.25F, 0.7F}, { 0.2F, 0.3F, 0.7F}, { 0.4F, 0.3F, 0.2F}, { 0.4F, 0.5F, 0.2F}, { 0.6F, 0.2F, 0.2F}, { 0.1F, 0.1F, 0.1F}};
-    private int br;
-    private PathfinderGoalEatTile bs = new PathfinderGoalEatTile(this);
+    private final InventoryCrafting bk = new InventoryCrafting(new ContainerSheepBreed(this), 2, 1);
+    private static final Map bm = Maps.newEnumMap(EnumColor.class);
+    private int bn;
+    private PathfinderGoalEatTile bo = new PathfinderGoalEatTile(this);
+
+    public static float[] a(EnumColor enumcolor) {
+        return (float[]) EntitySheep.bm.get(enumcolor);
+    }
 
     public EntitySheep(World world) {
         super(world);
         this.a(0.9F, 1.3F);
-        this.getNavigation().a(true);
+        ((Navigation) this.getNavigation()).a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.25D));
         this.goalSelector.a(2, new PathfinderGoalBreed(this, 1.0D));
         this.goalSelector.a(3, new PathfinderGoalTempt(this, 1.1D, Items.WHEAT, false));
         this.goalSelector.a(4, new PathfinderGoalFollowParent(this, 1.1D));
-        this.goalSelector.a(5, this.bs);
+        this.goalSelector.a(5, this.bo);
         this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 1.0D));
         this.goalSelector.a(7, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 6.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-        this.bq.setItem(0, new ItemStack(Items.INK_SACK, 1, 0));
-        this.bq.setItem(1, new ItemStack(Items.INK_SACK, 1, 0));
-        this.bq.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
+        this.bk.setItem(0, new ItemStack(Items.DYE, 1, 0));
+        this.bk.setItem(1, new ItemStack(Items.DYE, 1, 0));
+        this.bk.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
     }
 
-    protected boolean bk() {
-        return true;
+    protected void E() {
+        this.bn = this.bo.f();
+        super.E();
     }
 
-    protected void bn() {
-        this.br = this.bs.f();
-        super.bn();
-    }
-
-    public void e() {
+    public void m() {
         if (this.world.isStatic) {
-            this.br = Math.max(0, this.br - 1);
+            this.bn = Math.max(0, this.bn - 1);
         }
 
-        super.e();
+        super.m();
     }
 
-    protected void aD() {
-        super.aD();
+    protected void aW() {
+        super.aW();
         this.getAttributeInstance(GenericAttributes.maxHealth).setValue(8.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.23000000417232513D);
     }
 
-    protected void c() {
-        super.c();
+    protected void h() {
+        super.h();
         this.datawatcher.a(16, new Byte((byte) 0));
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
         if (!this.isSheared()) {
-            this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor()), 0.0F);
+            this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor().getColorIndex()), 0.0F);
         }
+
+        int j = this.random.nextInt(2) + 1 + this.random.nextInt(1 + i);
+
+        for (int k = 0; k < j; ++k) {
+            if (this.isBurning()) {
+                this.a(Items.COOKED_MUTTON, 1);
+            } else {
+                this.a(Items.MUTTON, 1);
+            }
+        }
+
     }
 
     protected Item getLoot() {
@@ -83,12 +96,12 @@ public class EntitySheep extends EntityAnimal {
                     return false;
                 }
                 // CraftBukkit end
-
+                
                 this.setSheared(true);
                 int i = 1 + this.random.nextInt(3);
 
                 for (int j = 0; j < i; ++j) {
-                    EntityItem entityitem = this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor()), 1.0F);
+                    EntityItem entityitem = this.a(new ItemStack(Item.getItemOf(Blocks.WOOL), 1, this.getColor().getColorIndex()), 1.0F);
 
                     entityitem.motY += (double) (this.random.nextFloat() * 0.05F);
                     entityitem.motX += (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F);
@@ -106,39 +119,39 @@ public class EntitySheep extends EntityAnimal {
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         nbttagcompound.setBoolean("Sheared", this.isSheared());
-        nbttagcompound.setByte("Color", (byte) this.getColor());
+        nbttagcompound.setByte("Color", (byte) this.getColor().getColorIndex());
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
         this.setSheared(nbttagcompound.getBoolean("Sheared"));
-        this.setColor(nbttagcompound.getByte("Color"));
+        this.setColor(EnumColor.fromColorIndex(nbttagcompound.getByte("Color")));
     }
 
-    protected String t() {
+    protected String z() {
         return "mob.sheep.say";
     }
 
-    protected String aT() {
+    protected String bn() {
         return "mob.sheep.say";
     }
 
-    protected String aU() {
+    protected String bo() {
         return "mob.sheep.say";
     }
 
-    protected void a(int i, int j, int k, Block block) {
+    protected void a(BlockPosition blockposition, Block block) {
         this.makeSound("mob.sheep.step", 0.15F, 1.0F);
     }
 
-    public int getColor() {
-        return this.datawatcher.getByte(16) & 15;
+    public EnumColor getColor() {
+        return EnumColor.fromColorIndex(this.datawatcher.getByte(16) & 15);
     }
 
-    public void setColor(int i) {
+    public void setColor(EnumColor enumcolor) {
         byte b0 = this.datawatcher.getByte(16);
 
-        this.datawatcher.watch(16, Byte.valueOf((byte) (b0 & 240 | i & 15)));
+        this.datawatcher.watch(16, Byte.valueOf((byte) (b0 & 240 | enumcolor.getColorIndex() & 15)));
     }
 
     public boolean isSheared() {
@@ -153,24 +166,24 @@ public class EntitySheep extends EntityAnimal {
         } else {
             this.datawatcher.watch(16, Byte.valueOf((byte) (b0 & -17)));
         }
+
     }
 
-    public static int a(Random random) {
+    public static EnumColor a(Random random) {
         int i = random.nextInt(100);
 
-        return i < 5 ? 15 : (i < 10 ? 7 : (i < 15 ? 8 : (i < 18 ? 12 : (random.nextInt(500) == 0 ? 6 : 0))));
+        return i < 5 ? EnumColor.BLACK : (i < 10 ? EnumColor.GRAY : (i < 15 ? EnumColor.SILVER : (i < 18 ? EnumColor.BROWN : (random.nextInt(500) == 0 ? EnumColor.PINK : EnumColor.WHITE))));
     }
 
     public EntitySheep b(EntityAgeable entityageable) {
         EntitySheep entitysheep = (EntitySheep) entityageable;
         EntitySheep entitysheep1 = new EntitySheep(this.world);
-        int i = this.a(this, entitysheep);
 
-        entitysheep1.setColor(15 - i);
+        entitysheep1.setColor(this.a((EntityAnimal) this, (EntityAnimal) entitysheep));
         return entitysheep1;
     }
 
-    public void p() {
+    public void v() {
         // CraftBukkit start
         SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
         this.world.getServer().getPluginManager().callEvent(event);
@@ -179,41 +192,60 @@ public class EntitySheep extends EntityAnimal {
             this.setSheared(false);
         }
         // CraftBukkit end
-
         if (this.isBaby()) {
-            this.a(60);
+            this.setAge(60);
         }
+
     }
 
-    public GroupDataEntity prepare(GroupDataEntity groupdataentity) {
-        groupdataentity = super.prepare(groupdataentity);
+    public GroupDataEntity prepare(DifficultyDamageScaler difficultydamagescaler, GroupDataEntity groupdataentity) {
+        groupdataentity = super.prepare(difficultydamagescaler, groupdataentity);
         this.setColor(a(this.world.random));
         return groupdataentity;
     }
 
-    private int a(EntityAnimal entityanimal, EntityAnimal entityanimal1) {
-        int i = this.b(entityanimal);
-        int j = this.b(entityanimal1);
+    private EnumColor a(EntityAnimal entityanimal, EntityAnimal entityanimal1) {
+        int i = ((EntitySheep) entityanimal).getColor().getInvColorIndex();
+        int j = ((EntitySheep) entityanimal1).getColor().getInvColorIndex();
 
-        this.bq.getItem(0).setData(i);
-        this.bq.getItem(1).setData(j);
-        ItemStack itemstack = CraftingManager.getInstance().craft(this.bq, ((EntitySheep) entityanimal).world);
+        this.bk.getItem(0).setData(i);
+        this.bk.getItem(1).setData(j);
+        ItemStack itemstack = CraftingManager.getInstance().craft(this.bk, ((EntitySheep) entityanimal).world);
         int k;
 
-        if (itemstack != null && itemstack.getItem() == Items.INK_SACK) {
+        if (itemstack != null && itemstack.getItem() == Items.DYE) {
             k = itemstack.getData();
         } else {
             k = this.world.random.nextBoolean() ? i : j;
         }
 
-        return k;
+        return EnumColor.fromInvColorIndex(k);
     }
 
-    private int b(EntityAnimal entityanimal) {
-        return 15 - ((EntitySheep) entityanimal).getColor();
+    public float getHeadHeight() {
+        return 0.95F * this.length;
     }
 
     public EntityAgeable createChild(EntityAgeable entityageable) {
         return this.b(entityageable);
+    }
+
+    static {
+        EntitySheep.bm.put(EnumColor.WHITE, new float[] { 1.0F, 1.0F, 1.0F});
+        EntitySheep.bm.put(EnumColor.ORANGE, new float[] { 0.85F, 0.5F, 0.2F});
+        EntitySheep.bm.put(EnumColor.MAGENTA, new float[] { 0.7F, 0.3F, 0.85F});
+        EntitySheep.bm.put(EnumColor.LIGHT_BLUE, new float[] { 0.4F, 0.6F, 0.85F});
+        EntitySheep.bm.put(EnumColor.YELLOW, new float[] { 0.9F, 0.9F, 0.2F});
+        EntitySheep.bm.put(EnumColor.LIME, new float[] { 0.5F, 0.8F, 0.1F});
+        EntitySheep.bm.put(EnumColor.PINK, new float[] { 0.95F, 0.5F, 0.65F});
+        EntitySheep.bm.put(EnumColor.GRAY, new float[] { 0.3F, 0.3F, 0.3F});
+        EntitySheep.bm.put(EnumColor.SILVER, new float[] { 0.6F, 0.6F, 0.6F});
+        EntitySheep.bm.put(EnumColor.CYAN, new float[] { 0.3F, 0.5F, 0.6F});
+        EntitySheep.bm.put(EnumColor.PURPLE, new float[] { 0.5F, 0.25F, 0.7F});
+        EntitySheep.bm.put(EnumColor.BLUE, new float[] { 0.2F, 0.3F, 0.7F});
+        EntitySheep.bm.put(EnumColor.BROWN, new float[] { 0.4F, 0.3F, 0.2F});
+        EntitySheep.bm.put(EnumColor.GREEN, new float[] { 0.4F, 0.5F, 0.2F});
+        EntitySheep.bm.put(EnumColor.RED, new float[] { 0.6F, 0.2F, 0.2F});
+        EntitySheep.bm.put(EnumColor.BLACK, new float[] { 0.1F, 0.1F, 0.1F});
     }
 }

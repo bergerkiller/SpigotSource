@@ -1,7 +1,6 @@
 package net.minecraft.server;
 
 import java.util.Iterator;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,21 +8,20 @@ import org.bukkit.event.player.PlayerPickupItemEvent; // CraftBukkit
 
 public class EntityItem extends Entity {
 
-    private static final Logger d = LogManager.getLogger();
-    public int age;
+    private static final Logger b = LogManager.getLogger();
+    private int age;
     public int pickupDelay;
     private int e;
     private String f;
     private String g;
-    public float c;
+    public float a;
     private int lastTick = MinecraftServer.currentTick; // CraftBukkit
 
     public EntityItem(World world, double d0, double d1, double d2) {
         super(world);
         this.e = 5;
-        this.c = (float) (Math.random() * 3.141592653589793D * 2.0D);
+        this.a = (float) (Math.random() * 3.141592653589793D * 2.0D);
         this.a(0.25F, 0.25F);
-        this.height = this.length / 2.0F;
         this.setPosition(d0, d1, d2);
         this.yaw = (float) (Math.random() * 360.0D);
         this.motX = (double) ((float) (Math.random() * 0.20000000298023224D - 0.10000000149011612D));
@@ -41,27 +39,27 @@ public class EntityItem extends Entity {
         this.setItemStack(itemstack);
     }
 
-    protected boolean g_() {
+    protected boolean r_() {
         return false;
     }
 
     public EntityItem(World world) {
         super(world);
         this.e = 5;
-        this.c = (float) (Math.random() * 3.141592653589793D * 2.0D);
+        this.a = (float) (Math.random() * 3.141592653589793D * 2.0D);
         this.a(0.25F, 0.25F);
-        this.height = this.length / 2.0F;
+        this.setItemStack(new ItemStack(Blocks.AIR, 0));
     }
 
-    protected void c() {
+    protected void h() {
         this.getDataWatcher().add(10, 5);
     }
 
-    public void h() {
+    public void s_() {
         if (this.getItemStack() == null) {
             this.die();
         } else {
-            super.h();
+            super.s_();
             // CraftBukkit start - Use wall time for pickup and despawn timers
             int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
             this.pickupDelay -= elapsedTicks;
@@ -73,12 +71,12 @@ public class EntityItem extends Entity {
             this.lastY = this.locY;
             this.lastZ = this.locZ;
             this.motY -= 0.03999999910593033D;
-            this.X = this.j(this.locX, (this.boundingBox.b + this.boundingBox.e) / 2.0D, this.locZ);
+            this.T = this.j(this.locX, (this.getBoundingBox().b + this.getBoundingBox().e) / 2.0D, this.locZ);
             this.move(this.motX, this.motY, this.motZ);
             boolean flag = (int) this.lastX != (int) this.locX || (int) this.lastY != (int) this.locY || (int) this.lastZ != (int) this.locZ;
 
             if (flag || this.ticksLived % 25 == 0) {
-                if (this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)).getMaterial() == Material.LAVA) {
+                if (this.world.getType(new BlockPosition(this)).getBlock().getMaterial() == Material.LAVA) {
                     this.motY = 0.20000000298023224D;
                     this.motX = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
                     this.motZ = (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
@@ -86,14 +84,14 @@ public class EntityItem extends Entity {
                 }
 
                 if (!this.world.isStatic) {
-                    this.k();
+                    this.w();
                 }
             }
 
             float f = 0.98F;
 
             if (this.onGround) {
-                f = this.world.getType(MathHelper.floor(this.locX), MathHelper.floor(this.boundingBox.b) - 1, MathHelper.floor(this.locZ)).frictionFactor * 0.98F;
+                f = this.world.getType(new BlockPosition(MathHelper.floor(this.locX), MathHelper.floor(this.getBoundingBox().b) - 1, MathHelper.floor(this.locZ))).getBlock().frictionFactor * 0.98F;
             }
 
             this.motX *= (double) f;
@@ -105,16 +103,16 @@ public class EntityItem extends Entity {
             // Spigot start - Make the hopper(s) below this item active.
             // Called each tick on each item entity.
             if (this.world.spigotConfig.altHopperTicking) {
-                int xi = MathHelper.floor(this.boundingBox.a);
-                int yi = MathHelper.floor(this.boundingBox.b) - 1;
-                int zi = MathHelper.floor(this.boundingBox.c);
-                int xf = MathHelper.floor(this.boundingBox.d);
-                int yf = MathHelper.floor(this.boundingBox.e) - 1;
-                int zf = MathHelper.floor(this.boundingBox.f);
+                int xi = MathHelper.floor(this.getBoundingBox().a);
+                int yi = MathHelper.floor(this.getBoundingBox().b) - 1;
+                int zi = MathHelper.floor(this.getBoundingBox().c);
+                int xf = MathHelper.floor(this.getBoundingBox().d);
+                int yf = MathHelper.floor(this.getBoundingBox().e) - 1;
+                int zf = MathHelper.floor(this.getBoundingBox().f);
                 for (int a = xi; a <= xf; a++) {
                     for (int c = zi; c <= zf; c++) {
                         for (int b = yi; b <= yf; b++) {
-                            TileEntity tileEntity = this.world.getTileEntity(a, b, c);
+                            TileEntity tileEntity = this.world.getTileEntity(new BlockPosition(a, b, c));
                             if (tileEntity instanceof TileEntityHopper) {
                                 ((TileEntityHopper) tileEntity).makeTick();
                             }
@@ -124,7 +122,13 @@ public class EntityItem extends Entity {
             }
             // Spigot end
 
-            // ++this.age; // CraftBukkit - Moved up
+            /* Craftbukkit start - moved up
+            if (this.age != -32768) {
+                ++this.age;
+            }
+            // Craftbukkit end */
+
+            this.W();
             if (!this.world.isStatic && this.age >= world.spigotConfig.itemDespawnRate) { // Spigot
                 // CraftBukkit start - fire ItemDespawnEvent
                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
@@ -134,13 +138,14 @@ public class EntityItem extends Entity {
                 // CraftBukkit end
                 this.die();
             }
+
         }
     }
 
-    private void k() {
+    private void w() {
         // Spigot start
         double radius = world.spigotConfig.itemMerge;
-        Iterator iterator = this.world.a(EntityItem.class, this.boundingBox.grow(radius, radius, radius)).iterator();
+        Iterator iterator = this.world.a(EntityItem.class, this.getBoundingBox().grow(radius, radius, radius)).iterator();
         // Spigot end
 
         while (iterator.hasNext()) {
@@ -148,50 +153,69 @@ public class EntityItem extends Entity {
 
             this.a(entityitem);
         }
+
     }
 
-    public boolean a(EntityItem entityitem) {
+    private boolean a(EntityItem entityitem) {
         if (entityitem == this) {
             return false;
         } else if (entityitem.isAlive() && this.isAlive()) {
             ItemStack itemstack = this.getItemStack();
             ItemStack itemstack1 = entityitem.getItemStack();
 
-            if (itemstack1.getItem() != itemstack.getItem()) {
-                return false;
-            } else if (itemstack1.hasTag() ^ itemstack.hasTag()) {
-                return false;
-            } else if (itemstack1.hasTag() && !itemstack1.getTag().equals(itemstack.getTag())) {
-                return false;
-            } else if (itemstack1.getItem() == null) {
-                return false;
-            } else if (itemstack1.getItem().n() && itemstack1.getData() != itemstack.getData()) {
-                return false;
-            } else if (itemstack1.count < itemstack.count) {
-                return entityitem.a(this);
-            } else if (itemstack1.count + itemstack.count > itemstack1.getMaxStackSize()) {
-                return false;
+            if (this.pickupDelay != 32767 && entityitem.pickupDelay != 32767) {
+                if (this.age != -32768 && entityitem.age != -32768) {
+                    if (itemstack1.getItem() != itemstack.getItem()) {
+                        return false;
+                    } else if (itemstack1.hasTag() ^ itemstack.hasTag()) {
+                        return false;
+                    } else if (itemstack1.hasTag() && !itemstack1.getTag().equals(itemstack.getTag())) {
+                        return false;
+                    } else if (itemstack1.getItem() == null) {
+                        return false;
+                    } else if (itemstack1.getItem().k() && itemstack1.getData() != itemstack.getData()) {
+                        return false;
+                    } else if (itemstack1.count < itemstack.count) {
+                        return entityitem.a(this);
+                    } else if (itemstack1.count + itemstack.count > itemstack1.getMaxStackSize()) {
+                        return false;
+                    } else {
+                        // Spigot start
+                        itemstack.count += itemstack1.count;
+                        this.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
+                        this.age = Math.min(entityitem.age, this.age);
+                        this.setItemStack(itemstack);
+                        entityitem.die();
+                        // Spigot end
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
             } else {
-                // Spigot start
-                itemstack.count += itemstack1.count;
-                this.pickupDelay = Math.max(entityitem.pickupDelay, this.pickupDelay);
-                this.age = Math.min(entityitem.age, this.age);
-                this.setItemStack(itemstack);
-                entityitem.die();
-                // Spigot end
-                return true;
+                return false;
             }
         } else {
             return false;
         }
     }
 
-    public void e() {
+    public void j() {
         this.age = 4800;
     }
 
-    public boolean N() {
-        return this.world.a(this.boundingBox, Material.WATER, (Entity) this);
+    public boolean W() {
+        if (this.world.a(this.getBoundingBox(), Material.WATER, (Entity) this)) {
+            if (!this.inWater && !this.justCreated) {
+                this.X();
+            }
+
+            this.inWater = true;
+        } else {
+            this.inWater = false;
+        }
+
+        return this.inWater;
     }
 
     protected void burn(int i) {
@@ -199,12 +223,12 @@ public class EntityItem extends Entity {
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
-        if (this.isInvulnerable()) {
+        if (this.isInvulnerable(damagesource)) {
             return false;
         } else if (this.getItemStack() != null && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
             return false;
         } else {
-            this.Q();
+            this.ac();
             this.e = (int) ((float) this.e - f);
             if (this.e <= 0) {
                 this.die();
@@ -217,22 +241,28 @@ public class EntityItem extends Entity {
     public void b(NBTTagCompound nbttagcompound) {
         nbttagcompound.setShort("Health", (short) ((byte) this.e));
         nbttagcompound.setShort("Age", (short) this.age);
-        if (this.j() != null) {
+        nbttagcompound.setShort("PickupDelay", (short) this.pickupDelay);
+        if (this.n() != null) {
             nbttagcompound.setString("Thrower", this.f);
         }
 
-        if (this.i() != null) {
+        if (this.m() != null) {
             nbttagcompound.setString("Owner", this.g);
         }
 
         if (this.getItemStack() != null) {
             nbttagcompound.set("Item", this.getItemStack().save(new NBTTagCompound()));
         }
+
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         this.e = nbttagcompound.getShort("Health") & 255;
         this.age = nbttagcompound.getShort("Age");
+        if (nbttagcompound.hasKey("PickupDelay")) {
+            this.pickupDelay = nbttagcompound.getShort("PickupDelay");
+        }
+
         if (nbttagcompound.hasKey("Owner")) {
             this.g = nbttagcompound.getString("Owner");
         }
@@ -258,13 +288,14 @@ public class EntityItem extends Entity {
         if (this.getItemStack() == null) {
             this.die();
         }
+
     }
 
-    public void b_(EntityHuman entityhuman) {
+    public void d(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
             ItemStack itemstack = this.getItemStack();
             int i = itemstack.count;
-
+ 
             // CraftBukkit start - fire PlayerPickupItemEvent
             int canHold = entityhuman.inventory.canHold(itemstack);
             int remaining = itemstack.count - canHold;
@@ -287,61 +318,74 @@ public class EntityItem extends Entity {
 
             if (this.pickupDelay == 0 && (this.g == null || 6000 - this.age <= 200 || this.g.equals(entityhuman.getName())) && entityhuman.inventory.pickup(itemstack)) {
                 if (itemstack.getItem() == Item.getItemOf(Blocks.LOG)) {
-                    entityhuman.a((Statistic) AchievementList.g);
+                    entityhuman.b((Statistic) AchievementList.g);
                 }
 
                 if (itemstack.getItem() == Item.getItemOf(Blocks.LOG2)) {
-                    entityhuman.a((Statistic) AchievementList.g);
+                    entityhuman.b((Statistic) AchievementList.g);
                 }
 
                 if (itemstack.getItem() == Items.LEATHER) {
-                    entityhuman.a((Statistic) AchievementList.t);
+                    entityhuman.b((Statistic) AchievementList.t);
                 }
 
                 if (itemstack.getItem() == Items.DIAMOND) {
-                    entityhuman.a((Statistic) AchievementList.w);
+                    entityhuman.b((Statistic) AchievementList.w);
                 }
 
                 if (itemstack.getItem() == Items.BLAZE_ROD) {
-                    entityhuman.a((Statistic) AchievementList.A);
+                    entityhuman.b((Statistic) AchievementList.A);
                 }
 
-                if (itemstack.getItem() == Items.DIAMOND && this.j() != null) {
-                    EntityHuman entityhuman1 = this.world.a(this.j());
+                if (itemstack.getItem() == Items.DIAMOND && this.n() != null) {
+                    EntityHuman entityhuman1 = this.world.a(this.n());
 
                     if (entityhuman1 != null && entityhuman1 != entityhuman) {
-                        entityhuman1.a((Statistic) AchievementList.x);
+                        entityhuman1.b((Statistic) AchievementList.x);
                     }
                 }
 
-                this.world.makeSound(entityhuman, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                if (!this.R()) {
+                    this.world.makeSound(entityhuman, "random.pop", 0.2F, ((this.random.nextFloat() - this.random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                }
+
                 entityhuman.receive(this, i);
                 if (itemstack.count <= 0) {
                     this.die();
                 }
             }
+
         }
     }
 
     public String getName() {
-        return LocaleI18n.get("item." + this.getItemStack().a());
+        return this.hasCustomName() ? this.getCustomName() : LocaleI18n.get("item." + this.getItemStack().a());
     }
 
-    public boolean av() {
+    public boolean aE() {
         return false;
     }
 
-    public void b(int i) {
-        super.b(i);
+    public void c(int i) {
+        super.c(i);
         if (!this.world.isStatic) {
-            this.k();
+            this.w();
         }
+
     }
 
     public ItemStack getItemStack() {
         ItemStack itemstack = this.getDataWatcher().getItemStack(10);
 
-        return itemstack == null ? new ItemStack(Blocks.STONE) : itemstack;
+        if (itemstack == null) {
+            if (this.world != null) {
+                EntityItem.b.error("Item entity " + this.getId() + " has no item?!");
+            }
+
+            return new ItemStack(Blocks.STONE);
+        } else {
+            return itemstack;
+        }
     }
 
     public void setItemStack(ItemStack itemstack) {
@@ -349,19 +393,48 @@ public class EntityItem extends Entity {
         this.getDataWatcher().update(10);
     }
 
-    public String i() {
+    public String m() {
         return this.g;
     }
 
-    public void a(String s) {
+    public void b(String s) {
         this.g = s;
     }
 
-    public String j() {
+    public String n() {
         return this.f;
     }
 
-    public void b(String s) {
+    public void c(String s) {
         this.f = s;
+    }
+
+    public void p() {
+        this.pickupDelay = 10;
+    }
+
+    public void q() {
+        this.pickupDelay = 0;
+    }
+
+    public void r() {
+        this.pickupDelay = 32767;
+    }
+
+    public void a(int i) {
+        this.pickupDelay = i;
+    }
+
+    public boolean s() {
+        return this.pickupDelay > 0;
+    }
+
+    public void u() {
+        this.age = -6000;
+    }
+
+    public void v() {
+        this.r();
+        this.age = 5999;
     }
 }

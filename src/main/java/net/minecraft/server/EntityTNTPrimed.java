@@ -13,7 +13,6 @@ public class EntityTNTPrimed extends Entity {
         super(world);
         this.k = true;
         this.a(0.98F, 0.98F);
-        this.height = this.length / 2.0F;
     }
 
     public EntityTNTPrimed(World world, double d0, double d1, double d2, EntityLiving entityliving) {
@@ -31,17 +30,17 @@ public class EntityTNTPrimed extends Entity {
         this.source = entityliving;
     }
 
-    protected void c() {}
+    protected void h() {}
 
-    protected boolean g_() {
+    protected boolean r_() {
         return false;
     }
 
-    public boolean R() {
+    public boolean ad() {
         return !this.dead;
     }
 
-    public void h() {
+    public void s_() {
         if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
         this.lastX = this.locX;
         this.lastY = this.locY;
@@ -59,14 +58,17 @@ public class EntityTNTPrimed extends Entity {
 
         if (this.fuseTicks-- <= 0) {
             // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
+            // this.die();
             if (!this.world.isStatic) {
                 this.explode();
             }
             this.die();
             // CraftBukkit end
         } else {
-            this.world.addParticle("smoke", this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D);
+            this.W();
+            this.world.addParticle(EnumParticle.SMOKE_NORMAL, this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D, new int[0]);
         }
+
     }
 
     private void explode() {
@@ -79,8 +81,7 @@ public class EntityTNTPrimed extends Entity {
         server.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            // give 'this' instead of (Entity) null so we know what causes the damage
-            this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), true);
+            this.world.createExplosion(this, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, event.getRadius(), event.getFire(), true);
         }
         // CraftBukkit end
     }
@@ -95,5 +96,9 @@ public class EntityTNTPrimed extends Entity {
 
     public EntityLiving getSource() {
         return this.source;
+    }
+
+    public float getHeadHeight() {
+        return 0.0F;
     }
 }

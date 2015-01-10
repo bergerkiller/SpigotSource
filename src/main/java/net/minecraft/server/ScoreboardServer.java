@@ -1,8 +1,9 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -10,7 +11,7 @@ import java.util.Set;
 public class ScoreboardServer extends Scoreboard {
 
     private final MinecraftServer a;
-    private final Set b = new HashSet();
+    private final Set b = Sets.newHashSet();
     private PersistentScoreboard c;
 
     public ScoreboardServer(MinecraftServer minecraftserver) {
@@ -20,7 +21,7 @@ public class ScoreboardServer extends Scoreboard {
     public void handleScoreChanged(ScoreboardScore scoreboardscore) {
         super.handleScoreChanged(scoreboardscore);
         if (this.b.contains(scoreboardscore.getObjective())) {
-            this.sendAll(new PacketPlayOutScoreboardScore(scoreboardscore, 0)); // CraftBukkit - Internal packet method
+            this.sendAll(new PacketPlayOutScoreboardScore(scoreboardscore)); // CraftBukkit - Internal packet method
         }
 
         this.b();
@@ -29,6 +30,12 @@ public class ScoreboardServer extends Scoreboard {
     public void handlePlayerRemoved(String s) {
         super.handlePlayerRemoved(s);
         this.sendAll(new PacketPlayOutScoreboardScore(s)); // CraftBukkit - Internal packet method
+        this.b();
+    }
+
+    public void a(String s, ScoreboardObjective scoreboardobjective) {
+        super.a(s, scoreboardobjective);
+        this.sendAll(new PacketPlayOutScoreboardScore(s, scoreboardobjective)); // CraftBukkit - Internal packet method
         this.b();
     }
 
@@ -122,14 +129,15 @@ public class ScoreboardServer extends Scoreboard {
         if (this.c != null) {
             this.c.c();
         }
+
     }
 
     public List getScoreboardScorePacketsForObjective(ScoreboardObjective scoreboardobjective) {
-        ArrayList arraylist = new ArrayList();
+        ArrayList arraylist = Lists.newArrayList();
 
         arraylist.add(new PacketPlayOutScoreboardObjective(scoreboardobjective, 0));
 
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 19; ++i) {
             if (this.getObjectiveForSlot(i) == scoreboardobjective) {
                 arraylist.add(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
             }
@@ -140,7 +148,7 @@ public class ScoreboardServer extends Scoreboard {
         while (iterator.hasNext()) {
             ScoreboardScore scoreboardscore = (ScoreboardScore) iterator.next();
 
-            arraylist.add(new PacketPlayOutScoreboardScore(scoreboardscore, 0));
+            arraylist.add(new PacketPlayOutScoreboardScore(scoreboardscore));
         }
 
         return arraylist;
@@ -166,11 +174,11 @@ public class ScoreboardServer extends Scoreboard {
     }
 
     public List f(ScoreboardObjective scoreboardobjective) {
-        ArrayList arraylist = new ArrayList();
+        ArrayList arraylist = Lists.newArrayList();
 
         arraylist.add(new PacketPlayOutScoreboardObjective(scoreboardobjective, 1));
 
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 19; ++i) {
             if (this.getObjectiveForSlot(i) == scoreboardobjective) {
                 arraylist.add(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
             }
@@ -201,7 +209,7 @@ public class ScoreboardServer extends Scoreboard {
     public int h(ScoreboardObjective scoreboardobjective) {
         int i = 0;
 
-        for (int j = 0; j < 3; ++j) {
+        for (int j = 0; j < 19; ++j) {
             if (this.getObjectiveForSlot(j) == scoreboardobjective) {
                 ++i;
             }

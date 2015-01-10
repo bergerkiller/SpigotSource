@@ -1,24 +1,18 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
+
 public class BlockAnvil extends BlockFalling {
 
-    public static final String[] a = new String[] { "intact", "slightlyDamaged", "veryDamaged"};
-    private static final String[] N = new String[] { "anvil_top_damaged_0", "anvil_top_damaged_1", "anvil_top_damaged_2"};
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) EnumDirectionLimit.HORIZONTAL);
+    public static final BlockStateInteger DAMAGE = BlockStateInteger.of("damage", 0, 2);
 
     protected BlockAnvil() {
         super(Material.HEAVY);
-        this.g(0);
+        this.j(this.blockStateList.getBlockData().set(BlockAnvil.FACING, EnumDirection.NORTH).set(BlockAnvil.DAMAGE, Integer.valueOf(0)));
+        this.e(0);
         this.a(CreativeModeTab.c);
     }
-
-    // Spigot start
-    @Override
-    public AxisAlignedBB a( World world, int i, int j, int k )
-    {
-        updateShape( world, i, j, k );
-        return super.a( world, i, j, k );
-    }
-    // Spigot end
 
     public boolean d() {
         return false;
@@ -28,61 +22,57 @@ public class BlockAnvil extends BlockFalling {
         return false;
     }
 
-    public void postPlace(World world, int i, int j, int k, EntityLiving entityliving, ItemStack itemstack) {
-        int l = MathHelper.floor((double) (entityliving.yaw * 4.0F / 360.0F) + 0.5D) & 3;
-        int i1 = world.getData(i, j, k) >> 2;
+    public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
+        EnumDirection enumdirection1 = entityliving.getDirection().e();
 
-        ++l;
-        l %= 4;
-        if (l == 0) {
-            world.setData(i, j, k, 2 | i1 << 2, 2);
-        }
-
-        if (l == 1) {
-            world.setData(i, j, k, 3 | i1 << 2, 2);
-        }
-
-        if (l == 2) {
-            world.setData(i, j, k, 0 | i1 << 2, 2);
-        }
-
-        if (l == 3) {
-            world.setData(i, j, k, 1 | i1 << 2, 2);
-        }
+        return super.getPlacedState(world, blockposition, enumdirection, f, f1, f2, i, entityliving).set(BlockAnvil.FACING, enumdirection1).set(BlockAnvil.DAMAGE, Integer.valueOf(i >> 2));
     }
 
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
-        if (world.isStatic) {
-            return true;
-        } else {
-            entityhuman.openAnvil(i, j, k);
-            return true;
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+        if (!world.isStatic) {
+            entityhuman.openTileEntity(new TileEntityContainerAnvil(world, blockposition));
         }
+
+        return true;
     }
 
-    public int b() {
-        return 35;
+    public int getDropData(IBlockData iblockdata) {
+        return ((Integer) iblockdata.get(BlockAnvil.DAMAGE)).intValue();
     }
 
-    public int getDropData(int i) {
-        return i >> 2;
-    }
+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        EnumDirection enumdirection = (EnumDirection) iblockaccess.getType(blockposition).get(BlockAnvil.FACING);
 
-    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = iblockaccess.getData(i, j, k) & 3;
-
-        if (l != 3 && l != 1) {
-            this.a(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F);
-        } else {
+        if (enumdirection.k() == EnumAxis.X) {
             this.a(0.0F, 0.0F, 0.125F, 1.0F, 1.0F, 0.875F);
+        } else {
+            this.a(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F);
         }
+
     }
 
     protected void a(EntityFallingBlock entityfallingblock) {
         entityfallingblock.a(true);
     }
 
-    public void a(World world, int i, int j, int k, int l) {
-        world.triggerEffect(1022, i, j, k, 0);
+    public void a_(World world, BlockPosition blockposition) {
+        world.triggerEffect(1022, blockposition, 0);
     }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockAnvil.FACING, EnumDirection.fromType2(i & 3)).set(BlockAnvil.DAMAGE, Integer.valueOf((i & 15) >> 2));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        byte b0 = 0;
+        int i = b0 | ((EnumDirection) iblockdata.get(BlockAnvil.FACING)).b();
+
+        i |= ((Integer) iblockdata.get(BlockAnvil.DAMAGE)).intValue() << 2;
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockAnvil.FACING, BlockAnvil.DAMAGE});
+    }
+
 }

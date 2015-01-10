@@ -7,12 +7,12 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
-public class InventoryLargeChest implements IInventory {
+public class InventoryLargeChest implements ITileInventory {
 
     private String a;
-    public IInventory left; // CraftBukkit - private -> public
-    public IInventory right; // CraftBukkit - private -> public
-
+    public ITileInventory left;
+    public ITileInventory right;
+    
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
@@ -50,18 +50,24 @@ public class InventoryLargeChest implements IInventory {
     }
     // CraftBukkit end
 
-    public InventoryLargeChest(String s, IInventory iinventory, IInventory iinventory1) {
+    public InventoryLargeChest(String s, ITileInventory itileinventory, ITileInventory itileinventory1) {
         this.a = s;
-        if (iinventory == null) {
-            iinventory = iinventory1;
+        if (itileinventory == null) {
+            itileinventory = itileinventory1;
         }
 
-        if (iinventory1 == null) {
-            iinventory1 = iinventory;
+        if (itileinventory1 == null) {
+            itileinventory1 = itileinventory;
         }
 
-        this.left = iinventory;
-        this.right = iinventory1;
+        this.left = itileinventory;
+        this.right = itileinventory1;
+        if (itileinventory.q_()) {
+            itileinventory1.a(itileinventory.i());
+        } else if (itileinventory1.q_()) {
+            itileinventory.a(itileinventory1.i());
+        }
+
     }
 
     public int getSize() {
@@ -72,12 +78,16 @@ public class InventoryLargeChest implements IInventory {
         return this.left == iinventory || this.right == iinventory;
     }
 
-    public String getInventoryName() {
-        return this.left.k_() ? this.left.getInventoryName() : (this.right.k_() ? this.right.getInventoryName() : this.a);
+    public String getName() {
+        return this.left.hasCustomName() ? this.left.getName() : (this.right.hasCustomName() ? this.right.getName() : this.a);
     }
 
-    public boolean k_() {
-        return this.left.k_() || this.right.k_();
+    public boolean hasCustomName() {
+        return this.left.hasCustomName() || this.right.hasCustomName();
+    }
+
+    public IChatBaseComponent getScoreboardDisplayName() {
+        return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
     public ItemStack getItem(int i) {
@@ -98,6 +108,7 @@ public class InventoryLargeChest implements IInventory {
         } else {
             this.left.setItem(i, itemstack);
         }
+
     }
 
     public int getMaxStackSize() {
@@ -113,17 +124,53 @@ public class InventoryLargeChest implements IInventory {
         return this.left.a(entityhuman) && this.right.a(entityhuman);
     }
 
-    public void startOpen() {
-        this.left.startOpen();
-        this.right.startOpen();
+    public void startOpen(EntityHuman entityhuman) {
+        this.left.startOpen(entityhuman);
+        this.right.startOpen(entityhuman);
     }
 
-    public void closeContainer() {
-        this.left.closeContainer();
-        this.right.closeContainer();
+    public void closeContainer(EntityHuman entityhuman) {
+        this.left.closeContainer(entityhuman);
+        this.right.closeContainer(entityhuman);
     }
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
+    }
+
+    public int getProperty(int i) {
+        return 0;
+    }
+
+    public void b(int i, int j) {}
+
+    public int g() {
+        return 0;
+    }
+
+    public boolean q_() {
+        return this.left.q_() || this.right.q_();
+    }
+
+    public void a(ChestLock chestlock) {
+        this.left.a(chestlock);
+        this.right.a(chestlock);
+    }
+
+    public ChestLock i() {
+        return this.left.i();
+    }
+
+    public String getContainerName() {
+        return this.left.getContainerName();
+    }
+
+    public Container createContainer(PlayerInventory playerinventory, EntityHuman entityhuman) {
+        return new ContainerChest(playerinventory, this, entityhuman);
+    }
+
+    public void l() {
+        this.left.l();
+        this.right.l();
     }
 }

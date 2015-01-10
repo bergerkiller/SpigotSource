@@ -41,8 +41,8 @@ public class InventoryMerchant implements IInventory {
     public org.bukkit.inventory.InventoryHolder getOwner() {
         return player.getBukkitEntity();
     }
-    // CraftBukkit end
-
+    // CraftBukkit end    
+    
     public InventoryMerchant(EntityHuman entityhuman, IMerchant imerchant) {
         this.player = entityhuman;
         this.merchant = imerchant;
@@ -67,7 +67,7 @@ public class InventoryMerchant implements IInventory {
             } else if (this.itemsInSlots[i].count <= j) {
                 itemstack = this.itemsInSlots[i];
                 this.itemsInSlots[i] = null;
-                if (this.d(i)) {
+                if (this.e(i)) {
                     this.h();
                 }
 
@@ -78,7 +78,7 @@ public class InventoryMerchant implements IInventory {
                     this.itemsInSlots[i] = null;
                 }
 
-                if (this.d(i)) {
+                if (this.e(i)) {
                     this.h();
                 }
 
@@ -89,7 +89,7 @@ public class InventoryMerchant implements IInventory {
         }
     }
 
-    private boolean d(int i) {
+    private boolean e(int i) {
         return i == 0 || i == 1;
     }
 
@@ -110,17 +110,22 @@ public class InventoryMerchant implements IInventory {
             itemstack.count = this.getMaxStackSize();
         }
 
-        if (this.d(i)) {
+        if (this.e(i)) {
             this.h();
         }
+
     }
 
-    public String getInventoryName() {
+    public String getName() {
         return "mob.villager";
     }
 
-    public boolean k_() {
+    public boolean hasCustomName() {
         return false;
+    }
+
+    public IChatBaseComponent getScoreboardDisplayName() {
+        return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
     public int getMaxStackSize() {
@@ -128,12 +133,12 @@ public class InventoryMerchant implements IInventory {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.merchant.b() == entityhuman;
+        return this.merchant.u_() == entityhuman;
     }
 
-    public void startOpen() {}
+    public void startOpen(EntityHuman entityhuman) {}
 
-    public void closeContainer() {}
+    public void closeContainer(EntityHuman entityhuman) {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
@@ -161,12 +166,12 @@ public class InventoryMerchant implements IInventory {
             if (merchantrecipelist != null) {
                 MerchantRecipe merchantrecipe = merchantrecipelist.a(itemstack, itemstack1, this.e);
 
-                if (merchantrecipe != null && !merchantrecipe.g()) {
+                if (merchantrecipe != null && !merchantrecipe.h()) {
                     this.recipe = merchantrecipe;
                     this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
                 } else if (itemstack1 != null) {
                     merchantrecipe = merchantrecipelist.a(itemstack1, itemstack, this.e);
-                    if (merchantrecipe != null && !merchantrecipe.g()) {
+                    if (merchantrecipe != null && !merchantrecipe.h()) {
                         this.recipe = merchantrecipe;
                         this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
                     } else {
@@ -185,8 +190,25 @@ public class InventoryMerchant implements IInventory {
         return this.recipe;
     }
 
-    public void c(int i) {
+    public void d(int i) {
         this.e = i;
         this.h();
+    }
+
+    public int getProperty(int i) {
+        return 0;
+    }
+
+    public void b(int i, int j) {}
+
+    public int g() {
+        return 0;
+    }
+
+    public void l() {
+        for (int i = 0; i < this.itemsInSlots.length; ++i) {
+            this.itemsInSlots[i] = null;
+        }
+
     }
 }

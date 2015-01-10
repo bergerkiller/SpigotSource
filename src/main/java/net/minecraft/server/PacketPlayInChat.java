@@ -1,10 +1,8 @@
 package net.minecraft.server;
 
-import java.io.IOException; // CraftBukkit
+public class PacketPlayInChat implements Packet {
 
-public class PacketPlayInChat extends Packet {
-
-    private String message;
+    private String a;
 
     public PacketPlayInChat() {}
 
@@ -13,42 +11,32 @@ public class PacketPlayInChat extends Packet {
             s = s.substring(0, 100);
         }
 
-        this.message = s;
+        this.a = s;
     }
 
-    public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
-        this.message = packetdataserializer.c(100);
+    public void a(PacketDataSerializer packetdataserializer) {
+        this.a = packetdataserializer.c(100);
     }
 
-    public void b(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
-        packetdataserializer.a(this.message);
+    public void b(PacketDataSerializer packetdataserializer) {
+        packetdataserializer.a(this.a);
     }
 
-    public void a(PacketPlayInListener packetplayinlistener) {
-        packetplayinlistener.a(this);
+    public void a(PacketListenerPlayIn packetlistenerplayin) {
+        packetlistenerplayin.a(this);
     }
 
-    public String b() {
-        return String.format("message=\'%s\'", new Object[] { this.message});
+    public String a() {
+        return this.a;
     }
-
-    public String c() {
-        return this.message;
-    }
-
-    // CraftBukkit start - make chat async
-    @Override
-    public boolean a() {
-        return !this.message.startsWith("/");
-    }
-    // CraftBukkit end
 
     // Spigot Start
     private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
             new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "Async Chat Thread - #%d" ).build() );
-    public void handle(final PacketListener packetlistener)
+    @Override
+    public void a(final PacketListener packetlistener)
     {
-        if ( a() )
+        if ( !a.startsWith("/") )
         {
             executors.submit( new Runnable()
             {
@@ -56,12 +44,12 @@ public class PacketPlayInChat extends Packet {
                 @Override
                 public void run()
                 {
-                    PacketPlayInChat.this.a( (PacketPlayInListener) packetlistener );
+                    PacketPlayInChat.this.a( (PacketListenerPlayIn) packetlistener );
                 }
             } );
             return;
         }
         // Spigot End
-        this.a((PacketPlayInListener) packetlistener);
+        this.a((PacketListenerPlayIn) packetlistener);
     }
 }

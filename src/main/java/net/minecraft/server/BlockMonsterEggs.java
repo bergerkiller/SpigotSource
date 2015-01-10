@@ -2,120 +2,77 @@ package net.minecraft.server;
 
 import java.util.Random;
 
-import net.minecraft.util.org.apache.commons.lang3.tuple.ImmutablePair;
-
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason; // CraftBukkit
 
 public class BlockMonsterEggs extends Block {
 
-    public static final String[] a = new String[] { "stone", "cobble", "brick", "mossybrick", "crackedbrick", "chiseledbrick"};
+    public static final BlockStateEnum VARIANT = BlockStateEnum.of("variant", EnumMonsterEggVarient.class);
 
     public BlockMonsterEggs() {
         super(Material.CLAY);
+        this.j(this.blockStateList.getBlockData().set(BlockMonsterEggs.VARIANT, EnumMonsterEggVarient.STONE));
         this.c(0.0F);
         this.a(CreativeModeTab.c);
-    }
-
-    public void postBreak(World world, int i, int j, int k, int l) {
-        if (!world.isStatic) {
-            EntitySilverfish entitysilverfish = new EntitySilverfish(world);
-
-            entitysilverfish.setPositionRotation((double) i + 0.5D, (double) j, (double) k + 0.5D, 0.0F, 0.0F);
-            world.addEntity(entitysilverfish, SpawnReason.SILVERFISH_BLOCK); // CraftBukkit - add SpawnReason
-            entitysilverfish.s();
-        }
-
-        super.postBreak(world, i, j, k, l);
     }
 
     public int a(Random random) {
         return 0;
     }
 
-    public static boolean a(Block block) {
-        return block == Blocks.STONE || block == Blocks.COBBLESTONE || block == Blocks.SMOOTH_BRICK;
+    public static boolean d(IBlockData iblockdata) {
+        Block block = iblockdata.getBlock();
+
+        return iblockdata == Blocks.STONE.getBlockData().set(BlockStone.VARIANT, EnumStoneVariant.STONE) || block == Blocks.COBBLESTONE || block == Blocks.STONEBRICK;
     }
 
-    public static int a(Block block, int i) {
-        if (i == 0) {
-            if (block == Blocks.COBBLESTONE) {
-                return 1;
-            }
+    protected ItemStack i(IBlockData iblockdata) {
+        switch (SwitchHelperMonsterEggVarient.a[((EnumMonsterEggVarient) iblockdata.get(BlockMonsterEggs.VARIANT)).ordinal()]) {
+        case 1:
+            return new ItemStack(Blocks.COBBLESTONE);
 
-            if (block == Blocks.SMOOTH_BRICK) {
-                return 2;
-            }
-        } else if (block == Blocks.SMOOTH_BRICK) {
-            switch (i) {
-                case 1:
-                    return 3;
+        case 2:
+            return new ItemStack(Blocks.STONEBRICK);
 
-                case 2:
-                    return 4;
+        case 3:
+            return new ItemStack(Blocks.STONEBRICK, 1, EnumStonebrickType.MOSSY.a());
 
-                case 3:
-                    return 5;
-            }
-        }
+        case 4:
+            return new ItemStack(Blocks.STONEBRICK, 1, EnumStonebrickType.CRACKED.a());
 
-        return 0;
-    }
+        case 5:
+            return new ItemStack(Blocks.STONEBRICK, 1, EnumStonebrickType.CHISELED.a());
 
-    public static ImmutablePair b(int i) {
-        switch (i) {
-            case 1:
-                return new ImmutablePair(Blocks.COBBLESTONE, Integer.valueOf(0));
-
-            case 2:
-                return new ImmutablePair(Blocks.SMOOTH_BRICK, Integer.valueOf(0));
-
-            case 3:
-                return new ImmutablePair(Blocks.SMOOTH_BRICK, Integer.valueOf(1));
-
-            case 4:
-                return new ImmutablePair(Blocks.SMOOTH_BRICK, Integer.valueOf(2));
-
-            case 5:
-                return new ImmutablePair(Blocks.SMOOTH_BRICK, Integer.valueOf(3));
-
-            default:
-                return new ImmutablePair(Blocks.STONE, Integer.valueOf(0));
+        default:
+            return new ItemStack(Blocks.STONE);
         }
     }
 
-    protected ItemStack j(int i) {
-        switch (i) {
-            case 1:
-                return new ItemStack(Blocks.COBBLESTONE);
-
-            case 2:
-                return new ItemStack(Blocks.SMOOTH_BRICK);
-
-            case 3:
-                return new ItemStack(Blocks.SMOOTH_BRICK, 1, 1);
-
-            case 4:
-                return new ItemStack(Blocks.SMOOTH_BRICK, 1, 2);
-
-            case 5:
-                return new ItemStack(Blocks.SMOOTH_BRICK, 1, 3);
-
-            default:
-                return new ItemStack(Blocks.STONE);
-        }
-    }
-
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        if (!world.isStatic) {
+    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
+        if (!world.isStatic && world.getGameRules().getBoolean("doTileDrops")) {
             EntitySilverfish entitysilverfish = new EntitySilverfish(world);
 
-            entitysilverfish.setPositionRotation((double) i + 0.5D, (double) j, (double) k + 0.5D, 0.0F, 0.0F);
+            entitysilverfish.setPositionRotation((double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
             world.addEntity(entitysilverfish, SpawnReason.SILVERFISH_BLOCK); // CraftBukkit - add SpawnReason
-            entitysilverfish.s();
+            entitysilverfish.y();
         }
+
     }
 
-    public int getDropData(World world, int i, int j, int k) {
-        return world.getData(i, j, k);
+    public int getDropData(World world, BlockPosition blockposition) {
+        IBlockData iblockdata = world.getType(blockposition);
+
+        return iblockdata.getBlock().toLegacyData(iblockdata);
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockMonsterEggs.VARIANT, EnumMonsterEggVarient.a(i));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        return ((EnumMonsterEggVarient) iblockdata.get(BlockMonsterEggs.VARIANT)).a();
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockMonsterEggs.VARIANT});
     }
 }

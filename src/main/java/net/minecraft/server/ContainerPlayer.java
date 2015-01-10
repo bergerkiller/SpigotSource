@@ -52,6 +52,7 @@ public class ContainerPlayer extends Container {
     }
 
     public void a(IInventory iinventory) {
+        // this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.h.world));
         // CraftBukkit start (Note: the following line would cause an error if called during construction)
         CraftingManager.getInstance().lastCraftView = getBukkitView();
         ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.h.world);
@@ -144,6 +145,7 @@ public class ContainerPlayer extends Container {
     }
 
     // CraftBukkit start
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;

@@ -8,21 +8,18 @@ public class ItemMapEmpty extends ItemWorldMapBase {
 
     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
         World worldMain = world.getServer().getServer().worlds.get(0); // CraftBukkit - store reference to primary world
-        ItemStack itemstack1 = new ItemStack(Items.MAP, 1, worldMain.b("map")); // CraftBukkit - use primary world for maps
+        ItemStack itemstack1 = new ItemStack(Items.FILLED_MAP, 1, worldMain.b("map")); // CraftBukkit - use primary world for maps
         String s = "map_" + itemstack1.getData();
         WorldMap worldmap = new WorldMap(s);
 
-        worldMain.a(s, (PersistentBase) worldmap); // CraftBukkit - use primary world for maps
+        world.a(s, (PersistentBase) worldmap);
         worldmap.scale = 0;
-        int i = 128 * (1 << worldmap.scale);
-
-        worldmap.centerX = (int) (Math.round(entityhuman.locX / (double) i) * (long) i);
-        worldmap.centerZ = (int) (Math.round(entityhuman.locZ / (double) i) * (long) i);
+        worldmap.a(entityhuman.locX, entityhuman.locZ, worldmap.scale);
         worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - use bukkit dimension
         worldmap.c();
-
+        
         org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(new org.bukkit.event.server.MapInitializeEvent(worldmap.mapView)); // CraftBukkit
-
+        
         --itemstack.count;
         if (itemstack.count <= 0) {
             return itemstack1;
@@ -31,6 +28,7 @@ public class ItemMapEmpty extends ItemWorldMapBase {
                 entityhuman.drop(itemstack1, false);
             }
 
+            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
             return itemstack;
         }
     }

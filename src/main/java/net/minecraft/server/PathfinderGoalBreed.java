@@ -20,7 +20,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.d.ce()) {
+        if (!this.d.cp()) {
             return false;
         } else {
             this.e = this.f();
@@ -29,7 +29,7 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public boolean b() {
-        return this.e.isAlive() && this.e.ce() && this.b < 60;
+        return this.e.isAlive() && this.e.cp() && this.b < 60;
     }
 
     public void d() {
@@ -38,17 +38,18 @@ public class PathfinderGoalBreed extends PathfinderGoal {
     }
 
     public void e() {
-        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.x());
+        this.d.getControllerLook().a(this.e, 10.0F, (float) this.d.bP());
         this.d.getNavigation().a((Entity) this.e, this.c);
         ++this.b;
-        if (this.b >= 60 && this.d.f(this.e) < 9.0D) {
+        if (this.b >= 60 && this.d.h(this.e) < 9.0D) {
             this.g();
         }
+
     }
 
     private EntityAnimal f() {
         float f = 8.0F;
-        List list = this.a.a(this.d.getClass(), this.d.boundingBox.grow((double) f, (double) f, (double) f));
+        List list = this.a.a(this.d.getClass(), this.d.getBoundingBox().grow((double) f, (double) f, (double) f));
         double d0 = Double.MAX_VALUE;
         EntityAnimal entityanimal = null;
         Iterator iterator = list.iterator();
@@ -56,9 +57,9 @@ public class PathfinderGoalBreed extends PathfinderGoal {
         while (iterator.hasNext()) {
             EntityAnimal entityanimal1 = (EntityAnimal) iterator.next();
 
-            if (this.d.mate(entityanimal1) && this.d.f(entityanimal1) < d0) {
+            if (this.d.mate(entityanimal1) && this.d.h(entityanimal1) < d0) {
                 entityanimal = entityanimal1;
-                d0 = this.d.f(entityanimal1);
+                d0 = this.d.h(entityanimal1);
             }
         }
 
@@ -74,39 +75,40 @@ public class PathfinderGoalBreed extends PathfinderGoal {
                 entityageable.persistent = true;
             }
             // CraftBukkit end
-            EntityHuman entityhuman = this.d.cd();
+            EntityHuman entityhuman = this.d.co();
 
-            if (entityhuman == null && this.e.cd() != null) {
-                entityhuman = this.e.cd();
+            if (entityhuman == null && this.e.co() != null) {
+                entityhuman = this.e.co();
             }
 
             if (entityhuman != null) {
-                entityhuman.a(StatisticList.x);
+                entityhuman.b(StatisticList.A);
                 if (this.d instanceof EntityCow) {
-                    entityhuman.a((Statistic) AchievementList.H);
+                    entityhuman.b((Statistic) AchievementList.H);
                 }
             }
 
-            this.d.setAge(6000);
-            this.e.setAge(6000);
-            this.d.cf();
-            this.e.cf();
-            entityageable.setAge(-24000);
+            this.d.setAgeRaw(6000);
+            this.e.setAgeRaw(6000);
+            this.d.cq();
+            this.e.cq();
+            entityageable.setAgeRaw(-24000);
             entityageable.setPositionRotation(this.d.locX, this.d.locY, this.d.locZ, 0.0F, 0.0F);
             this.a.addEntity(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-            Random random = this.d.aI();
+            Random random = this.d.bb();
 
             for (int i = 0; i < 7; ++i) {
                 double d0 = random.nextGaussian() * 0.02D;
                 double d1 = random.nextGaussian() * 0.02D;
                 double d2 = random.nextGaussian() * 0.02D;
 
-                this.a.addParticle("heart", this.d.locX + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, this.d.locY + 0.5D + (double) (random.nextFloat() * this.d.length), this.d.locZ + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, d0, d1, d2);
+                this.a.addParticle(EnumParticle.HEART, this.d.locX + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, this.d.locY + 0.5D + (double) (random.nextFloat() * this.d.length), this.d.locZ + (double) (random.nextFloat() * this.d.width * 2.0F) - (double) this.d.width, d0, d1, d2, new int[0]);
             }
 
             if (this.a.getGameRules().getBoolean("doMobLoot")) {
                 this.a.addEntity(new EntityExperienceOrb(this.a, this.d.locX, this.d.locY, this.d.locZ, random.nextInt(7) + 1));
             }
+
         }
     }
 }

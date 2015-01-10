@@ -14,57 +14,60 @@ public class BlockRedstoneLamp extends Block {
         if (flag) {
             this.a(1.0F);
         }
+
     }
 
-    public void onPlace(World world, int i, int j, int k) {
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
         if (!world.isStatic) {
-            if (this.a && !world.isBlockIndirectlyPowered(i, j, k)) {
-                world.a(i, j, k, this, 4);
-            } else if (!this.a && world.isBlockIndirectlyPowered(i, j, k)) {
+            if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
+                world.setTypeAndData(blockposition, Blocks.REDSTONE_LAMP.getBlockData(), 2);
+            } else if (!this.a && world.isBlockIndirectlyPowered(blockposition)) {
                 // CraftBukkit start
-                if (CraftEventFactory.callRedstoneChange(world, i, j, k, 0, 15).getNewCurrent() != 15) {
+                if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
                     return;
                 }
                 // CraftBukkit end
-
-                world.setTypeAndData(i, j, k, Blocks.REDSTONE_LAMP_ON, 0, 2);
+                world.setTypeAndData(blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), 2);
             }
+
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
         if (!world.isStatic) {
-            if (this.a && !world.isBlockIndirectlyPowered(i, j, k)) {
-                world.a(i, j, k, this, 4);
-            } else if (!this.a && world.isBlockIndirectlyPowered(i, j, k)) {
+            if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
+                world.a(blockposition, (Block) this, 4);
+            } else if (!this.a && world.isBlockIndirectlyPowered(blockposition)) {
                 // CraftBukkit start
-                if (CraftEventFactory.callRedstoneChange(world, i, j, k, 0, 15).getNewCurrent() != 15) {
+                if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 0, 15).getNewCurrent() != 15) {
                     return;
                 }
                 // CraftBukkit end
-
-                world.setTypeAndData(i, j, k, Blocks.REDSTONE_LAMP_ON, 0, 2);
+                world.setTypeAndData(blockposition, Blocks.LIT_REDSTONE_LAMP.getBlockData(), 2);
             }
+
         }
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        if (!world.isStatic && this.a && !world.isBlockIndirectlyPowered(i, j, k)) {
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        if (!world.isStatic) {
+            if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
             // CraftBukkit start
-            if (CraftEventFactory.callRedstoneChange(world, i, j, k, 15, 0).getNewCurrent() != 0) {
+            if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
                 return;
             }
             // CraftBukkit end
+                world.setTypeAndData(blockposition, Blocks.REDSTONE_LAMP.getBlockData(), 2);
+            }
 
-            world.setTypeAndData(i, j, k, Blocks.REDSTONE_LAMP_OFF, 0, 2);
         }
     }
 
-    public Item getDropType(int i, Random random, int j) {
-        return Item.getItemOf(Blocks.REDSTONE_LAMP_OFF);
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
+        return Item.getItemOf(Blocks.REDSTONE_LAMP);
     }
 
-    protected ItemStack j(int i) {
-        return new ItemStack(Blocks.REDSTONE_LAMP_OFF);
+    protected ItemStack i(IBlockData iblockdata) {
+        return new ItemStack(Blocks.REDSTONE_LAMP);
     }
 }

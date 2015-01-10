@@ -22,7 +22,7 @@ public class EntityBoat extends Entity {
     private double f;
     private double g;
     private double h;
-
+ 
     // CraftBukkit start
     public double maxSpeed = 0.4D;
     public double occupiedDeceleration = 0.2D;
@@ -50,104 +50,106 @@ public class EntityBoat extends Entity {
         this.b = 0.07D;
         this.k = true;
         this.a(1.5F, 0.6F);
-        this.height = this.length / 2.0F;
     }
 
-    protected boolean g_() {
+    protected boolean r_() {
         return false;
     }
 
-    protected void c() {
+    protected void h() {
         this.datawatcher.a(17, new Integer(0));
         this.datawatcher.a(18, new Integer(1));
         this.datawatcher.a(19, new Float(0.0F));
     }
 
-    public AxisAlignedBB h(Entity entity) {
-        return entity.boundingBox;
+    public AxisAlignedBB j(Entity entity) {
+        return entity.getBoundingBox();
     }
 
-    public AxisAlignedBB J() {
-        return this.boundingBox;
+    public AxisAlignedBB S() {
+        return this.getBoundingBox();
     }
 
-    public boolean S() {
+    public boolean ae() {
         return true;
     }
 
     public EntityBoat(World world, double d0, double d1, double d2) {
         this(world);
-        this.setPosition(d0, d1 + (double) this.height, d2);
+        this.setPosition(d0, d1, d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
         this.motZ = 0.0D;
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
-
+        
         this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleCreateEvent((Vehicle) this.getBukkitEntity())); // CraftBukkit
     }
 
-    public double ae() {
+    public double an() {
         return (double) this.length * 0.0D - 0.30000001192092896D;
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
-        if (this.isInvulnerable()) {
+        if (this.isInvulnerable(damagesource)) {
             return false;
         } else if (!this.world.isStatic && !this.dead) {
-            // CraftBukkit start
-            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
-
-            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
-            this.world.getServer().getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                return true;
-            }
-            // f = event.getDamage(); // TODO Why don't we do this?
-            // CraftBukkit end
-
-            this.c(-this.i());
-            this.a(10);
-            this.setDamage(this.getDamage() + f * 10.0F);
-            this.Q();
-            boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
-
-            if (flag || this.getDamage() > 40.0F) {
+            if (this.passenger != null && this.passenger == damagesource.getEntity() && damagesource instanceof EntityDamageSourceIndirect) {
+                return false;
+            } else {
                 // CraftBukkit start
-                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-                this.world.getServer().getPluginManager().callEvent(destroyEvent);
+                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 
-                if (destroyEvent.isCancelled()) {
-                    this.setDamage(40F); // Maximize damage so this doesn't get triggered again right away
+                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
                     return true;
                 }
+                // f = event.getDamage(); // TODO Why don't we do this?
                 // CraftBukkit end
+                
+                this.b(-this.m());
+                this.a(10);
+                this.setDamage(this.j() + f * 10.0F);
+                this.ac();
+                boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
-                if (this.passenger != null) {
-                    this.passenger.mount(this);
+                if (flag || this.j() > 40.0F) {
+                    // CraftBukkit start
+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
+
+                    if (destroyEvent.isCancelled()) {
+                        this.setDamage(40F); // Maximize damage so this doesn't get triggered again right away
+                        return true;
+                    }
+                    // CraftBukkit end
+                    if (this.passenger != null) {
+                        this.passenger.mount(this);
+                    }
+
+                    if (!flag) {
+                        this.a(Items.BOAT, 1, 0.0F);
+                    }
+
+                    this.die();
                 }
 
-                if (!flag) {
-                    this.a(Items.BOAT, 1, 0.0F);
-                }
-
-                this.die();
+                return true;
             }
-
-            return true;
         } else {
             return true;
         }
     }
 
-    public boolean R() {
+    public boolean ad() {
         return !this.dead;
     }
 
-    public void h() {
+    public void s_() {
         // CraftBukkit start
         double prevX = this.locX;
         double prevY = this.locY;
@@ -155,14 +157,13 @@ public class EntityBoat extends Entity {
         float prevYaw = this.yaw;
         float prevPitch = this.pitch;
         // CraftBukkit end
-
-        super.h();
-        if (this.f() > 0) {
-            this.a(this.f() - 1);
+        super.s_();
+        if (this.l() > 0) {
+            this.a(this.l() - 1);
         }
 
-        if (this.getDamage() > 0.0F) {
-            this.setDamage(this.getDamage() - 1.0F);
+        if (this.j() > 0.0F) {
+            this.setDamage(this.j() - 1.0F);
         }
 
         this.lastX = this.locX;
@@ -172,9 +173,9 @@ public class EntityBoat extends Entity {
         double d0 = 0.0D;
 
         for (int i = 0; i < b0; ++i) {
-            double d1 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (i + 0) / (double) b0 - 0.125D;
-            double d2 = this.boundingBox.b + (this.boundingBox.e - this.boundingBox.b) * (double) (i + 1) / (double) b0 - 0.125D;
-            AxisAlignedBB axisalignedbb = AxisAlignedBB.a(this.boundingBox.a, d1, this.boundingBox.c, this.boundingBox.d, d2, this.boundingBox.f);
+            double d1 = this.getBoundingBox().b + (this.getBoundingBox().e - this.getBoundingBox().b) * (double) (i + 0) / (double) b0 - 0.125D;
+            double d2 = this.getBoundingBox().b + (this.getBoundingBox().e - this.getBoundingBox().b) * (double) (i + 1) / (double) b0 - 0.125D;
+            AxisAlignedBB axisalignedbb = new AxisAlignedBB(this.getBoundingBox().a, d1, this.getBoundingBox().c, this.getBoundingBox().d, d2, this.getBoundingBox().f);
 
             if (this.world.b(axisalignedbb, Material.WATER)) {
                 d0 += 1.0D / (double) b0;
@@ -186,7 +187,7 @@ public class EntityBoat extends Entity {
         double d5;
         int j;
 
-        if (d3 > 0.26249999999999996D) {
+        if (d3 > 0.2975D) {
             d4 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D);
             d5 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D);
 
@@ -199,11 +200,11 @@ public class EntityBoat extends Entity {
                 if (this.random.nextBoolean()) {
                     d8 = this.locX - d4 * d6 * 0.8D + d5 * d7;
                     d9 = this.locZ - d5 * d6 * 0.8D - d4 * d7;
-                    this.world.addParticle("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                    this.world.addParticle(EnumParticle.WATER_SPLASH, d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ, new int[0]);
                 } else {
                     d8 = this.locX + d4 + d5 * d6 * 0.7D;
                     d9 = this.locZ + d5 - d4 * d6 * 0.7D;
-                    this.world.addParticle("splash", d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ);
+                    this.world.addParticle(EnumParticle.WATER_SPLASH, d8, this.locY - 0.125D, d9, this.motX, this.motY, this.motZ, new int[0]);
                 }
             }
         }
@@ -221,7 +222,7 @@ public class EntityBoat extends Entity {
                 this.pitch = (float) ((double) this.pitch + (this.h - (double) this.pitch) / (double) this.c);
                 --this.c;
                 this.setPosition(d4, d5, d10);
-                this.b(this.yaw, this.pitch);
+                this.setYawPitch(this.yaw, this.pitch);
             } else {
                 d4 = this.locX + this.motX;
                 d5 = this.locY + this.motY;
@@ -237,6 +238,7 @@ public class EntityBoat extends Entity {
                 this.motY *= 0.949999988079071D;
                 this.motZ *= 0.9900000095367432D;
             }
+
         } else {
             if (d0 < 1.0D) {
                 d4 = d0 * 2.0D - 1.0D;
@@ -249,12 +251,12 @@ public class EntityBoat extends Entity {
                 this.motY += 0.007000000216066837D;
             }
 
-            if (this.passenger != null && this.passenger instanceof EntityLiving) {
+            if (this.passenger instanceof EntityLiving) {
                 EntityLiving entityliving = (EntityLiving) this.passenger;
-                float f = this.passenger.yaw + -entityliving.bd * 90.0F;
+                float f = this.passenger.yaw + -entityliving.aX * 90.0F;
 
-                this.motX += -Math.sin((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.be * 0.05000000074505806D;
-                this.motZ += Math.cos((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.be * 0.05000000074505806D;
+                this.motX += -Math.sin((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.aY * 0.05000000074505806D;
+                this.motZ += Math.cos((double) (f * 3.1415927F / 180.0F)) * this.b * (double) entityliving.aY * 0.05000000074505806D;
             }
             // CraftBukkit start - Support unoccupied deceleration
             else if (unoccupiedDeceleration >= 0) {
@@ -299,23 +301,24 @@ public class EntityBoat extends Entity {
 
                 for (int i1 = 0; i1 < 2; ++i1) {
                     int j1 = MathHelper.floor(this.locY) + i1;
-                    Block block = this.world.getType(l, j1, j);
+                    BlockPosition blockposition = new BlockPosition(l, j1, j);
+                    Block block = this.world.getType(blockposition).getBlock();
 
-                    if (block == Blocks.SNOW) {
+                    if (block == Blocks.SNOW_LAYER) {
                         // CraftBukkit start
                         if (CraftEventFactory.callEntityChangeBlockEvent(this, l, j1, j, Blocks.AIR, 0).isCancelled()) {
                             continue;
                         }
                         // CraftBukkit end
-                        this.world.setAir(l, j1, j);
+                        this.world.setAir(blockposition);
                         this.positionChanged = false;
-                    } else if (block == Blocks.WATER_LILY) {
+                    } else if (block == Blocks.WATERLILY) {
                         // CraftBukkit start
                         if (CraftEventFactory.callEntityChangeBlockEvent(this, l, j1, j, Blocks.AIR, 0).isCancelled()) {
                             continue;
                         }
                         // CraftBukkit end
-                        this.world.setAir(l, j1, j, true);
+                        this.world.setAir(blockposition, true);
                         this.positionChanged = false;
                     }
                 }
@@ -329,7 +332,7 @@ public class EntityBoat extends Entity {
 
             this.move(this.motX, this.motY, this.motZ);
             if (this.positionChanged && d3 > 0.2D) {
-                if (!this.world.isStatic && !this.dead) {
+                if (!this.world.isStatic && !this.dead) {         
                     // CraftBukkit start
                     Vehicle vehicle = (Vehicle) this.getBukkitEntity();
                     VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
@@ -338,7 +341,7 @@ public class EntityBoat extends Entity {
                         this.die();
 
                         for (k = 0; k < 3; ++k) {
-                            this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+                            this.a(Item.getItemOf(Blocks.PLANKS), 1, 0.0F);
                         }
 
                         for (k = 0; k < 2; ++k) {
@@ -372,7 +375,7 @@ public class EntityBoat extends Entity {
             }
 
             this.yaw = (float) ((double) this.yaw + d12);
-            this.b(this.yaw, this.pitch);
+            this.setYawPitch(this.yaw, this.pitch);
 
             // CraftBukkit start
             org.bukkit.Server server = this.world.getServer();
@@ -391,13 +394,13 @@ public class EntityBoat extends Entity {
             // CraftBukkit end
 
             if (!this.world.isStatic) {
-                List list = this.world.getEntities(this, this.boundingBox.grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+                List list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D));
 
                 if (list != null && !list.isEmpty()) {
                     for (int k1 = 0; k1 < list.size(); ++k1) {
                         Entity entity = (Entity) list.get(k1);
 
-                        if (entity != this.passenger && entity.S() && entity instanceof EntityBoat) {
+                        if (entity != this.passenger && entity.ae() && entity instanceof EntityBoat) {
                             entity.collide(this);
                         }
                     }
@@ -407,16 +410,17 @@ public class EntityBoat extends Entity {
                     this.passenger.vehicle = null; // CraftBukkit
                     this.passenger = null;
                 }
+
             }
         }
     }
 
-    public void ac() {
+    public void al() {
         if (this.passenger != null) {
             double d0 = Math.cos((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
             double d1 = Math.sin((double) this.yaw * 3.141592653589793D / 180.0D) * 0.4D;
 
-            this.passenger.setPosition(this.locX + d0, this.locY + this.ae() + this.passenger.ad(), this.locZ + d1);
+            this.passenger.setPosition(this.locX + d0, this.locY + this.an() + this.passenger.am(), this.locZ + d1);
         }
     }
 
@@ -424,7 +428,7 @@ public class EntityBoat extends Entity {
 
     protected void a(NBTTagCompound nbttagcompound) {}
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean e(EntityHuman entityhuman) {
         if (this.passenger != null && this.passenger instanceof EntityHuman && this.passenger != entityhuman) {
             return true;
         } else {
@@ -436,14 +440,10 @@ public class EntityBoat extends Entity {
         }
     }
 
-    protected void a(double d0, boolean flag) {
-        int i = MathHelper.floor(this.locX);
-        int j = MathHelper.floor(this.locY);
-        int k = MathHelper.floor(this.locZ);
-
+    protected void a(double d0, boolean flag, Block block, BlockPosition blockposition) {
         if (flag) {
             if (this.fallDistance > 3.0F) {
-                this.b(this.fallDistance);
+                this.e(this.fallDistance, 1.0F);
                 if (!this.world.isStatic && !this.dead) {
                     // CraftBukkit start
                     Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -452,13 +452,13 @@ public class EntityBoat extends Entity {
                     if (!destroyEvent.isCancelled()) {
                         this.die();
 
-                        int l;
+                        int i;
 
-                        for (l = 0; l < 3; ++l) {
-                            this.a(Item.getItemOf(Blocks.WOOD), 1, 0.0F);
+                        for (i = 0; i < 3; ++i) {
+                            this.a(Item.getItemOf(Blocks.PLANKS), 1, 0.0F);
                         }
 
-                        for (l = 0; l < 2; ++l) {
+                        for (i = 0; i < 2; ++i) {
                             this.a(Items.STICK, 1, 0.0F);
                         }
                     }
@@ -467,16 +467,17 @@ public class EntityBoat extends Entity {
 
                 this.fallDistance = 0.0F;
             }
-        } else if (this.world.getType(i, j - 1, k).getMaterial() != Material.WATER && d0 < 0.0D) {
+        } else if (this.world.getType((new BlockPosition(this)).down()).getBlock().getMaterial() != Material.WATER && d0 < 0.0D) {
             this.fallDistance = (float) ((double) this.fallDistance - d0);
         }
+
     }
 
     public void setDamage(float f) {
         this.datawatcher.watch(19, Float.valueOf(f));
     }
 
-    public float getDamage() {
+    public float j() {
         return this.datawatcher.getFloat(19);
     }
 
@@ -484,15 +485,15 @@ public class EntityBoat extends Entity {
         this.datawatcher.watch(17, Integer.valueOf(i));
     }
 
-    public int f() {
+    public int l() {
         return this.datawatcher.getInt(17);
     }
 
-    public void c(int i) {
+    public void b(int i) {
         this.datawatcher.watch(18, Integer.valueOf(i));
     }
 
-    public int i() {
+    public int m() {
         return this.datawatcher.getInt(18);
     }
 }

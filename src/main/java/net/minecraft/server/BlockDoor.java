@@ -1,240 +1,306 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
 import java.util.Random;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockDoor extends Block {
 
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) EnumDirectionLimit.HORIZONTAL);
+    public static final BlockStateBoolean OPEN = BlockStateBoolean.of("open");
+    public static final BlockStateEnum HINGE = BlockStateEnum.of("hinge", EnumDoorHinge.class);
+    public static final BlockStateBoolean POWERED = BlockStateBoolean.of("powered");
+    public static final BlockStateEnum HALF = BlockStateEnum.of("half", EnumDoorHalf.class);
+
     protected BlockDoor(Material material) {
         super(material);
-        float f = 0.5F;
-        float f1 = 1.0F;
-
-        this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
+        this.j(this.blockStateList.getBlockData().set(BlockDoor.FACING, EnumDirection.NORTH).set(BlockDoor.OPEN, Boolean.valueOf(false)).set(BlockDoor.HINGE, EnumDoorHinge.LEFT).set(BlockDoor.POWERED, Boolean.valueOf(false)).set(BlockDoor.HALF, EnumDoorHalf.LOWER));
     }
 
     public boolean c() {
         return false;
     }
 
-    public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = this.g(iblockaccess, i, j, k);
-
-        return (l & 4) != 0;
+    public boolean b(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return g(e(iblockaccess, blockposition));
     }
 
     public boolean d() {
         return false;
     }
 
-    public int b() {
-        return 7;
+    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        this.updateShape(world, blockposition);
+        return super.a(world, blockposition, iblockdata);
     }
 
-    public AxisAlignedBB a(World world, int i, int j, int k) {
-        this.updateShape(world, i, j, k);
-        return super.a(world, i, j, k);
+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        this.k(e(iblockaccess, blockposition));
     }
 
-    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.b(this.g(iblockaccess, i, j, k));
-    }
-
-    public int e(IBlockAccess iblockaccess, int i, int j, int k) {
-        return this.g(iblockaccess, i, j, k) & 3;
-    }
-
-    public boolean f(IBlockAccess iblockaccess, int i, int j, int k) {
-        return (this.g(iblockaccess, i, j, k) & 4) != 0;
-    }
-
-    private void b(int i) {
+    private void k(int i) {
         float f = 0.1875F;
 
         this.a(0.0F, 0.0F, 0.0F, 1.0F, 2.0F, 1.0F);
-        int j = i & 3;
-        boolean flag = (i & 4) != 0;
-        boolean flag1 = (i & 16) != 0;
+        EnumDirection enumdirection = f(i);
+        boolean flag = g(i);
+        boolean flag1 = j(i);
 
-        if (j == 0) {
-            if (flag) {
+        if (flag) {
+            if (enumdirection == EnumDirection.EAST) {
                 if (!flag1) {
                     this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
                 } else {
                     this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
                 }
-            } else {
-                this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
-            }
-        } else if (j == 1) {
-            if (flag) {
+            } else if (enumdirection == EnumDirection.SOUTH) {
                 if (!flag1) {
                     this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
                 } else {
                     this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
                 }
-            } else {
-                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
-            }
-        } else if (j == 2) {
-            if (flag) {
+            } else if (enumdirection == EnumDirection.WEST) {
                 if (!flag1) {
                     this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
                 } else {
                     this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
                 }
-            } else {
-                this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            }
-        } else if (j == 3) {
-            if (flag) {
+            } else if (enumdirection == EnumDirection.NORTH) {
                 if (!flag1) {
                     this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
                 } else {
                     this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
                 }
-            } else {
-                this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
             }
+        } else if (enumdirection == EnumDirection.EAST) {
+            this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+        } else if (enumdirection == EnumDirection.SOUTH) {
+            this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+        } else if (enumdirection == EnumDirection.WEST) {
+            this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+        } else if (enumdirection == EnumDirection.NORTH) {
+            this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
         }
+
     }
 
-    public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {}
-
-    public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
             return true;
         } else {
-            int i1 = this.g(world, i, j, k);
-            int j1 = i1 & 7;
+            BlockPosition blockposition1 = iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.LOWER ? blockposition : blockposition.down();
+            IBlockData iblockdata1 = blockposition.equals(blockposition1) ? iblockdata : world.getType(blockposition1);
 
-            j1 ^= 4;
-            if ((i1 & 8) == 0) {
-                world.setData(i, j, k, j1, 2);
-                world.c(i, j, k, i, j, k);
+            if (iblockdata1.getBlock() != this) {
+                return false;
             } else {
-                world.setData(i, j - 1, k, j1, 2);
-                world.c(i, j - 1, k, i, j, k);
+                iblockdata = iblockdata1.a(BlockDoor.OPEN);
+                world.setTypeAndData(blockposition1, iblockdata, 2);
+                world.b(blockposition1, blockposition);
+                world.a(entityhuman, ((Boolean) iblockdata.get(BlockDoor.OPEN)).booleanValue() ? 1003 : 1006, blockposition, 0);
+                return true;
             }
-
-            world.a(entityhuman, 1003, i, j, k, 0);
-            return true;
         }
     }
 
-    public void setDoor(World world, int i, int j, int k, boolean flag) {
-        int l = this.g(world, i, j, k);
-        boolean flag1 = (l & 4) != 0;
+    public void setDoor(World world, BlockPosition blockposition, boolean flag) {
+        IBlockData iblockdata = world.getType(blockposition);
 
-        if (flag1 != flag) {
-            int i1 = l & 7;
+        if (iblockdata.getBlock() == this) {
+            BlockPosition blockposition1 = iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.LOWER ? blockposition : blockposition.down();
+            IBlockData iblockdata1 = blockposition == blockposition1 ? iblockdata : world.getType(blockposition1);
 
-            i1 ^= 4;
-            if ((l & 8) == 0) {
-                world.setData(i, j, k, i1, 2);
-                world.c(i, j, k, i, j, k);
-            } else {
-                world.setData(i, j - 1, k, i1, 2);
-                world.c(i, j - 1, k, i, j, k);
+            if (iblockdata1.getBlock() == this && ((Boolean) iblockdata1.get(BlockDoor.OPEN)).booleanValue() != flag) {
+                world.setTypeAndData(blockposition1, iblockdata1.set(BlockDoor.OPEN, Boolean.valueOf(flag)), 2);
+                world.b(blockposition1, blockposition);
+                world.a((EntityHuman) null, flag ? 1003 : 1006, blockposition, 0);
             }
 
-            world.a((EntityHuman) null, 1003, i, j, k, 0);
         }
     }
 
-    public void doPhysics(World world, int i, int j, int k, Block block) {
-        int l = world.getData(i, j, k);
+    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        if (iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.UPPER) {
+            BlockPosition blockposition1 = blockposition.down();
+            IBlockData iblockdata1 = world.getType(blockposition1);
 
-        if ((l & 8) == 0) {
+            if (iblockdata1.getBlock() != this) {
+                world.setAir(blockposition);
+            } else if (block != this) {
+                this.doPhysics(world, blockposition1, iblockdata1, block);
+            }
+        } else {
             boolean flag = false;
+            BlockPosition blockposition2 = blockposition.up();
+            IBlockData iblockdata2 = world.getType(blockposition2);
 
-            if (world.getType(i, j + 1, k) != this) {
-                world.setAir(i, j, k);
+            if (iblockdata2.getBlock() != this) {
+                world.setAir(blockposition);
                 flag = true;
             }
 
-            if (!World.a((IBlockAccess) world, i, j - 1, k)) {
-                world.setAir(i, j, k);
+            if (!World.a((IBlockAccess) world, blockposition.down())) {
+                world.setAir(blockposition);
                 flag = true;
-                if (world.getType(i, j + 1, k) == this) {
-                    world.setAir(i, j + 1, k);
+                if (iblockdata2.getBlock() == this) {
+                    world.setAir(blockposition2);
                 }
             }
 
             if (flag) {
                 if (!world.isStatic) {
-                    this.b(world, i, j, k, l, 0);
+                    this.b(world, blockposition, iblockdata, 0);
                 }
-            // CraftBukkit start
-            } else if (block.isPowerSource()) {
+            } else {
+                // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
-                org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(i, j, k);
-                org.bukkit.block.Block blockTop = bworld.getBlockAt(i, j + 1, k);
+                org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                org.bukkit.block.Block blockTop = bworld.getBlockAt(blockposition2.getX(), blockposition2.getY(), blockposition2.getZ());
 
                 int power = bukkitBlock.getBlockPower();
                 int powerTop = blockTop.getBlockPower();
                 if (powerTop > power) power = powerTop;
-                int oldPower = (world.getData(i, j, k) & 4) > 0 ? 15 : 0;
+                int oldPower = (Boolean)iblockdata2.get(POWERED) ? 15 : 0;
 
                 if (oldPower == 0 ^ power == 0) {
                     BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, oldPower, power);
                     world.getServer().getPluginManager().callEvent(eventRedstone);
 
-                    this.setDoor(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+                    boolean flag1 = eventRedstone.getNewCurrent() > 0;
+                    world.setTypeAndData(blockposition2, iblockdata2.set(BlockDoor.POWERED, Boolean.valueOf(flag1)), 2);
+                    if (flag1 != ((Boolean) iblockdata.get(BlockDoor.OPEN)).booleanValue()) {
+                        world.setTypeAndData(blockposition, iblockdata.set(BlockDoor.OPEN, Boolean.valueOf(flag1)), 2);
+                        world.b(blockposition, blockposition);
+                        world.a((EntityHuman) null, flag1 ? 1003 : 1006, blockposition, 0);
+                    }
                 }
                 // CraftBukkit end
             }
-        } else {
-            if (world.getType(i, j - 1, k) != this) {
-                world.setAir(i, j, k);
-            }
-
-            if (block != this) {
-                this.doPhysics(world, i, j - 1, k, block);
-            }
         }
+
     }
 
-    public Item getDropType(int i, Random random, int j) {
-        return (i & 8) != 0 ? null : (this.material == Material.ORE ? Items.IRON_DOOR : Items.WOOD_DOOR);
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
+        return iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.UPPER ? null : this.j();
     }
 
-    public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1) {
-        this.updateShape(world, i, j, k);
-        return super.a(world, i, j, k, vec3d, vec3d1);
+    public MovingObjectPosition a(World world, BlockPosition blockposition, Vec3D vec3d, Vec3D vec3d1) {
+        this.updateShape(world, blockposition);
+        return super.a(world, blockposition, vec3d, vec3d1);
     }
 
-    public boolean canPlace(World world, int i, int j, int k) {
-        return j >= 255 ? false : World.a((IBlockAccess) world, i, j - 1, k) && super.canPlace(world, i, j, k) && super.canPlace(world, i, j + 1, k);
+    public boolean canPlace(World world, BlockPosition blockposition) {
+        return blockposition.getY() >= 255 ? false : World.a((IBlockAccess) world, blockposition.down()) && super.canPlace(world, blockposition) && super.canPlace(world, blockposition.up());
     }
 
-    public int h() {
+    public int i() {
         return 1;
     }
 
-    public int g(IBlockAccess iblockaccess, int i, int j, int k) {
-        int l = iblockaccess.getData(i, j, k);
-        boolean flag = (l & 8) != 0;
-        int i1;
-        int j1;
+    public static int e(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        IBlockData iblockdata = iblockaccess.getType(blockposition);
+        int i = iblockdata.getBlock().toLegacyData(iblockdata);
+        boolean flag = i(i);
+        IBlockData iblockdata1 = iblockaccess.getType(blockposition.down());
+        int j = iblockdata1.getBlock().toLegacyData(iblockdata1);
+        int k = flag ? j : i;
+        IBlockData iblockdata2 = iblockaccess.getType(blockposition.up());
+        int l = iblockdata2.getBlock().toLegacyData(iblockdata2);
+        int i1 = flag ? i : l;
+        boolean flag1 = (i1 & 1) != 0;
+        boolean flag2 = (i1 & 2) != 0;
 
-        if (flag) {
-            i1 = iblockaccess.getData(i, j - 1, k);
-            j1 = l;
-        } else {
-            i1 = l;
-            j1 = iblockaccess.getData(i, j + 1, k);
-        }
-
-        boolean flag1 = (j1 & 1) != 0;
-
-        return i1 & 7 | (flag ? 8 : 0) | (flag1 ? 16 : 0);
+        return b(k) | (flag ? 8 : 0) | (flag1 ? 16 : 0) | (flag2 ? 32 : 0);
     }
 
-    public void a(World world, int i, int j, int k, int l, EntityHuman entityhuman) {
-        if (entityhuman.abilities.canInstantlyBuild && (l & 8) != 0 && world.getType(i, j - 1, k) == this) {
-            world.setAir(i, j - 1, k);
+    private Item j() {
+        return this == Blocks.IRON_DOOR ? Items.IRON_DOOR : (this == Blocks.SPRUCE_DOOR ? Items.SPRUCE_DOOR : (this == Blocks.BIRCH_DOOR ? Items.BIRCH_DOOR : (this == Blocks.JUNGLE_DOOR ? Items.JUNGLE_DOOR : (this == Blocks.ACACIA_DOOR ? Items.ACACIA_DOOR : (this == Blocks.DARK_OAK_DOOR ? Items.DARK_OAK_DOOR : Items.WOODEN_DOOR)))));
+    }
+
+    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+        BlockPosition blockposition1 = blockposition.down();
+
+        if (entityhuman.abilities.canInstantlyBuild && iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.UPPER && world.getType(blockposition1).getBlock() == this) {
+            world.setAir(blockposition1);
         }
+
+    }
+
+    public IBlockData updateState(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        IBlockData iblockdata1;
+
+        if (iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.LOWER) {
+            iblockdata1 = iblockaccess.getType(blockposition.up());
+            if (iblockdata1.getBlock() == this) {
+                iblockdata = iblockdata.set(BlockDoor.HINGE, iblockdata1.get(BlockDoor.HINGE)).set(BlockDoor.POWERED, iblockdata1.get(BlockDoor.POWERED));
+            }
+        } else {
+            iblockdata1 = iblockaccess.getType(blockposition.down());
+            if (iblockdata1.getBlock() == this) {
+                iblockdata = iblockdata.set(BlockDoor.FACING, iblockdata1.get(BlockDoor.FACING)).set(BlockDoor.OPEN, iblockdata1.get(BlockDoor.OPEN));
+            }
+        }
+
+        return iblockdata;
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return (i & 8) > 0 ? this.getBlockData().set(BlockDoor.HALF, EnumDoorHalf.UPPER).set(BlockDoor.HINGE, (i & 1) > 0 ? EnumDoorHinge.RIGHT : EnumDoorHinge.LEFT).set(BlockDoor.POWERED, Boolean.valueOf((i & 2) > 0)) : this.getBlockData().set(BlockDoor.HALF, EnumDoorHalf.LOWER).set(BlockDoor.FACING, EnumDirection.fromType2(i & 3).f()).set(BlockDoor.OPEN, Boolean.valueOf((i & 4) > 0));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        byte b0 = 0;
+        int i;
+
+        if (iblockdata.get(BlockDoor.HALF) == EnumDoorHalf.UPPER) {
+            i = b0 | 8;
+            if (iblockdata.get(BlockDoor.HINGE) == EnumDoorHinge.RIGHT) {
+                i |= 1;
+            }
+
+            if (((Boolean) iblockdata.get(BlockDoor.POWERED)).booleanValue()) {
+                i |= 2;
+            }
+        } else {
+            i = b0 | ((EnumDirection) iblockdata.get(BlockDoor.FACING)).e().b();
+            if (((Boolean) iblockdata.get(BlockDoor.OPEN)).booleanValue()) {
+                i |= 4;
+            }
+        }
+
+        return i;
+    }
+
+    protected static int b(int i) {
+        return i & 7;
+    }
+
+    public static boolean f(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return g(e(iblockaccess, blockposition));
+    }
+
+    public static EnumDirection h(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return f(e(iblockaccess, blockposition));
+    }
+
+    public static EnumDirection f(int i) {
+        return EnumDirection.fromType2(i & 3).f();
+    }
+
+    protected static boolean g(int i) {
+        return (i & 4) != 0;
+    }
+
+    protected static boolean i(int i) {
+        return (i & 8) != 0;
+    }
+
+    protected static boolean j(int i) {
+        return (i & 16) != 0;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockDoor.HALF, BlockDoor.FACING, BlockDoor.OPEN, BlockDoor.HINGE, BlockDoor.POWERED});
     }
 }

@@ -1,190 +1,115 @@
 package net.minecraft.server;
 
-import java.io.IOException;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
+import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-public class PacketPlayOutMapChunk extends Packet {
+public class PacketPlayOutMapChunk implements Packet {
 
     private int a;
     private int b;
-    private int c;
-    private int d;
-    private byte[] e;
-    private byte[] f;
-    private boolean g;
-    private int h;
-    private static byte[] i = new byte[196864];
+    private ChunkMap c;
+    private boolean d;
 
     public PacketPlayOutMapChunk() {}
 
     public PacketPlayOutMapChunk(Chunk chunk, boolean flag, int i) {
         this.a = chunk.locX;
         this.b = chunk.locZ;
-        this.g = flag;
-        ChunkMap chunkmap = a(chunk, flag, i);
-        Deflater deflater = new Deflater(4); // Spigot
-
-        this.d = chunkmap.c;
-        this.c = chunkmap.b;
-        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, i, chunkmap.a, chunk.world); // Spigot
-
-        try {
-            this.f = chunkmap.a;
-            deflater.setInput(chunkmap.a, 0, chunkmap.a.length);
-            deflater.finish();
-            this.e = new byte[chunkmap.a.length];
-            this.h = deflater.deflate(this.e);
-        } finally {
-            deflater.end();
-        }
+        this.d = flag;
+        this.c = a(chunk, flag, !chunk.getWorld().worldProvider.o(), i);
+        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
     }
 
-    public static int c() {
-        return 196864;
-    }
-
-    public void a(PacketDataSerializer packetdataserializer) throws IOException {
+    public void a(PacketDataSerializer packetdataserializer) {
         this.a = packetdataserializer.readInt();
         this.b = packetdataserializer.readInt();
-        this.g = packetdataserializer.readBoolean();
-        this.c = packetdataserializer.readShort();
-        this.d = packetdataserializer.readShort();
-        this.h = packetdataserializer.readInt();
-        if (i.length < this.h) {
-            i = new byte[this.h];
-        }
-
-        packetdataserializer.readBytes(i, 0, this.h);
-        int i = 0;
-
-        int j;
-
-        for (j = 0; j < 16; ++j) {
-            i += this.c >> j & 1;
-        }
-
-        j = 12288 * i;
-        if (this.g) {
-            j += 256;
-        }
-
-        this.f = new byte[j];
-        Inflater inflater = new Inflater();
-
-        inflater.setInput(PacketPlayOutMapChunk.i, 0, this.h);
-
-        try {
-            inflater.inflate(this.f);
-        } catch (DataFormatException dataformatexception) {
-            throw new IOException("Bad compressed data format");
-        } finally {
-            inflater.end();
-        }
+        this.d = packetdataserializer.readBoolean();
+        this.c = new ChunkMap();
+        this.c.b = packetdataserializer.readShort();
+        this.c.a = packetdataserializer.a();
     }
 
     public void b(PacketDataSerializer packetdataserializer) {
         packetdataserializer.writeInt(this.a);
         packetdataserializer.writeInt(this.b);
-        packetdataserializer.writeBoolean(this.g);
-        packetdataserializer.writeShort((short) (this.c & '\uffff'));
-        packetdataserializer.writeShort((short) (this.d & '\uffff'));
-        packetdataserializer.writeInt(this.h);
-        packetdataserializer.writeBytes(this.e, 0, this.h);
+        packetdataserializer.writeBoolean(this.d);
+        packetdataserializer.writeShort((short) (this.c.b & '\uffff'));
+        packetdataserializer.a(this.c.a);
     }
 
-    public void a(PacketPlayOutListener packetplayoutlistener) {
-        packetplayoutlistener.a(this);
+    public void a(PacketListenerPlayOut packetlistenerplayout) {
+        packetlistenerplayout.a(this);
     }
 
-    public String b() {
-        return String.format("x=%d, z=%d, full=%b, sects=%d, add=%d, size=%d", new Object[] { Integer.valueOf(this.a), Integer.valueOf(this.b), Boolean.valueOf(this.g), Integer.valueOf(this.c), Integer.valueOf(this.d), Integer.valueOf(this.h)});
+    protected static int a(int i, boolean flag, boolean flag1) {
+        int j = i * 2 * 16 * 16 * 16;
+        int k = i * 16 * 16 * 16 / 2;
+        int l = flag ? i * 16 * 16 * 16 / 2 : 0;
+        int i1 = flag1 ? 256 : 0;
+
+        return j + k + l + i1;
     }
 
-    public static ChunkMap a(Chunk chunk, boolean flag, int i) {
-        int j = 0;
+    public static ChunkMap a(Chunk chunk, boolean flag, boolean flag1, int i) {
         ChunkSection[] achunksection = chunk.getSections();
-        int k = 0;
         ChunkMap chunkmap = new ChunkMap();
-        byte[] abyte = PacketPlayOutMapChunk.i;
+        ArrayList arraylist = Lists.newArrayList();
 
-        if (flag) {
-            chunk.q = true;
-        }
+        int j;
 
-        int l;
+        for (j = 0; j < achunksection.length; ++j) {
+            ChunkSection chunksection = achunksection[j];
 
-        for (l = 0; l < achunksection.length; ++l) {
-            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                chunkmap.b |= 1 << l;
-                if (achunksection[l].getExtendedIdArray() != null) {
-                    chunkmap.c |= 1 << l;
-                    ++k;
-                }
+            if (chunksection != null && (!flag || !chunksection.a()) && (i & 1 << j) != 0) {
+                chunkmap.b |= 1 << j;
+                arraylist.add(chunksection);
             }
         }
 
-        for (l = 0; l < achunksection.length; ++l) {
-            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                byte[] abyte1 = achunksection[l].getIdArray();
+        chunkmap.a = new byte[a(Integer.bitCount(chunkmap.b), flag1, flag)];
+        j = 0;
+        Iterator iterator = arraylist.iterator();
 
-                System.arraycopy(abyte1, 0, abyte, j, abyte1.length);
-                j += abyte1.length;
+        ChunkSection chunksection1;
+
+        while (iterator.hasNext()) {
+            chunksection1 = (ChunkSection) iterator.next();
+            char[] achar = chunksection1.getIdArray();
+            char[] achar1 = achar;
+            int k = achar.length;
+
+            for (int l = 0; l < k; ++l) {
+                char c0 = achar1[l];
+
+                chunkmap.a[j++] = (byte) (c0 & 255);
+                chunkmap.a[j++] = (byte) (c0 >> 8 & 255);
             }
         }
 
-        NibbleArray nibblearray;
-
-        for (l = 0; l < achunksection.length; ++l) {
-            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                nibblearray = achunksection[l].getDataArray();
-                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
-                j += nibblearray.a.length;
-            }
+        for (iterator = arraylist.iterator(); iterator.hasNext(); j = a(chunksection1.getEmittedLightArray().a(), chunkmap.a, j)) {
+            chunksection1 = (ChunkSection) iterator.next();
         }
 
-        for (l = 0; l < achunksection.length; ++l) {
-            if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                nibblearray = achunksection[l].getEmittedLightArray();
-                System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
-                j += nibblearray.a.length;
-            }
-        }
-
-        if (!chunk.world.worldProvider.g) {
-            for (l = 0; l < achunksection.length; ++l) {
-                if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && (i & 1 << l) != 0) {
-                    nibblearray = achunksection[l].getSkyLightArray();
-                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
-                    j += nibblearray.a.length;
-                }
-            }
-        }
-
-        if (k > 0) {
-            for (l = 0; l < achunksection.length; ++l) {
-                if (achunksection[l] != null && (!flag || !achunksection[l].isEmpty()) && achunksection[l].getExtendedIdArray() != null && (i & 1 << l) != 0) {
-                    nibblearray = achunksection[l].getExtendedIdArray();
-                    System.arraycopy(nibblearray.a, 0, abyte, j, nibblearray.a.length);
-                    j += nibblearray.a.length;
-                }
+        if (flag1) {
+            for (iterator = arraylist.iterator(); iterator.hasNext(); j = a(chunksection1.getSkyLightArray().a(), chunkmap.a, j)) {
+                chunksection1 = (ChunkSection) iterator.next();
             }
         }
 
         if (flag) {
-            byte[] abyte2 = chunk.m();
-
-            System.arraycopy(abyte2, 0, abyte, j, abyte2.length);
-            j += abyte2.length;
+            a(chunk.getBiomeIndex(), chunkmap.a, j);
         }
 
-        chunkmap.a = new byte[j];
-        System.arraycopy(abyte, 0, chunkmap.a, 0, j);
         return chunkmap;
     }
 
-    public void handle(PacketListener packetlistener) {
-        this.a((PacketPlayOutListener) packetlistener);
+    private static int a(byte[] abyte, byte[] abyte1, int i) {
+        System.arraycopy(abyte, 0, abyte1, i, abyte.length);
+        return i + abyte.length;
+    }
+
+    public void a(PacketListener packetlistener) {
+        this.a((PacketListenerPlayOut) packetlistener);
     }
 }

@@ -10,18 +10,16 @@ final class DispenseBehaviorTNT extends DispenseBehaviorItem {
     DispenseBehaviorTNT() {}
 
     protected ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
-        World world = isourceblock.k();
-        int i = isourceblock.getBlockX() + enumfacing.getAdjacentX();
-        int j = isourceblock.getBlockY() + enumfacing.getAdjacentY();
-        int k = isourceblock.getBlockZ() + enumfacing.getAdjacentZ();
-
+        World world = isourceblock.i();
+        BlockPosition blockposition = isourceblock.getBlockPosition().shift(BlockDispenser.b(isourceblock.f()));
+        // EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (EntityLiving) null);
+        
         // CraftBukkit start
         ItemStack itemstack1 = itemstack.a(1);
-        org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 
-        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(i + 0.5, j + 0.5, k + 0.5));
+        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX() + 0.5, blockposition.getY() + 0.5, blockposition.getZ() + 0.5));
         if (!BlockDispenser.eventFired) {
             world.getServer().getPluginManager().callEvent(event);
         }
@@ -35,7 +33,7 @@ final class DispenseBehaviorTNT extends DispenseBehaviorItem {
             itemstack.count++;
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.M.get(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;
@@ -46,6 +44,7 @@ final class DispenseBehaviorTNT extends DispenseBehaviorItem {
         // CraftBukkit end
 
         world.addEntity(entitytntprimed);
+        world.makeSound(entitytntprimed, "game.tnt.primed", 1.0F, 1.0F);
         // --itemstack.count; // CraftBukkit - handled above
         return itemstack;
     }

@@ -28,16 +28,16 @@ public class SlotFurnaceResult extends Slot {
     }
 
     public void a(EntityHuman entityhuman, ItemStack itemstack) {
-        this.b(itemstack);
+        this.c(itemstack);
         super.a(entityhuman, itemstack);
     }
 
     protected void a(ItemStack itemstack, int i) {
         this.b += i;
-        this.b(itemstack);
+        this.c(itemstack);
     }
 
-    protected void b(ItemStack itemstack) {
+    protected void c(ItemStack itemstack) {
         itemstack.a(this.a.world, this.a, this.b);
         if (!this.a.world.isStatic) {
             int i = this.b;
@@ -48,17 +48,17 @@ public class SlotFurnaceResult extends Slot {
                 i = 0;
             } else if (f < 1.0F) {
                 j = MathHelper.d((float) i * f);
-                if (j < MathHelper.f((float) i * f) && (float) Math.random() < (float) i * f - (float) j) {
+                if (j < MathHelper.f((float) i * f) && Math.random() < (double) ((float) i * f - (float) j)) {
                     ++j;
                 }
 
                 i = j;
             }
-
+ 
             // CraftBukkit start - fire FurnaceExtractEvent
             Player player = (Player) a.getBukkitEntity();
             TileEntityFurnace furnace = ((TileEntityFurnace) this.inventory);
-            org.bukkit.block.Block block = a.world.getWorld().getBlockAt(furnace.x, furnace.y, furnace.z);
+            org.bukkit.block.Block block = a.world.getWorld().getBlockAt(furnace.position.getX(), furnace.position.getY(), furnace.position.getZ());
 
             FurnaceExtractEvent event = new FurnaceExtractEvent(player, block, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), itemstack.count, i);
             a.world.getServer().getPluginManager().callEvent(event);
@@ -75,11 +75,12 @@ public class SlotFurnaceResult extends Slot {
 
         this.b = 0;
         if (itemstack.getItem() == Items.IRON_INGOT) {
-            this.a.a((Statistic) AchievementList.k, 1);
+            this.a.b((Statistic) AchievementList.k);
         }
 
         if (itemstack.getItem() == Items.COOKED_FISH) {
-            this.a.a((Statistic) AchievementList.p, 1);
+            this.a.b((Statistic) AchievementList.p);
         }
+
     }
 }

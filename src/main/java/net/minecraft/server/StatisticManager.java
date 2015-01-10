@@ -1,18 +1,16 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Maps;
 import java.util.Map;
-
-import net.minecraft.util.com.google.common.collect.Maps;
 
 public class StatisticManager {
 
     protected final Map a = Maps.newConcurrentMap();
 
-    public StatisticManager() {
-    }
+    public StatisticManager() {}
 
     public boolean hasAchievement(Achievement achievement) {
-        return this.getStatisticValue((Statistic) achievement) > 0;
+        return this.getStatisticValue(achievement) > 0;
     }
 
     public boolean b(Achievement achievement) {

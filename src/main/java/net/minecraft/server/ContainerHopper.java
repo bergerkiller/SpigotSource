@@ -8,11 +8,12 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 public class ContainerHopper extends Container {
 
     private final IInventory hopper;
-
+ 
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
 
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;
@@ -24,10 +25,10 @@ public class ContainerHopper extends Container {
     }
     // CraftBukkit end
 
-    public ContainerHopper(PlayerInventory playerinventory, IInventory iinventory) {
+    public ContainerHopper(PlayerInventory playerinventory, IInventory iinventory, EntityHuman entityhuman) {
         this.hopper = iinventory;
         this.player = playerinventory; // CraftBukkit - save player
-        iinventory.startOpen();
+        iinventory.startOpen(entityhuman);
         byte b0 = 51;
 
         int i;
@@ -45,6 +46,7 @@ public class ContainerHopper extends Container {
         for (i = 0; i < 9; ++i) {
             this.a(new Slot(playerinventory, i, 8 + i * 18, 58 + b0));
         }
+
     }
 
     public boolean a(EntityHuman entityhuman) {
@@ -80,6 +82,6 @@ public class ContainerHopper extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.hopper.closeContainer();
+        this.hopper.closeContainer(entityhuman);
     }
 }

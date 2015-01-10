@@ -1,63 +1,64 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.List;
 
 public class IntCache {
 
     private static int a = 256;
-    private static List b = new ArrayList();
-    private static List c = new ArrayList();
-    private static List d = new ArrayList();
-    private static List e = new ArrayList();
+    private static List b = Lists.newArrayList();
+    private static List c = Lists.newArrayList();
+    private static List d = Lists.newArrayList();
+    private static List e = Lists.newArrayList();
 
     public static synchronized int[] a(int i) {
         int[] aint;
 
         if (i <= 256) {
-            if (b.isEmpty()) {
+            if (IntCache.b.isEmpty()) {
                 aint = new int[256];
-                if (c.size() < org.spigotmc.SpigotConfig.intCacheLimit) c.add(aint);
+                if (c.size() < org.spigotmc.SpigotConfig.intCacheLimit) IntCache.c.add(aint);
                 return aint;
             } else {
-                aint = (int[]) b.remove(b.size() - 1);
-                if (c.size() < org.spigotmc.SpigotConfig.intCacheLimit) c.add(aint);
+                aint = (int[]) IntCache.b.remove(IntCache.b.size() - 1);
+                if (c.size() < org.spigotmc.SpigotConfig.intCacheLimit) IntCache.c.add(aint);
                 return aint;
             }
-        } else if (i > a) {
-            a = i;
-            d.clear();
-            e.clear();
-            aint = new int[a];
-            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) e.add(aint);
+        } else if (i > IntCache.a) {
+            IntCache.a = i;
+            IntCache.d.clear();
+            IntCache.e.clear();
+            aint = new int[IntCache.a];
+            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) IntCache.e.add(aint);
             return aint;
-        } else if (d.isEmpty()) {
-            aint = new int[a];
-            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) e.add(aint);
+        } else if (IntCache.d.isEmpty()) {
+            aint = new int[IntCache.a];
+            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) IntCache.e.add(aint);
             return aint;
         } else {
-            aint = (int[]) d.remove(d.size() - 1);
-            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) e.add(aint);
+            aint = (int[]) IntCache.d.remove(IntCache.d.size() - 1);
+            if (e.size() < org.spigotmc.SpigotConfig.intCacheLimit) IntCache.e.add(aint);
             return aint;
         }
     }
 
     public static synchronized void a() {
-        if (!d.isEmpty()) {
-            d.remove(d.size() - 1);
+        if (!IntCache.d.isEmpty()) {
+            IntCache.d.remove(IntCache.d.size() - 1);
         }
 
-        if (!b.isEmpty()) {
-            b.remove(b.size() - 1);
+        if (!IntCache.b.isEmpty()) {
+            IntCache.b.remove(IntCache.b.size() - 1);
         }
 
-        d.addAll(e);
-        b.addAll(c);
-        e.clear();
-        c.clear();
+        IntCache.d.addAll(IntCache.e);
+        IntCache.b.addAll(IntCache.c);
+        IntCache.e.clear();
+        IntCache.c.clear();
     }
 
     public static synchronized String b() {
-        return "cache: " + d.size() + ", tcache: " + b.size() + ", allocated: " + e.size() + ", tallocated: " + c.size();
+        return "cache: " + IntCache.d.size() + ", tcache: " + IntCache.b.size() + ", allocated: " + IntCache.e.size() + ", tallocated: " + IntCache.c.size();
     }
+
 }

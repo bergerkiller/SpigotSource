@@ -8,11 +8,11 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryHolder;
 // CraftBukkit end
 
-public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements IInventory {
+public abstract class EntityMinecartContainer extends EntityMinecartAbstract implements ITileInventory {
 
     private ItemStack[] items = new ItemStack[27]; // CraftBukkit - 36 -> 27
     private boolean b = true;
-
+    
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -54,33 +54,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
 
     public void a(DamageSource damagesource) {
         super.a(damagesource);
-
-        for (int i = 0; i < this.getSize(); ++i) {
-            ItemStack itemstack = this.getItem(i);
-
-            if (itemstack != null) {
-                float f = this.random.nextFloat() * 0.8F + 0.1F;
-                float f1 = this.random.nextFloat() * 0.8F + 0.1F;
-                float f2 = this.random.nextFloat() * 0.8F + 0.1F;
-
-                while (itemstack.count > 0) {
-                    int j = this.random.nextInt(21) + 10;
-
-                    if (j > itemstack.count) {
-                        j = itemstack.count;
-                    }
-
-                    itemstack.count -= j;
-                    EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.getItem(), j, itemstack.getData()));
-                    float f3 = 0.05F;
-
-                    entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
-                    entityitem.motY = (double) ((float) this.random.nextGaussian() * f3 + 0.2F);
-                    entityitem.motZ = (double) ((float) this.random.nextGaussian() * f3);
-                    this.world.addEntity(entityitem);
-                }
-            }
-        }
+        InventoryUtils.dropEntity(this.world, this, this);
     }
 
     public ItemStack getItem(int i) {
@@ -124,31 +98,32 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
         }
+
     }
 
     public void update() {}
 
     public boolean a(EntityHuman entityhuman) {
-        return this.dead ? false : entityhuman.f(this) <= 64.0D;
+        return this.dead ? false : entityhuman.h(this) <= 64.0D;
     }
 
-    public void startOpen() {}
+    public void startOpen(EntityHuman entityhuman) {}
 
-    public void closeContainer() {}
+    public void closeContainer(EntityHuman entityhuman) {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
     }
 
-    public String getInventoryName() {
-        return this.k_() ? this.u() : "container.minecart";
+    public String getName() {
+        return this.hasCustomName() ? this.getCustomName() : "container.minecart";
     }
 
     public int getMaxStackSize() {
         return maxStack; // CraftBukkit
     }
 
-    public void b(int i) {
+    public void c(int i) {
         // Spigot Start
         for ( HumanEntity human : new java.util.ArrayList<HumanEntity>( transaction ) )
         {
@@ -156,42 +131,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
         }
         // Spigot End
         this.b = false;
-        super.b(i);
+        super.c(i);
     }
 
     public void die() {
         if (this.b) {
-            for (int i = 0; i < this.getSize(); ++i) {
-                ItemStack itemstack = this.getItem(i);
-
-                if (itemstack != null) {
-                    float f = this.random.nextFloat() * 0.8F + 0.1F;
-                    float f1 = this.random.nextFloat() * 0.8F + 0.1F;
-                    float f2 = this.random.nextFloat() * 0.8F + 0.1F;
-
-                    while (itemstack.count > 0) {
-                        int j = this.random.nextInt(21) + 10;
-
-                        if (j > itemstack.count) {
-                            j = itemstack.count;
-                        }
-
-                        itemstack.count -= j;
-                        EntityItem entityitem = new EntityItem(this.world, this.locX + (double) f, this.locY + (double) f1, this.locZ + (double) f2, new ItemStack(itemstack.getItem(), j, itemstack.getData()));
-
-                        if (itemstack.hasTag()) {
-                            entityitem.getItemStack().setTag((NBTTagCompound) itemstack.getTag().clone());
-                        }
-
-                        float f3 = 0.05F;
-
-                        entityitem.motX = (double) ((float) this.random.nextGaussian() * f3);
-                        entityitem.motY = (double) ((float) this.random.nextGaussian() * f3 + 0.2F);
-                        entityitem.motZ = (double) ((float) this.random.nextGaussian() * f3);
-                        this.world.addEntity(entityitem);
-                    }
-                }
-            }
+            InventoryUtils.dropEntity(this.world, this, this);
         }
 
         super.die();
@@ -228,9 +173,10 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
                 this.items[j] = ItemStack.createStack(nbttagcompound1);
             }
         }
+
     }
 
-    public boolean c(EntityHuman entityhuman) {
+    public boolean e(EntityHuman entityhuman) {
         if (!this.world.isStatic) {
             entityhuman.openContainer(this);
         }
@@ -238,12 +184,39 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
         return true;
     }
 
-    protected void i() {
+    protected void o() {
         int i = 15 - Container.b((IInventory) this);
         float f = 0.98F + (float) i * 0.001F;
 
         this.motX *= (double) f;
         this.motY *= 0.0D;
         this.motZ *= (double) f;
+    }
+
+    public int getProperty(int i) {
+        return 0;
+    }
+
+    public void b(int i, int j) {}
+
+    public int g() {
+        return 0;
+    }
+
+    public boolean q_() {
+        return false;
+    }
+
+    public void a(ChestLock chestlock) {}
+
+    public ChestLock i() {
+        return ChestLock.a;
+    }
+
+    public void l() {
+        for (int i = 0; i < this.items.length; ++i) {
+            this.items[i] = null;
+        }
+
     }
 }

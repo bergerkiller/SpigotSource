@@ -13,14 +13,15 @@ public class TileEntityRecordPlayer extends TileEntity {
         } else if (nbttagcompound.getInt("Record") > 0) {
             this.setRecord(new ItemStack(Item.getById(nbttagcompound.getInt("Record")), 1, 0));
         }
+
     }
 
     public void b(NBTTagCompound nbttagcompound) {
         super.b(nbttagcompound);
         if (this.getRecord() != null) {
             nbttagcompound.set("RecordItem", this.getRecord().save(new NBTTagCompound()));
-            nbttagcompound.setInt("Record", Item.getId(this.getRecord().getItem()));
         }
+
     }
 
     public ItemStack getRecord() {
@@ -33,7 +34,6 @@ public class TileEntityRecordPlayer extends TileEntity {
             itemstack.count = 1;
         }
         // CraftBukkit end
-
         this.record = itemstack;
         this.update();
     }

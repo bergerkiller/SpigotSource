@@ -1,37 +1,46 @@
 package net.minecraft.server;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 
 public class Village {
 
-    private World world;
-    private final List doors = new ArrayList();
-    private final ChunkCoordinates c = new ChunkCoordinates(0, 0, 0);
-    private final ChunkCoordinates center = new ChunkCoordinates(0, 0, 0);
-    private int size;
+    private World a;
+    private final List b = Lists.newArrayList();
+    private BlockPosition c;
+    private BlockPosition d;
+    private int e;
     private int f;
-    private int time;
-    private int population;
-    private int noBreedTicks;
-    private TreeMap playerStandings = new TreeMap();
-    private List aggressors = new ArrayList();
-    private int ironGolemCount;
+    private int g;
+    private int h;
+    private int i;
+    private TreeMap j;
+    private List k;
+    private int l;
 
-    public Village() {}
+    public Village() {
+        this.c = BlockPosition.ZERO;
+        this.d = BlockPosition.ZERO;
+        this.j = new TreeMap();
+        this.k = Lists.newArrayList();
+    }
 
     public Village(World world) {
-        this.world = world;
+        this.c = BlockPosition.ZERO;
+        this.d = BlockPosition.ZERO;
+        this.j = new TreeMap();
+        this.k = Lists.newArrayList();
+        this.a = world;
     }
 
     public void a(World world) {
-        this.world = world;
+        this.a = world;
     }
 
-    public void tick(int i) {
-        this.time = i;
+    public void a(int i) {
+        this.g = i;
         this.m();
         this.l();
         if (i % 20 == 0) {
@@ -39,49 +48,48 @@ public class Village {
         }
 
         if (i % 30 == 0) {
-            this.countPopulation();
+            this.j();
         }
 
-        int j = this.population / 10;
+        int j = this.h / 10;
 
-        if (this.ironGolemCount < j && this.doors.size() > 20 && this.world.random.nextInt(7000) == 0) {
-            Vec3D vec3d = this.a(MathHelper.d((float) this.center.x), MathHelper.d((float) this.center.y), MathHelper.d((float) this.center.z), 2, 4, 2);
+        if (this.l < j && this.b.size() > 20 && this.a.random.nextInt(7000) == 0) {
+            Vec3D vec3d = this.a(this.d, 2, 4, 2);
 
             if (vec3d != null) {
-                EntityIronGolem entityirongolem = new EntityIronGolem(this.world);
+                EntityIronGolem entityirongolem = new EntityIronGolem(this.a);
 
                 entityirongolem.setPosition(vec3d.a, vec3d.b, vec3d.c);
-                this.world.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
-                ++this.ironGolemCount;
+                this.a.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
+                ++this.l;
             }
         }
+
     }
 
-    private Vec3D a(int i, int j, int k, int l, int i1, int j1) {
-        for (int k1 = 0; k1 < 10; ++k1) {
-            int l1 = i + this.world.random.nextInt(16) - 8;
-            int i2 = j + this.world.random.nextInt(6) - 3;
-            int j2 = k + this.world.random.nextInt(16) - 8;
+    private Vec3D a(BlockPosition blockposition, int i, int j, int k) {
+        for (int l = 0; l < 10; ++l) {
+            BlockPosition blockposition1 = blockposition.a(this.a.random.nextInt(16) - 8, this.a.random.nextInt(6) - 3, this.a.random.nextInt(16) - 8);
 
-            if (this.a(l1, i2, j2) && this.b(l1, i2, j2, l, i1, j1)) {
-                return Vec3D.a((double) l1, (double) i2, (double) j2);
+            if (this.a(blockposition1) && this.a(new BlockPosition(i, j, k), blockposition1)) {
+                return new Vec3D((double) blockposition1.getX(), (double) blockposition1.getY(), (double) blockposition1.getZ());
             }
         }
 
         return null;
     }
 
-    private boolean b(int i, int j, int k, int l, int i1, int j1) {
-        if (!World.a((IBlockAccess) this.world, i, j - 1, k)) {
+    private boolean a(BlockPosition blockposition, BlockPosition blockposition1) {
+        if (!World.a((IBlockAccess) this.a, blockposition1.down())) {
             return false;
         } else {
-            int k1 = i - l / 2;
-            int l1 = k - j1 / 2;
+            int i = blockposition1.getX() - blockposition.getX() / 2;
+            int j = blockposition1.getZ() - blockposition.getZ() / 2;
 
-            for (int i2 = k1; i2 < k1 + l; ++i2) {
-                for (int j2 = j; j2 < j + i1; ++j2) {
-                    for (int k2 = l1; k2 < l1 + j1; ++k2) {
-                        if (this.world.getType(i2, j2, k2).r()) {
+            for (int k = i; k < i + blockposition.getX(); ++k) {
+                for (int l = blockposition1.getY(); l < blockposition1.getY() + blockposition.getY(); ++l) {
+                    for (int i1 = j; i1 < j + blockposition.getZ(); ++i1) {
+                        if (this.a.getType(new BlockPosition(k, l, i1)).getBlock().isOccluding()) {
                             return false;
                         }
                     }
@@ -92,96 +100,97 @@ public class Village {
         }
     }
 
-    private void countPopulation() {
-        List list = this.world.a(EntityIronGolem.class, AxisAlignedBB.a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
+    private void j() {
+        List list = this.a.a(EntityIronGolem.class, new AxisAlignedBB((double) (this.d.getX() - this.e), (double) (this.d.getY() - 4), (double) (this.d.getZ() - this.e), (double) (this.d.getX() + this.e), (double) (this.d.getY() + 4), (double) (this.d.getZ() + this.e)));
 
-        this.ironGolemCount = list.size();
+        this.l = list.size();
     }
 
     private void k() {
-        List list = this.world.a(EntityVillager.class, AxisAlignedBB.a((double) (this.center.x - this.size), (double) (this.center.y - 4), (double) (this.center.z - this.size), (double) (this.center.x + this.size), (double) (this.center.y + 4), (double) (this.center.z + this.size)));
+        List list = this.a.a(EntityVillager.class, new AxisAlignedBB((double) (this.d.getX() - this.e), (double) (this.d.getY() - 4), (double) (this.d.getZ() - this.e), (double) (this.d.getX() + this.e), (double) (this.d.getY() + 4), (double) (this.d.getZ() + this.e)));
 
-        this.population = list.size();
-        if (this.population == 0) {
-            this.playerStandings.clear();
+        this.h = list.size();
+        if (this.h == 0) {
+            this.j.clear();
         }
+
     }
 
-    public ChunkCoordinates getCenter() {
-        return this.center;
+    public BlockPosition a() {
+        return this.d;
     }
 
-    public int getSize() {
-        return this.size;
+    public int b() {
+        return this.e;
     }
 
-    public int getDoorCount() {
-        return this.doors.size();
+    public int c() {
+        return this.b.size();
     }
 
     public int d() {
-        return this.time - this.f;
+        return this.g - this.f;
     }
 
-    public int getPopulationCount() {
-        return this.population;
+    public int e() {
+        return this.h;
     }
 
-    public boolean a(int i, int j, int k) {
-        return this.center.e(i, j, k) < (float) (this.size * this.size);
+    public boolean a(BlockPosition blockposition) {
+        return this.d.i(blockposition) < (double) (this.e * this.e);
     }
 
-    public List getDoors() {
-        return this.doors;
+    public List f() {
+        return this.b;
     }
 
-    public VillageDoor b(int i, int j, int k) {
+    public VillageDoor b(BlockPosition blockposition) {
         VillageDoor villagedoor = null;
-        int l = Integer.MAX_VALUE;
-        Iterator iterator = this.doors.iterator();
+        int i = Integer.MAX_VALUE;
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             VillageDoor villagedoor1 = (VillageDoor) iterator.next();
-            int i1 = villagedoor1.b(i, j, k);
+            int j = villagedoor1.a(blockposition);
 
-            if (i1 < l) {
+            if (j < i) {
                 villagedoor = villagedoor1;
-                l = i1;
+                i = j;
             }
         }
 
         return villagedoor;
     }
 
-    public VillageDoor c(int i, int j, int k) {
+    public VillageDoor c(BlockPosition blockposition) {
         VillageDoor villagedoor = null;
-        int l = Integer.MAX_VALUE;
-        Iterator iterator = this.doors.iterator();
+        int i = Integer.MAX_VALUE;
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             VillageDoor villagedoor1 = (VillageDoor) iterator.next();
-            int i1 = villagedoor1.b(i, j, k);
+            int j = villagedoor1.a(blockposition);
 
-            if (i1 > 256) {
-                i1 *= 1000;
+            if (j > 256) {
+                j *= 1000;
             } else {
-                i1 = villagedoor1.f();
+                j = villagedoor1.c();
             }
 
-            if (i1 < l) {
+            if (j < i) {
                 villagedoor = villagedoor1;
-                l = i1;
+                i = j;
             }
         }
 
         return villagedoor;
     }
 
-    public VillageDoor e(int i, int j, int k) {
-        if (this.center.e(i, j, k) > (float) (this.size * this.size)) {
+    public VillageDoor e(BlockPosition blockposition) {
+        if (this.d.i(blockposition) > (double) (this.e * this.e)) {
             return null;
         } else {
-            Iterator iterator = this.doors.iterator();
+            Iterator iterator = this.b.iterator();
 
             VillageDoor villagedoor;
 
@@ -191,49 +200,47 @@ public class Village {
                 }
 
                 villagedoor = (VillageDoor) iterator.next();
-            } while (villagedoor.locX != i || villagedoor.locZ != k || Math.abs(villagedoor.locY - j) > 1);
+            } while (villagedoor.d().getX() != blockposition.getX() || villagedoor.d().getZ() != blockposition.getZ() || Math.abs(villagedoor.d().getY() - blockposition.getY()) > 1);
 
             return villagedoor;
         }
     }
 
-    public void addDoor(VillageDoor villagedoor) {
-        this.doors.add(villagedoor);
-        this.c.x += villagedoor.locX;
-        this.c.y += villagedoor.locY;
-        this.c.z += villagedoor.locZ;
+    public void a(VillageDoor villagedoor) {
+        this.b.add(villagedoor);
+        this.c = this.c.a(villagedoor.d());
         this.n();
-        this.f = villagedoor.addedTime;
+        this.f = villagedoor.h();
     }
 
-    public boolean isAbandoned() {
-        return this.doors.isEmpty();
+    public boolean g() {
+        return this.b.isEmpty();
     }
 
     public void a(EntityLiving entityliving) {
-        Iterator iterator = this.aggressors.iterator();
+        Iterator iterator = this.k.iterator();
 
         VillageAggressor villageaggressor;
 
         do {
             if (!iterator.hasNext()) {
-                this.aggressors.add(new VillageAggressor(this, entityliving, this.time));
+                this.k.add(new VillageAggressor(this, entityliving, this.g));
                 return;
             }
 
             villageaggressor = (VillageAggressor) iterator.next();
         } while (villageaggressor.a != entityliving);
 
-        villageaggressor.b = this.time;
+        villageaggressor.b = this.g;
     }
 
     public EntityLiving b(EntityLiving entityliving) {
         double d0 = Double.MAX_VALUE;
         VillageAggressor villageaggressor = null;
 
-        for (int i = 0; i < this.aggressors.size(); ++i) {
-            VillageAggressor villageaggressor1 = (VillageAggressor) this.aggressors.get(i);
-            double d1 = villageaggressor1.a.f(entityliving);
+        for (int i = 0; i < this.k.size(); ++i) {
+            VillageAggressor villageaggressor1 = (VillageAggressor) this.k.get(i);
+            double d1 = villageaggressor1.a.h(entityliving);
 
             if (d1 <= d0) {
                 villageaggressor = villageaggressor1;
@@ -247,16 +254,16 @@ public class Village {
     public EntityHuman c(EntityLiving entityliving) {
         double d0 = Double.MAX_VALUE;
         EntityHuman entityhuman = null;
-        Iterator iterator = this.playerStandings.keySet().iterator();
+        Iterator iterator = this.j.keySet().iterator();
 
         while (iterator.hasNext()) {
             String s = (String) iterator.next();
 
             if (this.d(s)) {
-                EntityHuman entityhuman1 = this.world.a(s);
+                EntityHuman entityhuman1 = this.a.a(s);
 
                 if (entityhuman1 != null) {
-                    double d1 = entityhuman1.f(entityliving);
+                    double d1 = entityhuman1.h(entityliving);
 
                     if (d1 <= d0) {
                         entityhuman = entityhuman1;
@@ -270,35 +277,34 @@ public class Village {
     }
 
     private void l() {
-        Iterator iterator = this.aggressors.iterator();
+        Iterator iterator = this.k.iterator();
 
         while (iterator.hasNext()) {
             VillageAggressor villageaggressor = (VillageAggressor) iterator.next();
 
-            if (!villageaggressor.a.isAlive() || Math.abs(this.time - villageaggressor.b) > 300) {
+            if (!villageaggressor.a.isAlive() || Math.abs(this.g - villageaggressor.b) > 300) {
                 iterator.remove();
             }
         }
+
     }
 
     private void m() {
         boolean flag = false;
-        boolean flag1 = this.world.random.nextInt(50) == 0;
-        Iterator iterator = this.doors.iterator();
+        boolean flag1 = this.a.random.nextInt(50) == 0;
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             VillageDoor villagedoor = (VillageDoor) iterator.next();
 
             if (flag1) {
-                villagedoor.d();
+                villagedoor.a();
             }
 
-            if (!this.isDoor(villagedoor.locX, villagedoor.locY, villagedoor.locZ) || Math.abs(this.time - villagedoor.addedTime) > 1200) {
-                this.c.x -= villagedoor.locX;
-                this.c.y -= villagedoor.locY;
-                this.c.z -= villagedoor.locZ;
+            if (!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
+                this.c = this.c.a(villagedoor.d().a(-1));
                 flag = true;
-                villagedoor.removed = true;
+                villagedoor.a(true);
                 iterator.remove();
             }
         }
@@ -306,43 +312,46 @@ public class Village {
         if (flag) {
             this.n();
         }
+
     }
 
-    private boolean isDoor(int i, int j, int k) {
-        return this.world.getType(i, j, k) == Blocks.WOODEN_DOOR;
+    private boolean f(BlockPosition blockposition) {
+        Block block = this.a.getType(blockposition).getBlock();
+
+        return block instanceof BlockDoor ? block.getMaterial() == Material.WOOD : false;
     }
 
     private void n() {
-        int i = this.doors.size();
+        int i = this.b.size();
 
         if (i == 0) {
-            this.center.b(0, 0, 0);
-            this.size = 0;
+            this.d = new BlockPosition(0, 0, 0);
+            this.e = 0;
         } else {
-            this.center.b(this.c.x / i, this.c.y / i, this.c.z / i);
+            this.d = new BlockPosition(this.c.getX() / i, this.c.getY() / i, this.c.getZ() / i);
             int j = 0;
 
             VillageDoor villagedoor;
 
-            for (Iterator iterator = this.doors.iterator(); iterator.hasNext(); j = Math.max(villagedoor.b(this.center.x, this.center.y, this.center.z), j)) {
+            for (Iterator iterator = this.b.iterator(); iterator.hasNext(); j = Math.max(villagedoor.a(this.d), j)) {
                 villagedoor = (VillageDoor) iterator.next();
             }
 
-            this.size = Math.max(32, (int) Math.sqrt((double) j) + 1);
+            this.e = Math.max(32, (int) Math.sqrt((double) j) + 1);
         }
     }
 
     public int a(String s) {
-        Integer integer = (Integer) this.playerStandings.get(s);
+        Integer integer = (Integer) this.j.get(s);
 
         return integer != null ? integer.intValue() : 0;
     }
 
     public int a(String s, int i) {
         int j = this.a(s);
-        int k = MathHelper.a(j + i, -30, 10);
+        int k = MathHelper.clamp(j + i, -30, 10);
 
-        this.playerStandings.put(s, Integer.valueOf(k));
+        this.j.put(s, Integer.valueOf(k));
         return k;
     }
 
@@ -351,25 +360,21 @@ public class Village {
     }
 
     public void a(NBTTagCompound nbttagcompound) {
-        this.population = nbttagcompound.getInt("PopSize");
-        this.size = nbttagcompound.getInt("Radius");
-        this.ironGolemCount = nbttagcompound.getInt("Golems");
+        this.h = nbttagcompound.getInt("PopSize");
+        this.e = nbttagcompound.getInt("Radius");
+        this.l = nbttagcompound.getInt("Golems");
         this.f = nbttagcompound.getInt("Stable");
-        this.time = nbttagcompound.getInt("Tick");
-        this.noBreedTicks = nbttagcompound.getInt("MTick");
-        this.center.x = nbttagcompound.getInt("CX");
-        this.center.y = nbttagcompound.getInt("CY");
-        this.center.z = nbttagcompound.getInt("CZ");
-        this.c.x = nbttagcompound.getInt("ACX");
-        this.c.y = nbttagcompound.getInt("ACY");
-        this.c.z = nbttagcompound.getInt("ACZ");
+        this.g = nbttagcompound.getInt("Tick");
+        this.i = nbttagcompound.getInt("MTick");
+        this.d = new BlockPosition(nbttagcompound.getInt("CX"), nbttagcompound.getInt("CY"), nbttagcompound.getInt("CZ"));
+        this.c = new BlockPosition(nbttagcompound.getInt("ACX"), nbttagcompound.getInt("ACY"), nbttagcompound.getInt("ACZ"));
         NBTTagList nbttaglist = nbttagcompound.getList("Doors", 10);
 
         for (int i = 0; i < nbttaglist.size(); ++i) {
             NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
-            VillageDoor villagedoor = new VillageDoor(nbttagcompound1.getInt("X"), nbttagcompound1.getInt("Y"), nbttagcompound1.getInt("Z"), nbttagcompound1.getInt("IDX"), nbttagcompound1.getInt("IDZ"), nbttagcompound1.getInt("TS"));
+            VillageDoor villagedoor = new VillageDoor(new BlockPosition(nbttagcompound1.getInt("X"), nbttagcompound1.getInt("Y"), nbttagcompound1.getInt("Z")), nbttagcompound1.getInt("IDX"), nbttagcompound1.getInt("IDZ"), nbttagcompound1.getInt("TS"));
 
-            this.doors.add(villagedoor);
+            this.b.add(villagedoor);
         }
 
         NBTTagList nbttaglist1 = nbttagcompound.getList("Players", 10);
@@ -377,49 +382,50 @@ public class Village {
         for (int j = 0; j < nbttaglist1.size(); ++j) {
             NBTTagCompound nbttagcompound2 = nbttaglist1.get(j);
 
-            this.playerStandings.put(nbttagcompound2.getString("Name"), Integer.valueOf(nbttagcompound2.getInt("S")));
+            this.j.put(nbttagcompound2.getString("Name"), Integer.valueOf(nbttagcompound2.getInt("S")));
         }
+
     }
 
     public void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setInt("PopSize", this.population);
-        nbttagcompound.setInt("Radius", this.size);
-        nbttagcompound.setInt("Golems", this.ironGolemCount);
+        nbttagcompound.setInt("PopSize", this.h);
+        nbttagcompound.setInt("Radius", this.e);
+        nbttagcompound.setInt("Golems", this.l);
         nbttagcompound.setInt("Stable", this.f);
-        nbttagcompound.setInt("Tick", this.time);
-        nbttagcompound.setInt("MTick", this.noBreedTicks);
-        nbttagcompound.setInt("CX", this.center.x);
-        nbttagcompound.setInt("CY", this.center.y);
-        nbttagcompound.setInt("CZ", this.center.z);
-        nbttagcompound.setInt("ACX", this.c.x);
-        nbttagcompound.setInt("ACY", this.c.y);
-        nbttagcompound.setInt("ACZ", this.c.z);
+        nbttagcompound.setInt("Tick", this.g);
+        nbttagcompound.setInt("MTick", this.i);
+        nbttagcompound.setInt("CX", this.d.getX());
+        nbttagcompound.setInt("CY", this.d.getY());
+        nbttagcompound.setInt("CZ", this.d.getZ());
+        nbttagcompound.setInt("ACX", this.c.getX());
+        nbttagcompound.setInt("ACY", this.c.getY());
+        nbttagcompound.setInt("ACZ", this.c.getZ());
         NBTTagList nbttaglist = new NBTTagList();
-        Iterator iterator = this.doors.iterator();
+        Iterator iterator = this.b.iterator();
 
         while (iterator.hasNext()) {
             VillageDoor villagedoor = (VillageDoor) iterator.next();
             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-            nbttagcompound1.setInt("X", villagedoor.locX);
-            nbttagcompound1.setInt("Y", villagedoor.locY);
-            nbttagcompound1.setInt("Z", villagedoor.locZ);
-            nbttagcompound1.setInt("IDX", villagedoor.d);
-            nbttagcompound1.setInt("IDZ", villagedoor.e);
-            nbttagcompound1.setInt("TS", villagedoor.addedTime);
+            nbttagcompound1.setInt("X", villagedoor.d().getX());
+            nbttagcompound1.setInt("Y", villagedoor.d().getY());
+            nbttagcompound1.setInt("Z", villagedoor.d().getZ());
+            nbttagcompound1.setInt("IDX", villagedoor.f());
+            nbttagcompound1.setInt("IDZ", villagedoor.g());
+            nbttagcompound1.setInt("TS", villagedoor.h());
             nbttaglist.add(nbttagcompound1);
         }
 
         nbttagcompound.set("Doors", nbttaglist);
         NBTTagList nbttaglist1 = new NBTTagList();
-        Iterator iterator1 = this.playerStandings.keySet().iterator();
+        Iterator iterator1 = this.j.keySet().iterator();
 
         while (iterator1.hasNext()) {
             String s = (String) iterator1.next();
             NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
             nbttagcompound2.setString("Name", s);
-            nbttagcompound2.setInt("S", ((Integer) this.playerStandings.get(s)).intValue());
+            nbttagcompound2.setInt("S", ((Integer) this.j.get(s)).intValue());
             nbttaglist1.add(nbttagcompound2);
         }
 
@@ -427,20 +433,21 @@ public class Village {
     }
 
     public void h() {
-        this.noBreedTicks = this.time;
+        this.i = this.g;
     }
 
     public boolean i() {
-        return this.noBreedTicks == 0 || this.time - this.noBreedTicks >= 3600;
+        return this.i == 0 || this.g - this.i >= 3600;
     }
 
     public void b(int i) {
-        Iterator iterator = this.playerStandings.keySet().iterator();
+        Iterator iterator = this.j.keySet().iterator();
 
         while (iterator.hasNext()) {
             String s = (String) iterator.next();
 
             this.a(s, i);
         }
+
     }
 }

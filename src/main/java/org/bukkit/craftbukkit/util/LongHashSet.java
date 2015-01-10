@@ -31,7 +31,6 @@ public class LongHashSet {
     private int elements;
     private long[] values;
     private int modCount;
-    private org.spigotmc.FlatMap<Boolean> flat = new org.spigotmc.FlatMap<Boolean>(); // Spigot
 
     public LongHashSet() {
         this(INITIAL_SIZE);
@@ -57,30 +56,10 @@ public class LongHashSet {
     }
 
     public boolean contains(int msw, int lsw) {
-        // Spigot start
-        if ( elements == 0 )
-        {
-            return false;
-        }
-        if ( flat.contains( msw, lsw ) )
-        {
-            return true;
-        }
-        // Spigot end
         return contains(LongHash.toLong(msw, lsw));
     }
 
     public boolean contains(long value) {
-        // Spigot start
-        if ( elements == 0 )
-        {
-            return false;
-        }
-        if ( flat.contains( value ) )
-        {
-            return true;
-        }
-        // Spigot end
         int hash = hash(value);
         int index = (hash & 0x7FFFFFFF) % values.length;
         int offset = 1;
@@ -103,7 +82,6 @@ public class LongHashSet {
     }
 
     public boolean add(long value) {
-        flat.put( value, Boolean.TRUE ); // Spigot
         int hash = hash(value);
         int index = (hash & 0x7FFFFFFF) % values.length;
         int offset = 1;
@@ -147,18 +125,10 @@ public class LongHashSet {
     }
 
     public void remove(int msw, int lsw) {
-        // Spigot start
-        flat.remove(msw, lsw);
-        remove0(LongHash.toLong(msw, lsw));
+        remove(LongHash.toLong(msw, lsw));
     }
 
     public boolean remove(long value) {
-        flat.remove(value);
-        return remove0(value);
-    }
-
-    private boolean remove0(long value) {
-        // Spigot end
         int hash = hash(value);
         int index = (hash & 0x7FFFFFFF) % values.length;
         int offset = 1;
@@ -191,7 +161,6 @@ public class LongHashSet {
 
         freeEntries = values.length;
         modCount++;
-        flat = new org.spigotmc.FlatMap<Boolean>();
     }
 
     public long[] toArray() {

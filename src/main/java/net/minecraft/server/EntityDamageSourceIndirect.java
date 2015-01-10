@@ -10,7 +10,7 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
     }
 
     public Entity i() {
-        return this.p;
+        return this.q;
     }
 
     public Entity getEntity() {
@@ -18,14 +18,14 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
     }
 
     public IChatBaseComponent getLocalizedDeathMessage(EntityLiving entityliving) {
-        IChatBaseComponent ichatbasecomponent = this.owner == null ? this.p.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
-        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).be() : null;
+        IChatBaseComponent ichatbasecomponent = this.owner == null ? this.q.getScoreboardDisplayName() : this.owner.getScoreboardDisplayName();
+        ItemStack itemstack = this.owner instanceof EntityLiving ? ((EntityLiving) this.owner).bz() : null;
         String s = "death.attack." + this.translationIndex;
         String s1 = s + ".item";
 
-        return itemstack != null && itemstack.hasName() && LocaleI18n.c(s1) ? new ChatMessage(s1, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent, itemstack.E()}) : new ChatMessage(s, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent});
-    }
-
+        return itemstack != null && itemstack.hasName() && LocaleI18n.c(s1) ? new ChatMessage(s1, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent, itemstack.C()}) : new ChatMessage(s, new Object[] { entityliving.getScoreboardDisplayName(), ichatbasecomponent});
+    }    
+    
     // CraftBukkit start
     public Entity getProximateDamageSource() {
         return super.getEntity();

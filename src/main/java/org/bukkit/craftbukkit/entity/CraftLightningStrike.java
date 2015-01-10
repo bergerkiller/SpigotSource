@@ -1,9 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityLightning;
-
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LightningStrike;
 
@@ -29,22 +27,20 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     public EntityType getType() {
         return EntityType.LIGHTNING;
     }
-    
-    // Spigot start
-    private final LightningStrike.Spigot spigot = new LightningStrike.Spigot()
-    {
 
+    // Spigot start
+    private final LightningStrike.Spigot spigot = new LightningStrike.Spigot() {
+        
         @Override
         public boolean isSilent()
         {
             return getHandle().isSilent;
         }
-
     };
-
-    public LightningStrike.Spigot spigot()
-    {
-        return this.spigot;
+    
+    @Override
+    public LightningStrike.Spigot spigot() {
+        return spigot;
     }
     // Spigot end
 }

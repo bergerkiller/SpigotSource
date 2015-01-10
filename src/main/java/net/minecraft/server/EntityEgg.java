@@ -32,7 +32,7 @@ public class EntityEgg extends EntityProjectile {
         if (!hatching) {
             numHatching = 0;
         }
-
+        
         EntityType hatchingType = EntityType.CHICKEN;
 
         Entity shooter = this.getShooter();
@@ -46,23 +46,26 @@ public class EntityEgg extends EntityProjectile {
             numHatching = event.getNumHatches();
             hatchingType = event.getHatchingType();
         }
-
+        
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
                 org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
                 if (entity instanceof Ageable) {
                     ((Ageable) entity).setBaby();
                 }
-            }
+             }
         }
         // CraftBukkit end
 
+        double d0 = 0.08D;
+
         for (int j = 0; j < 8; ++j) {
-            this.world.addParticle("snowballpoof", this.locX, this.locY, this.locZ, 0.0D, 0.0D, 0.0D);
+            this.world.addParticle(EnumParticle.ITEM_CRACK, this.locX, this.locY, this.locZ, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, new int[] { Item.getId(Items.EGG)});
         }
 
         if (!this.world.isStatic) {
             this.die();
         }
+
     }
 }

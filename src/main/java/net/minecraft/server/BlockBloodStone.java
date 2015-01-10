@@ -9,17 +9,18 @@ public class BlockBloodStone extends Block {
         this.a(CreativeModeTab.b);
     }
 
-    public MaterialMapColor f(int i) {
+    public MaterialMapColor g(IBlockData iblockdata) {
         return MaterialMapColor.K;
     }
 
     // CraftBukkit start
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (net.minecraft.server.Block.getById(l) != null && net.minecraft.server.Block.getById(l).isPowerSource()) {
-            org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
-            int power = block.getBlockPower();
+    @Override
+    public void doPhysics(World world, BlockPosition position, IBlockData iblockdata, Block block) {
+        if (block != null && block.isPowerSource()) {
+            org.bukkit.block.Block bl = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+            int power = bl.getBlockPower();
 
-            BlockRedstoneEvent event = new BlockRedstoneEvent(block, power, power);
+            BlockRedstoneEvent event = new BlockRedstoneEvent(bl, power, power);
             world.getServer().getPluginManager().callEvent(event);
         }
     }

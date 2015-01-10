@@ -21,7 +21,7 @@ public class ControllerLook {
         if (entity instanceof EntityLiving) {
             this.f = entity.locY + (double) entity.getHeadHeight();
         } else {
-            this.f = (entity.boundingBox.b + entity.boundingBox.e) / 2.0D;
+            this.f = (entity.getBoundingBox().b + entity.getBoundingBox().e) / 2.0D;
         }
 
         this.g = entity.locZ;
@@ -53,22 +53,23 @@ public class ControllerLook {
             // CraftBukkit end
 
             this.a.pitch = this.a(this.a.pitch, f1, this.c);
-            this.a.aO = this.a(this.a.aO, f, this.b);
+            this.a.aI = this.a(this.a.aI, f, this.b);
         } else {
-            this.a.aO = this.a(this.a.aO, this.a.aM, 10.0F);
+            this.a.aI = this.a(this.a.aI, this.a.aG, 10.0F);
         }
 
-        float f2 = MathHelper.g(this.a.aO - this.a.aM);
+        float f2 = MathHelper.g(this.a.aI - this.a.aG);
 
-        if (!this.a.getNavigation().g()) {
+        if (!this.a.getNavigation().m()) {
             if (f2 < -75.0F) {
-                this.a.aO = this.a.aM - 75.0F;
+                this.a.aI = this.a.aG - 75.0F;
             }
 
             if (f2 > 75.0F) {
-                this.a.aO = this.a.aM + 75.0F;
+                this.a.aI = this.a.aG + 75.0F;
             }
         }
+
     }
 
     private float a(float f, float f1, float f2) {
@@ -83,5 +84,21 @@ public class ControllerLook {
         }
 
         return f + f3;
+    }
+
+    public boolean b() {
+        return this.d;
+    }
+
+    public double e() {
+        return this.e;
+    }
+
+    public double f() {
+        return this.f;
+    }
+
+    public double g() {
+        return this.g;
     }
 }

@@ -9,7 +9,7 @@ import java.util.Map.Entry;
 
 public class WorldGenVillage extends StructureGenerator {
 
-    public static final List e = Arrays.asList(new BiomeBase[] { BiomeBase.PLAINS, BiomeBase.DESERT, BiomeBase.SAVANNA});
+    public static final List d = Arrays.asList(new BiomeBase[] { BiomeBase.PLAINS, BiomeBase.DESERT, BiomeBase.SAVANNA});
     private int f;
     private int g;
     private int h;
@@ -32,6 +32,7 @@ public class WorldGenVillage extends StructureGenerator {
                 this.g = MathHelper.a((String) entry.getValue(), this.g, this.h + 1);
             }
         }
+
     }
 
     public String a() {
@@ -52,14 +53,14 @@ public class WorldGenVillage extends StructureGenerator {
 
         int i1 = i / this.g;
         int j1 = j / this.g;
-        Random random = this.c.A(i1, j1, this.c.spigotConfig.villageSeed); // Spigot
+        Random random = this.c.a(i1, j1, this.c.spigotConfig.villageSeed); // Spigot
 
         i1 *= this.g;
         j1 *= this.g;
         i1 += random.nextInt(this.g - this.h);
         j1 += random.nextInt(this.g - this.h);
         if (k == i1 && l == j1) {
-            boolean flag = this.c.getWorldChunkManager().a(k * 16 + 8, l * 16 + 8, 0, e);
+            boolean flag = this.c.getWorldChunkManager().a(k * 16 + 8, l * 16 + 8, 0, WorldGenVillage.d);
 
             if (flag) {
                 return true;
@@ -72,4 +73,5 @@ public class WorldGenVillage extends StructureGenerator {
     protected StructureStart b(int i, int j) {
         return new WorldGenVillageStart(this.c, this.b, i, j, this.f);
     }
+
 }

@@ -1,14 +1,19 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
+import java.util.Iterator;
 import java.util.Random;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
 
+    public static final BlockStateInteger AGE = BlockStateInteger.of("age", 0, 7);
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) (new BlockStemInnerClass1()));
     private final Block blockFruit;
 
     protected BlockStem(Block block) {
+        this.j(this.blockStateList.getBlockData().set(BlockStem.AGE, Integer.valueOf(0)).set(BlockStem.FACING, EnumDirection.UP));
         this.blockFruit = block;
         this.a(true);
         float f = 0.125F;
@@ -17,174 +22,129 @@ public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
         this.a((CreativeModeTab) null);
     }
 
-    protected boolean a(Block block) {
-        return block == Blocks.SOIL;
+    public IBlockData updateState(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        iblockdata = iblockdata.set(BlockStem.FACING, EnumDirection.UP);
+        Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator();
+
+        while (iterator.hasNext()) {
+            EnumDirection enumdirection = (EnumDirection) iterator.next();
+
+            if (iblockaccess.getType(blockposition.shift(enumdirection)).getBlock() == this.blockFruit) {
+                iblockdata = iblockdata.set(BlockStem.FACING, enumdirection);
+                break;
+            }
+        }
+
+        return iblockdata;
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
-        super.a(world, i, j, k, random);
-        if (world.getLightLevel(i, j + 1, k) >= 9) {
-            float f = this.n(world, i, j, k);
+    protected boolean c(Block block) {
+        return block == Blocks.FARMLAND;
+    }
+
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
+        super.b(world, blockposition, iblockdata, random);
+        if (world.getLightLevel(blockposition.up()) >= 9) {
+            float f = BlockCrops.a((Block) this, world, blockposition);
 
             if (random.nextInt((int) (world.growthOdds / (this == Blocks.PUMPKIN_STEM? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier) * (25.0F / f)) + 1) == 0) { // Spigot
-                int l = world.getData(i, j, k);
+                int i = ((Integer) iblockdata.get(BlockStem.AGE)).intValue();
 
-                if (l < 7) {
-                    ++l;
-                    CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
+                if (i < 7) {
+                    iblockdata = iblockdata.set(BlockStem.AGE, Integer.valueOf(i + 1));
+                    // world.setTypeAndData(blockposition, iblockdata, 2); // CraftBukkit
+                    CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, toLegacyData(iblockdata)); // CraftBukkit
                 } else {
-                    if (world.getType(i - 1, j, k) == this.blockFruit) {
-                        return;
+                    Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator();
+
+                    while (iterator.hasNext()) {
+                        EnumDirection enumdirection = (EnumDirection) iterator.next();
+
+                        if (world.getType(blockposition.shift(enumdirection)).getBlock() == this.blockFruit) {
+                            return;
+                        }
                     }
 
-                    if (world.getType(i + 1, j, k) == this.blockFruit) {
-                        return;
-                    }
+                    blockposition = blockposition.shift(EnumDirectionLimit.HORIZONTAL.a(random));
+                    Block block = world.getType(blockposition.down()).getBlock();
 
-                    if (world.getType(i, j, k - 1) == this.blockFruit) {
-                        return;
-                    }
-
-                    if (world.getType(i, j, k + 1) == this.blockFruit) {
-                        return;
-                    }
-
-                    int i1 = random.nextInt(4);
-                    int j1 = i;
-                    int k1 = k;
-
-                    if (i1 == 0) {
-                        j1 = i - 1;
-                    }
-
-                    if (i1 == 1) {
-                        ++j1;
-                    }
-
-                    if (i1 == 2) {
-                        k1 = k - 1;
-                    }
-
-                    if (i1 == 3) {
-                        ++k1;
-                    }
-
-                    Block block = world.getType(j1, j - 1, k1);
-
-                    if (world.getType(j1, j, k1).material == Material.AIR && (block == Blocks.SOIL || block == Blocks.DIRT || block == Blocks.GRASS)) {
-                        CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit, 0); // CraftBukkit
+                    if (world.getType(blockposition).getBlock().material == Material.AIR && (block == Blocks.FARMLAND || block == Blocks.DIRT || block == Blocks.GRASS)) {
+                        // world.setTypeUpdate(blockposition, this.blockFruit.getBlockData()); // CraftBukkit
+                        CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.blockFruit, 0); // CraftBukkit
                     }
                 }
             }
+
         }
     }
 
-    public void m(World world, int i, int j, int k) {
-        int l = world.getData(i, j, k) + MathHelper.nextInt(world.random, 2, 5);
+    public void g(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        int i = ((Integer) iblockdata.get(BlockStem.AGE)).intValue() + MathHelper.nextInt(world.random, 2, 5);
 
-        if (l > 7) {
-            l = 7;
-        }
-
-        CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this, l); // CraftBukkit
+        // world.setTypeAndData(blockposition, iblockdata.set(BlockStem.AGE, Integer.valueOf(Math.min(7, i))), 2);
+        CraftEventFactory.handleBlockGrowEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this, Math.min(7, i)); // CraftBukkit
     }
 
-    private float n(World world, int i, int j, int k) {
-        float f = 1.0F;
-        Block block = world.getType(i, j, k - 1);
-        Block block1 = world.getType(i, j, k + 1);
-        Block block2 = world.getType(i - 1, j, k);
-        Block block3 = world.getType(i + 1, j, k);
-        Block block4 = world.getType(i - 1, j, k - 1);
-        Block block5 = world.getType(i + 1, j, k - 1);
-        Block block6 = world.getType(i + 1, j, k + 1);
-        Block block7 = world.getType(i - 1, j, k + 1);
-        boolean flag = block2 == this || block3 == this;
-        boolean flag1 = block == this || block1 == this;
-        boolean flag2 = block4 == this || block5 == this || block6 == this || block7 == this;
-
-        for (int l = i - 1; l <= i + 1; ++l) {
-            for (int i1 = k - 1; i1 <= k + 1; ++i1) {
-                Block block8 = world.getType(l, j - 1, i1);
-                float f1 = 0.0F;
-
-                if (block8 == Blocks.SOIL) {
-                    f1 = 1.0F;
-                    if (world.getData(l, j - 1, i1) > 0) {
-                        f1 = 3.0F;
-                    }
-                }
-
-                if (l != i || i1 != k) {
-                    f1 /= 4.0F;
-                }
-
-                f += f1;
-            }
-        }
-
-        if (flag2 || flag && flag1) {
-            f /= 2.0F;
-        }
-
-        return f;
-    }
-
-    public void g() {
+    public void h() {
         float f = 0.125F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
     }
 
-    public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
-        this.maxY = (double) ((float) (iblockaccess.getData(i, j, k) * 2 + 2) / 16.0F);
+    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        this.maxY = (double) ((float) (((Integer) iblockaccess.getType(blockposition).get(BlockStem.AGE)).intValue() * 2 + 2) / 16.0F);
         float f = 0.125F;
 
         this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, (float) this.maxY, 0.5F + f);
     }
 
-    public int b() {
-        return 19;
-    }
-
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        super.dropNaturally(world, i, j, k, l, f, i1);
+    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
+        super.dropNaturally(world, blockposition, iblockdata, f, i);
         if (!world.isStatic) {
-            Item item = null;
+            Item item = this.j();
 
-            if (this.blockFruit == Blocks.PUMPKIN) {
-                item = Items.PUMPKIN_SEEDS;
-            }
+            if (item != null) {
+                int j = ((Integer) iblockdata.get(BlockStem.AGE)).intValue();
 
-            if (this.blockFruit == Blocks.MELON) {
-                item = Items.MELON_SEEDS;
-            }
-
-            for (int j1 = 0; j1 < 3; ++j1) {
-                if (world.random.nextInt(15) <= l) {
-                    this.a(world, i, j, k, new ItemStack(item));
+                for (int k = 0; k < 3; ++k) {
+                    if (world.random.nextInt(15) <= j) {
+                        a(world, blockposition, new ItemStack(item));
+                    }
                 }
+
             }
         }
     }
 
-    public Item getDropType(int i, Random random, int j) {
+    protected Item j() {
+        return this.blockFruit == Blocks.PUMPKIN ? Items.PUMPKIN_SEEDS : (this.blockFruit == Blocks.MELON_BLOCK ? Items.MELON_SEEDS : null);
+    }
+
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return null;
     }
 
-    public int a(Random random) {
-        return 1;
+    public boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
+        return ((Integer) iblockdata.get(BlockStem.AGE)).intValue() != 7;
     }
 
-    public boolean a(World world, int i, int j, int k, boolean flag) {
-        return world.getData(i, j, k) != 7;
-    }
-
-    public boolean a(World world, Random random, int i, int j, int k) {
+    public boolean a(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
         return true;
     }
 
-    public void b(World world, Random random, int i, int j, int k) {
-        this.m(world, i, j, k);
+    public void b(World world, Random random, BlockPosition blockposition, IBlockData iblockdata) {
+        this.g(world, blockposition, iblockdata);
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockStem.AGE, Integer.valueOf(i));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        return ((Integer) iblockdata.get(BlockStem.AGE)).intValue();
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockStem.AGE, BlockStem.FACING});
     }
 }

@@ -1,13 +1,10 @@
 package org.bukkit.craftbukkit;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
@@ -18,28 +15,7 @@ public class Main {
     public static boolean useJline = true;
     public static boolean useConsole = true;
 
-    public static void main(String[] args) throws IOException {
-        // Spigot Start
-        File lock = new File( ".update-lock" );
-        if ( !new File( "update-lock" ).exists() && !lock.exists()  && System.getProperty( "IReallyKnowWhatIAmDoingThisUpdate" ) == null )
-        {
-            System.err.println( "WARNING: This Minecraft update alters the way in which saved data is stored." );
-            System.err.println( "Please ensure your server is in the correct online/offline mode state, as the changes made are PERMANENT" );
-            System.err.println( "If you are running in offline mode, but your BungeeCord is in online mode, it is imperative that BungeeCord support is enabled in spigot.yml and BungeeCord's config.yml" );
-            System.err.println( "By typing `yes` you acknowledge that you have taken the necessary backups and are aware of this conversion" );
-            System.err.println( "Please type yes to continue starting the server. You have been warned :)" );
-            System.err.println( "See http://www.spigotmc.org/wiki/uuid-conversion/ if you have any questions and remember BACKUP BACKUP BACKUP" );
-            System.err.println( "=================================================================================" );
-            System.err.println( "Starting server in 10 seconds" );
-            lock.createNewFile();
-            try
-            {
-                Thread.sleep( TimeUnit.SECONDS.toMillis( 10 ) );
-            } catch ( InterruptedException ex )
-            {
-            }
-        }
-        // Spigot End
+    public static void main(String[] args) {
         // Todo: Installation script
         OptionParser parser = new OptionParser() {
             {

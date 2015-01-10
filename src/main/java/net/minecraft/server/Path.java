@@ -51,6 +51,7 @@ public class Path {
         } else {
             this.b(pathpoint.d);
         }
+
     }
 
     private void a(int i) {

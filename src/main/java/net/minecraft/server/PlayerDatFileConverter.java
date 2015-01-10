@@ -1,11 +1,10 @@
 package net.minecraft.server;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.ProfileLookupCallback;
+import com.mojang.authlib.yggdrasil.ProfileNotFoundException;
 import java.io.File;
 import java.util.UUID;
-
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.ProfileLookupCallback;
-import net.minecraft.util.com.mojang.authlib.yggdrasil.ProfileNotFoundException;
 
 final class PlayerDatFileConverter implements ProfileLookupCallback {
 
@@ -15,11 +14,11 @@ final class PlayerDatFileConverter implements ProfileLookupCallback {
     final File d;
     final String[] e;
 
-    PlayerDatFileConverter(DedicatedServer dedicatedserver, File file1, File file2, File file3, String[] astring) {
+    PlayerDatFileConverter(DedicatedServer dedicatedserver, File file, File file1, File file2, String[] astring) {
         this.a = dedicatedserver;
-        this.b = file1;
-        this.c = file2;
-        this.d = file3;
+        this.b = file;
+        this.c = file1;
+        this.d = file2;
         this.e = astring;
     }
 
@@ -45,15 +44,15 @@ final class PlayerDatFileConverter implements ProfileLookupCallback {
         }
     }
 
-    private void a(File file1, String s, String s1) {
-        File file2 = new File(this.d, s + ".dat");
-        File file3 = new File(file1, s1 + ".dat");
-
+    private void a(File file, String s, String s1) {
+        File file1 = new File(this.d, s + ".dat");
+        File file2 = new File(file, s1 + ".dat");
+ 
         // CraftBukkit start - Use old file name to seed lastKnownName
         NBTTagCompound root = null;
 
         try {
-            root = NBTCompressedStreamTools.a(new java.io.FileInputStream(file2));
+            root = NBTCompressedStreamTools.a(new java.io.FileInputStream(file1));
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -70,11 +69,11 @@ final class PlayerDatFileConverter implements ProfileLookupCallback {
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
-        }
+       }
         // CraftBukkit end
 
-        NameReferencingFileConverter.a(file1);
-        if (!file2.renameTo(file3)) {
+        NameReferencingFileConverter.a(file);
+        if (!file1.renameTo(file2)) {
             throw new FileConversionException("Could not convert file for " + s, (PredicateEmptyList) null);
         }
     }

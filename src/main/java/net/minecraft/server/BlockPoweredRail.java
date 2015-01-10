@@ -1,146 +1,151 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
+
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class BlockPoweredRail extends BlockMinecartTrackAbstract {
+
+    public static final BlockStateEnum SHAPE = BlockStateEnum.a("shape", EnumTrackPosition.class, (Predicate) (new BlockPoweredRailInnerClass1()));
+    public static final BlockStateBoolean POWERED = BlockStateBoolean.of("powered");
+
     protected BlockPoweredRail() {
         super(true);
+        this.j(this.blockStateList.getBlockData().set(BlockPoweredRail.SHAPE, EnumTrackPosition.NORTH_SOUTH).set(BlockPoweredRail.POWERED, Boolean.valueOf(false)));
     }
 
-    protected boolean a(World world, int i, int j, int k, int l, boolean flag, int i1) {
-        if (i1 >= 8) {
+    protected boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag, int i) {
+        if (i >= 8) {
             return false;
         } else {
-            int j1 = l & 0x7;
+            int j = blockposition.getX();
+            int k = blockposition.getY();
+            int l = blockposition.getZ();
             boolean flag1 = true;
+            EnumTrackPosition enumtrackposition = (EnumTrackPosition) iblockdata.get(BlockPoweredRail.SHAPE);
 
-            switch (j1) {
-            case 0:
-                if (flag) {
-                    ++k;
-                } else {
-                    --k;
-                }
-                break;
-
+            switch (SwitchHelperTrackPosition.a[enumtrackposition.ordinal()]) {
             case 1:
                 if (flag) {
-                    --i;
+                    ++l;
                 } else {
-                    ++i;
+                    --l;
                 }
                 break;
 
             case 2:
                 if (flag) {
-                    i--;
+                    --j;
                 } else {
-                    ++i;
                     ++j;
-                    flag1 = false;
                 }
-
-                j1 = 1;
                 break;
 
             case 3:
                 if (flag) {
-                    --i;
-                    ++j;
-                    flag1 = false;
+                    --j;
                 } else {
-                    ++i;
+                    ++j;
+                    ++k;
+                    flag1 = false;
                 }
 
-                j1 = 1;
+                enumtrackposition = EnumTrackPosition.EAST_WEST;
                 break;
 
             case 4:
                 if (flag) {
+                    --j;
                     ++k;
-                } else {
-                    --k;
-                    ++j;
                     flag1 = false;
+                } else {
+                    ++j;
                 }
 
-                j1 = 0;
+                enumtrackposition = EnumTrackPosition.EAST_WEST;
                 break;
 
             case 5:
                 if (flag) {
+                    ++l;
+                } else {
+                    --l;
                     ++k;
-                    ++j;
+                    flag1 = false;
+                }
+
+                enumtrackposition = EnumTrackPosition.NORTH_SOUTH;
+                break;
+
+            case 6:
+                if (flag) {
+                    ++l;
+                    ++k;
                     flag1 = false;
                 } else {
-                    --k;
+                    --l;
                 }
 
-                j1 = 0;
+                enumtrackposition = EnumTrackPosition.NORTH_SOUTH;
             }
 
-            return this.a(world, i, j, k, flag, i1, j1) ? true : flag1 && this.a(world, i, j - 1, k, flag, i1, j1);
+            return this.a(world, new BlockPosition(j, k, l), flag, i, enumtrackposition) ? true : flag1 && this.a(world, new BlockPosition(j, k - 1, l), flag, i, enumtrackposition);
         }
     }
 
-    protected boolean a(World world, int i, int j, int k, boolean flag, int l, int i1) {
-        Block block = world.getType(i, j, k);
+    protected boolean a(World world, BlockPosition blockposition, boolean flag, int i, EnumTrackPosition enumtrackposition) {
+        IBlockData iblockdata = world.getType(blockposition);
 
-        if (block == this) {
-            int j1 = world.getData(i, j, k);
-            int k1 = j1 & 0x7;
+        if (iblockdata.getBlock() != this) {
+            return false;
+        } else {
+            EnumTrackPosition enumtrackposition1 = (EnumTrackPosition) iblockdata.get(BlockPoweredRail.SHAPE);
 
-            if (i1 == 1 && (k1 == 0 || k1 == 4 || k1 == 5)) {
-                return false;
-            }
-
-            if (i1 == 0 && (k1 == 1 || k1 == 2 || k1 == 3)) {
-                return false;
-            }
-
-            if ((j1 & 0x8) != 0) {
-                if (world.isBlockIndirectlyPowered(i, j, k)) {
-                    return true;
-                }
-
-                return this.a(world, i, j, k, j1, flag, l + 1);
-            }
+            return enumtrackposition == EnumTrackPosition.EAST_WEST && (enumtrackposition1 == EnumTrackPosition.NORTH_SOUTH || enumtrackposition1 == EnumTrackPosition.ASCENDING_NORTH || enumtrackposition1 == EnumTrackPosition.ASCENDING_SOUTH) ? false : (enumtrackposition == EnumTrackPosition.NORTH_SOUTH && (enumtrackposition1 == EnumTrackPosition.EAST_WEST || enumtrackposition1 == EnumTrackPosition.ASCENDING_EAST || enumtrackposition1 == EnumTrackPosition.ASCENDING_WEST) ? false : (((Boolean) iblockdata.get(BlockPoweredRail.POWERED)).booleanValue() ? (world.isBlockIndirectlyPowered(blockposition) ? true : this.a(world, blockposition, iblockdata, flag, i + 1)) : false));
         }
-
-        return false;
     }
 
-    protected void a(World world, int i, int j, int k, int l, int i1, Block block) {
-        boolean flag = world.isBlockIndirectlyPowered(i, j, k);
+    protected void b(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+        boolean flag = ((Boolean) iblockdata.get(BlockPoweredRail.POWERED)).booleanValue();
+        boolean flag1 = world.isBlockIndirectlyPowered(blockposition) || this.a(world, blockposition, iblockdata, true, 0) || this.a(world, blockposition, iblockdata, false, 0);
 
-        flag = flag || this.a(world, i, j, k, l, true, 0) || this.a(world, i, j, k, l, false, 0);
-        boolean flag1 = false;
-
-        if (flag && (l & 0x8) == 0) {
+        if (flag1 != flag) {
             // CraftBukkit start
-            if (CraftEventFactory.callRedstoneChange(world, i, j, k, 0, 15).getNewCurrent() <= 0) {
+            int power = (Boolean)iblockdata.get(POWERED) ? 15 : 0;
+            int newPower = CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), power, 15 - power).getNewCurrent();
+            if (newPower == power) {
                 return;
             }
             // CraftBukkit end
-
-            world.setData(i, j, k, i1 | 0x8, 3);
-            flag1 = true;
-        } else if (!flag && (l & 0x8) != 0) {
-            // CraftBukkit start
-            if (CraftEventFactory.callRedstoneChange(world, i, j, k, 15, 0).getNewCurrent() > 0) {
-                return;
-            }
-            // CraftBukkit end
-
-            world.setData(i, j, k, i1, 3);
-            flag1 = true;
-        }
-
-        if (flag1) {
-            world.applyPhysics(i, j - 1, k, this);
-            if (i1 == 2 || i1 == 3 || i1 == 4 || i1 == 5) {
-                world.applyPhysics(i, j + 1, k, this);
+            world.setTypeAndData(blockposition, iblockdata.set(BlockPoweredRail.POWERED, Boolean.valueOf(flag1)), 3);
+            world.applyPhysics(blockposition.down(), this);
+            if (((EnumTrackPosition) iblockdata.get(BlockPoweredRail.SHAPE)).c()) {
+                world.applyPhysics(blockposition.up(), this);
             }
         }
+
+    }
+
+    public IBlockState l() {
+        return BlockPoweredRail.SHAPE;
+    }
+
+    public IBlockData fromLegacyData(int i) {
+        return this.getBlockData().set(BlockPoweredRail.SHAPE, EnumTrackPosition.a(i & 7)).set(BlockPoweredRail.POWERED, Boolean.valueOf((i & 8) > 0));
+    }
+
+    public int toLegacyData(IBlockData iblockdata) {
+        byte b0 = 0;
+        int i = b0 | ((EnumTrackPosition) iblockdata.get(BlockPoweredRail.SHAPE)).a();
+
+        if (((Boolean) iblockdata.get(BlockPoweredRail.POWERED)).booleanValue()) {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockStateList getStateList() {
+        return new BlockStateList(this, new IBlockState[] { BlockPoweredRail.SHAPE, BlockPoweredRail.POWERED});
     }
 }

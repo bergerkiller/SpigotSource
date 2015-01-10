@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 
 // CraftBukkit start
 import org.bukkit.block.BlockFace;
@@ -10,290 +13,254 @@ import org.bukkit.event.block.BlockFromToEvent;
 public class BlockFlowing extends BlockFluids {
 
     int a;
-    boolean[] b = new boolean[4];
-    int[] M = new int[4];
 
     protected BlockFlowing(Material material) {
         super(material);
     }
 
-    private void n(World world, int i, int j, int k) {
-        int l = world.getData(i, j, k);
-
-        world.setTypeAndData(i, j, k, Block.getById(Block.getId(this) + 1), l, 2);
+    private void f(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        world.setTypeAndData(blockposition, b(this.material).getBlockData().set(BlockFlowing.LEVEL, iblockdata.get(BlockFlowing.LEVEL)), 2);
     }
 
-    public void a(World world, int i, int j, int k, Random random) {
+    public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
         // CraftBukkit start
         org.bukkit.World bworld = world.getWorld();
         org.bukkit.Server server = world.getServer();
-        org.bukkit.block.Block source = bworld == null ? null : bworld.getBlockAt(i, j, k);
+        org.bukkit.block.Block source = bworld == null ? null : bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
         // CraftBukkit end
-
-        int l = this.e(world, i, j, k);
+        int i = ((Integer) iblockdata.get(LEVEL)).intValue();
         byte b0 = 1;
 
-        if (this.material == Material.LAVA && !world.worldProvider.f) {
+        if (this.material == Material.LAVA && !world.worldProvider.n()) {
             b0 = 2;
         }
 
-        boolean flag = true;
-        int i1 = this.a(world);
-        int j1;
+        int j = this.a(world);
+        int k;
 
-        if (l > 0) {
-            byte b1 = -100;
+        if (i > 0) {
+            int l = -100;
 
             this.a = 0;
-            int k1 = this.a(world, i - 1, j, k, b1);
 
-            k1 = this.a(world, i + 1, j, k, k1);
-            k1 = this.a(world, i, j, k - 1, k1);
-            k1 = this.a(world, i, j, k + 1, k1);
-            j1 = k1 + b0;
-            if (j1 >= 8 || k1 < 0) {
-                j1 = -1;
+            EnumDirection enumdirection;
+
+            for (Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator(); iterator.hasNext(); l = this.a(world, blockposition.shift(enumdirection), l)) {
+                enumdirection = (EnumDirection) iterator.next();
             }
 
-            if (this.e(world, i, j + 1, k) >= 0) {
-                int l1 = this.e(world, i, j + 1, k);
+            int i1 = l + b0;
 
-                if (l1 >= 8) {
-                    j1 = l1;
+            if (i1 >= 8 || l < 0) {
+                i1 = -1;
+            }
+
+            if (this.e((IBlockAccess) world, blockposition.up()) >= 0) {
+                k = this.e((IBlockAccess) world, blockposition.up());
+                if (k >= 8) {
+                    i1 = k;
                 } else {
-                    j1 = l1 + 8;
+                    i1 = k + 8;
                 }
             }
 
             if (this.a >= 2 && this.material == Material.WATER) {
-                if (world.getType(i, j - 1, k).getMaterial().isBuildable()) {
-                    j1 = 0;
-                } else if (world.getType(i, j - 1, k).getMaterial() == this.material && world.getData(i, j - 1, k) == 0) {
-                    j1 = 0;
+                IBlockData iblockdata1 = world.getType(blockposition.down());
+
+                if (iblockdata1.getBlock().getMaterial().isBuildable()) {
+                    i1 = 0;
+                } else if (iblockdata1.getBlock().getMaterial() == this.material && ((Integer) iblockdata1.get(BlockFlowing.LEVEL)).intValue() == 0) {
+                    i1 = 0;
                 }
             }
 
-            if (this.material == Material.LAVA && l < 8 && j1 < 8 && j1 > l && random.nextInt(4) != 0) {
-                i1 *= 4;
+            if (this.material == Material.LAVA && i < 8 && i1 < 8 && i1 > i && random.nextInt(4) != 0) {
+                j *= 4;
             }
 
-            if (j1 == l) {
-                if (flag) {
-                    this.n(world, i, j, k);
-                }
+            if (i1 == i) {
+                this.f(world, blockposition, iblockdata);
             } else {
-                l = j1;
-                if (j1 < 0) {
-                    world.setAir(i, j, k);
+                i = i1;
+                if (i1 < 0) {
+                    world.setAir(blockposition);
                 } else {
-                    world.setData(i, j, k, j1, 2);
-                    world.a(i, j, k, this, i1);
-                    world.applyPhysics(i, j, k, this);
+                    iblockdata = iblockdata.set(BlockFlowing.LEVEL, Integer.valueOf(i1));
+                    world.setTypeAndData(blockposition, iblockdata, 2);
+                    world.a(blockposition, (Block) this, j);
+                    world.applyPhysics(blockposition, this);
                 }
             }
         } else {
-            this.n(world, i, j, k);
+            this.f(world, blockposition, iblockdata);
         }
 
-        if (this.q(world, i, j - 1, k)) {
+        IBlockData iblockdata2 = world.getType(blockposition.down());
+
+        if (this.h(world, blockposition.down(), iblockdata2)) {
             // CraftBukkit start - Send "down" to the server
             BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
             if (server != null) {
                 server.getPluginManager().callEvent(event);
             }
-
             if (!event.isCancelled()) {
-                if (this.material == Material.LAVA && world.getType(i, j - 1, k).getMaterial() == Material.WATER) {
-                    world.setTypeUpdate(i, j - 1, k, Blocks.STONE);
-                    this.fizz(world, i, j - 1, k);
+                if (this.material == Material.LAVA && world.getType(blockposition.down()).getBlock().getMaterial() == Material.WATER) {
+                    world.setTypeUpdate(blockposition.down(), Blocks.STONE.getBlockData());
+                    this.fizz(world, blockposition.down());
                     return;
                 }
 
-                if (l >= 8) {
-                    this.flow(world, i, j - 1, k, l);
+                if (i >= 8) {
+                    this.flow(world, blockposition.down(), iblockdata2, i);
                 } else {
-                    this.flow(world, i, j - 1, k, l + 8);
+                    this.flow(world, blockposition.down(), iblockdata2, i + 8);
                 }
             }
             // CraftBukkit end
-        } else if (l >= 0 && (l == 0 || this.p(world, i, j - 1, k))) {
-            boolean[] aboolean = this.o(world, i, j, k);
+        } else if (i >= 0 && (i == 0 || this.g(world, blockposition.down(), iblockdata2))) {
+            Set set = this.e(world, blockposition);
 
-            j1 = l + b0;
-            if (l >= 8) {
-                j1 = 1;
+            k = i + b0;
+            if (i >= 8) {
+                k = 1;
             }
 
-            if (j1 >= 8) {
+            if (k >= 8) {
                 return;
             }
 
-            // CraftBukkit start - All four cardinal directions. Do not change the order!
-            BlockFace[] faces = new BlockFace[] { BlockFace.WEST, BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH };
-            int index = 0;
+            Iterator iterator1 = set.iterator();
 
-            for (BlockFace currentFace : faces) {
-                if (aboolean[index]) {
-                    BlockFromToEvent event = new BlockFromToEvent(source, currentFace);
-
-                    if (server != null) {
-                        server.getPluginManager().callEvent(event);
-                    }
-
-                    if (!event.isCancelled()) {
-                        this.flow(world, i + currentFace.getModX(), j, k + currentFace.getModZ(), j1);
-                    }
+            while (iterator1.hasNext()) {
+                EnumDirection enumdirection1 = (EnumDirection) iterator1.next();
+                
+                // CraftBukkit start
+                BlockFromToEvent event = new BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection1));
+                if (server != null) {
+                    server.getPluginManager().callEvent(event);
                 }
-                index++;
+                   
+                if (!event.isCancelled()) {
+                    this.flow(world, blockposition.shift(enumdirection1), world.getType(blockposition.shift(enumdirection1)), k);
+                }
+                // CraftBukkit end
             }
-            // CraftBukkit end
         }
+
     }
 
-    private void flow(World world, int i, int j, int k, int l) {
-        if (this.q(world, i, j, k)) {
-            Block block = world.getType(i, j, k);
-
-            if (this.material == Material.LAVA) {
-                this.fizz(world, i, j, k);
-            } else {
-                block.b(world, i, j, k, world.getData(i, j, k), 0);
+    private void flow(World world, BlockPosition blockposition, IBlockData iblockdata, int i) {
+        if (this.h(world, blockposition, iblockdata)) {
+            if (iblockdata.getBlock() != Blocks.AIR) {
+                if (this.material == Material.LAVA) {
+                    this.fizz(world, blockposition);
+                } else {
+                    iblockdata.getBlock().b(world, blockposition, iblockdata, 0);
+                }
             }
 
-            world.setTypeAndData(i, j, k, this, l, 3);
+            world.setTypeAndData(blockposition, this.getBlockData().set(BlockFlowing.LEVEL, Integer.valueOf(i)), 3);
         }
+
     }
 
-    private int c(World world, int i, int j, int k, int l, int i1) {
-        int j1 = 1000;
+    private int a(World world, BlockPosition blockposition, int i, EnumDirection enumdirection) {
+        int j = 1000;
+        Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator();
 
-        for (int k1 = 0; k1 < 4; ++k1) {
-            if ((k1 != 0 || i1 != 1) && (k1 != 1 || i1 != 0) && (k1 != 2 || i1 != 3) && (k1 != 3 || i1 != 2)) {
-                int l1 = i;
-                int i2 = k;
+        while (iterator.hasNext()) {
+            EnumDirection enumdirection1 = (EnumDirection) iterator.next();
 
-                if (k1 == 0) {
-                    l1 = i - 1;
-                }
+            if (enumdirection1 != enumdirection) {
+                BlockPosition blockposition1 = blockposition.shift(enumdirection1);
+                IBlockData iblockdata = world.getType(blockposition1);
 
-                if (k1 == 1) {
-                    ++l1;
-                }
-
-                if (k1 == 2) {
-                    i2 = k - 1;
-                }
-
-                if (k1 == 3) {
-                    ++i2;
-                }
-
-                if (!this.p(world, l1, j, i2) && (world.getType(l1, j, i2).getMaterial() != this.material || world.getData(l1, j, i2) != 0)) {
-                    if (!this.p(world, l1, j - 1, i2)) {
-                        return l;
+                if (!this.g(world, blockposition1, iblockdata) && (iblockdata.getBlock().getMaterial() != this.material || ((Integer) iblockdata.get(BlockFlowing.LEVEL)).intValue() > 0)) {
+                    if (!this.g(world, blockposition1.down(), iblockdata)) {
+                        return i;
                     }
 
-                    if (l < 4) {
-                        int j2 = this.c(world, l1, j, i2, l + 1, k1);
+                    if (i < 4) {
+                        int k = this.a(world, blockposition1, i + 1, enumdirection1.opposite());
 
-                        if (j2 < j1) {
-                            j1 = j2;
+                        if (k < j) {
+                            j = k;
                         }
                     }
                 }
             }
         }
 
-        return j1;
+        return j;
     }
 
-    private boolean[] o(World world, int i, int j, int k) {
-        int l;
-        int i1;
+    private Set e(World world, BlockPosition blockposition) {
+        int i = 1000;
+        EnumSet enumset = EnumSet.noneOf(EnumDirection.class);
+        Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator();
 
-        for (l = 0; l < 4; ++l) {
-            this.M[l] = 1000;
-            i1 = i;
-            int j1 = k;
+        while (iterator.hasNext()) {
+            EnumDirection enumdirection = (EnumDirection) iterator.next();
+            BlockPosition blockposition1 = blockposition.shift(enumdirection);
+            IBlockData iblockdata = world.getType(blockposition1);
 
-            if (l == 0) {
-                i1 = i - 1;
-            }
+            if (!this.g(world, blockposition1, iblockdata) && (iblockdata.getBlock().getMaterial() != this.material || ((Integer) iblockdata.get(BlockFlowing.LEVEL)).intValue() > 0)) {
+                int j;
 
-            if (l == 1) {
-                ++i1;
-            }
-
-            if (l == 2) {
-                j1 = k - 1;
-            }
-
-            if (l == 3) {
-                ++j1;
-            }
-
-            if (!this.p(world, i1, j, j1) && (world.getType(i1, j, j1).getMaterial() != this.material || world.getData(i1, j, j1) != 0)) {
-                if (this.p(world, i1, j - 1, j1)) {
-                    this.M[l] = this.c(world, i1, j, j1, 1, l);
+                if (this.g(world, blockposition1.down(), world.getType(blockposition1.down()))) {
+                    j = this.a(world, blockposition1, 1, enumdirection.opposite());
                 } else {
-                    this.M[l] = 0;
+                    j = 0;
+                }
+
+                if (j < i) {
+                    enumset.clear();
+                }
+
+                if (j <= i) {
+                    enumset.add(enumdirection);
+                    i = j;
                 }
             }
         }
 
-        l = this.M[0];
-
-        for (i1 = 1; i1 < 4; ++i1) {
-            if (this.M[i1] < l) {
-                l = this.M[i1];
-            }
-        }
-
-        for (i1 = 0; i1 < 4; ++i1) {
-            this.b[i1] = this.M[i1] == l;
-        }
-
-        return this.b;
+        return enumset;
     }
 
-    private boolean p(World world, int i, int j, int k) {
-        Block block = world.getType(i, j, k);
+    private boolean g(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        Block block = world.getType(blockposition).getBlock();
 
-        return block != Blocks.WOODEN_DOOR && block != Blocks.IRON_DOOR_BLOCK && block != Blocks.SIGN_POST && block != Blocks.LADDER && block != Blocks.SUGAR_CANE_BLOCK ? (block.material == Material.PORTAL ? true : block.material.isSolid()) : true;
+        return !(block instanceof BlockDoor) && block != Blocks.STANDING_SIGN && block != Blocks.LADDER && block != Blocks.REEDS ? (block.material == Material.PORTAL ? true : block.material.isSolid()) : true;
     }
 
-    protected int a(World world, int i, int j, int k, int l) {
-        int i1 = this.e(world, i, j, k);
+    protected int a(World world, BlockPosition blockposition, int i) {
+        int j = this.e((IBlockAccess) world, blockposition);
 
-        if (i1 < 0) {
-            return l;
+        if (j < 0) {
+            return i;
         } else {
-            if (i1 == 0) {
+            if (j == 0) {
                 ++this.a;
             }
 
-            if (i1 >= 8) {
-                i1 = 0;
+            if (j >= 8) {
+                j = 0;
             }
 
-            return l >= 0 && i1 >= l ? l : i1;
+            return i >= 0 && j >= i ? i : j;
         }
     }
 
-    private boolean q(World world, int i, int j, int k) {
-        Material material = world.getType(i, j, k).getMaterial();
+    private boolean h(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        Material material = iblockdata.getBlock().getMaterial();
 
-        return material == this.material ? false : (material == Material.LAVA ? false : !this.p(world, i, j, k));
+        return material != this.material && material != Material.LAVA && !this.g(world, blockposition, iblockdata);
     }
 
-    public void onPlace(World world, int i, int j, int k) {
-        super.onPlace(world, i, j, k);
-        if (world.getType(i, j, k) == this) {
-            world.a(i, j, k, this, this.a(world));
+    public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        if (!this.e(world, blockposition, iblockdata)) {
+            world.a(blockposition, (Block) this, this.a(world));
         }
-    }
 
-    public boolean L() {
-        return true;
     }
 }

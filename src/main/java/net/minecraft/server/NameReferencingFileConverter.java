@@ -1,5 +1,13 @@
 package net.minecraft.server;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import com.mojang.authlib.Agent;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.ProfileLookupCallback;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,19 +21,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-
-import net.minecraft.util.com.google.common.base.Charsets;
-import net.minecraft.util.com.google.common.collect.Iterators;
-import net.minecraft.util.com.google.common.collect.Lists;
-import net.minecraft.util.com.google.common.collect.Maps;
-import net.minecraft.util.com.google.common.io.Files;
-import net.minecraft.util.com.mojang.authlib.Agent;
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.ProfileLookupCallback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-// CraftBukkit - Imported for package private static methods
 
 public class NameReferencingFileConverter {
 
@@ -35,8 +32,8 @@ public class NameReferencingFileConverter {
     public static final File c = new File("ops.txt");
     public static final File d = new File("white-list.txt");
 
-    static List a(File file1, Map map) throws IOException { // CraftBukkit - Added throws
-        List list = Files.readLines(file1, Charsets.UTF_8);
+    static List a(File file, Map map) throws IOException { // CraftBukkit - Added throws
+        List list = Files.readLines(file, Charsets.UTF_8);
         Iterator iterator = list.iterator();
 
         while (iterator.hasNext()) {
@@ -70,16 +67,17 @@ public class NameReferencingFileConverter {
                 profilelookupcallback.onProfileLookupSucceeded(gameprofile);
             }
         }
+
     }
 
     public static boolean a(MinecraftServer minecraftserver) {
         GameProfileBanList gameprofilebanlist = new GameProfileBanList(PlayerList.a);
 
-        if (b.exists() && b.isFile()) {
+        if (NameReferencingFileConverter.b.exists() && NameReferencingFileConverter.b.isFile()) {
             if (gameprofilebanlist.c().exists()) {
                 try {
                     gameprofilebanlist.load();
-                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace
+                // CraftBukkit start - FileNotFoundException -> IOException, don't print stacetrace                
                 } catch (IOException filenotfoundexception) {
                     e.warn("Could not load existing file " + gameprofilebanlist.c().getName() + ", " + filenotfoundexception.getMessage());
                 }
@@ -89,18 +87,18 @@ public class NameReferencingFileConverter {
             try {
                 HashMap hashmap = Maps.newHashMap();
 
-                a(b, (Map) hashmap);
+                a(NameReferencingFileConverter.b, (Map) hashmap);
                 GameProfileBanListEntryConverter gameprofilebanlistentryconverter = new GameProfileBanListEntryConverter(minecraftserver, hashmap, gameprofilebanlist);
 
                 a(minecraftserver, hashmap.keySet(), gameprofilebanlistentryconverter);
                 gameprofilebanlist.save();
-                c(b);
+                c(NameReferencingFileConverter.b);
                 return true;
             } catch (IOException ioexception) {
-                e.warn("Could not read old user banlist to convert it!", ioexception);
+                NameReferencingFileConverter.e.warn("Could not read old user banlist to convert it!", ioexception);
                 return false;
             } catch (FileConversionException fileconversionexception) {
-                e.error("Conversion failed, please try again later", fileconversionexception);
+                NameReferencingFileConverter.e.error("Conversion failed, please try again later", fileconversionexception);
                 return false;
             }
         } else {
@@ -111,7 +109,7 @@ public class NameReferencingFileConverter {
     public static boolean b(MinecraftServer minecraftserver) {
         IpBanList ipbanlist = new IpBanList(PlayerList.b);
 
-        if (a.exists() && a.isFile()) {
+        if (NameReferencingFileConverter.a.exists() && NameReferencingFileConverter.a.isFile()) {
             if (ipbanlist.c().exists()) {
                 try {
                     ipbanlist.load();
@@ -125,7 +123,7 @@ public class NameReferencingFileConverter {
             try {
                 HashMap hashmap = Maps.newHashMap();
 
-                a(a, (Map) hashmap);
+                a(NameReferencingFileConverter.a, (Map) hashmap);
                 Iterator iterator = hashmap.keySet().iterator();
 
                 while (iterator.hasNext()) {
@@ -140,10 +138,10 @@ public class NameReferencingFileConverter {
                 }
 
                 ipbanlist.save();
-                c(a);
+                c(NameReferencingFileConverter.a);
                 return true;
             } catch (IOException ioexception) {
-                e.warn("Could not parse old ip banlist to convert it!", ioexception);
+                NameReferencingFileConverter.e.warn("Could not parse old ip banlist to convert it!", ioexception);
                 return false;
             }
         } else {
@@ -154,7 +152,7 @@ public class NameReferencingFileConverter {
     public static boolean c(MinecraftServer minecraftserver) {
         OpList oplist = new OpList(PlayerList.c);
 
-        if (c.exists() && c.isFile()) {
+        if (NameReferencingFileConverter.c.exists() && NameReferencingFileConverter.c.isFile()) {
             if (oplist.c().exists()) {
                 try {
                     oplist.load();
@@ -166,18 +164,18 @@ public class NameReferencingFileConverter {
             }
 
             try {
-                List list = Files.readLines(c, Charsets.UTF_8);
+                List list = Files.readLines(NameReferencingFileConverter.c, Charsets.UTF_8);
                 OpListProfileCallback oplistprofilecallback = new OpListProfileCallback(minecraftserver, oplist);
 
                 a(minecraftserver, list, oplistprofilecallback);
                 oplist.save();
-                c(c);
+                c(NameReferencingFileConverter.c);
                 return true;
             } catch (IOException ioexception) {
-                e.warn("Could not read old oplist to convert it!", ioexception);
+                NameReferencingFileConverter.e.warn("Could not read old oplist to convert it!", ioexception);
                 return false;
             } catch (FileConversionException fileconversionexception) {
-                e.error("Conversion failed, please try again later", fileconversionexception);
+                NameReferencingFileConverter.e.error("Conversion failed, please try again later", fileconversionexception);
                 return false;
             }
         } else {
@@ -188,7 +186,7 @@ public class NameReferencingFileConverter {
     public static boolean d(MinecraftServer minecraftserver) {
         WhiteList whitelist = new WhiteList(PlayerList.d);
 
-        if (d.exists() && d.isFile()) {
+        if (NameReferencingFileConverter.d.exists() && NameReferencingFileConverter.d.isFile()) {
             if (whitelist.c().exists()) {
                 try {
                     whitelist.load();
@@ -200,18 +198,18 @@ public class NameReferencingFileConverter {
             }
 
             try {
-                List list = Files.readLines(d, Charsets.UTF_8);
+                List list = Files.readLines(NameReferencingFileConverter.d, Charsets.UTF_8);
                 WhiteListProfileCallback whitelistprofilecallback = new WhiteListProfileCallback(minecraftserver, whitelist);
 
                 a(minecraftserver, list, whitelistprofilecallback);
                 whitelist.save();
-                c(d);
+                c(NameReferencingFileConverter.d);
                 return true;
             } catch (IOException ioexception) {
-                e.warn("Could not read old whitelist to convert it!", ioexception);
+                NameReferencingFileConverter.e.warn("Could not read old whitelist to convert it!", ioexception);
                 return false;
             } catch (FileConversionException fileconversionexception) {
-                e.error("Conversion failed, please try again later", fileconversionexception);
+                NameReferencingFileConverter.e.error("Conversion failed, please try again later", fileconversionexception);
                 return false;
             }
         } else {
@@ -226,7 +224,7 @@ public class NameReferencingFileConverter {
 
             if (gameprofile != null && gameprofile.getId() != null) {
                 return gameprofile.getId().toString();
-            } else if (!minecraftserver.N() && minecraftserver.getOnlineMode()) {
+            } else if (!minecraftserver.S() && minecraftserver.getOnlineMode()) {
                 ArrayList arraylist = Lists.newArrayList();
                 GameProfileLookupCallback gameprofilelookupcallback = new GameProfileLookupCallback(minecraftserver, arraylist);
 
@@ -241,19 +239,19 @@ public class NameReferencingFileConverter {
     }
 
     public static boolean a(DedicatedServer dedicatedserver, PropertyManager propertymanager) {
-        File file1 = d(propertymanager);
-        File file2 = new File(file1.getParentFile(), "playerdata");
-        File file3 = new File(file1.getParentFile(), "unknownplayers");
+        File file = d(propertymanager);
+        File file1 = new File(file.getParentFile(), "playerdata");
+        File file2 = new File(file.getParentFile(), "unknownplayers");
 
-        if (file1.exists() && file1.isDirectory()) {
-            File[] afile = file1.listFiles();
+        if (file.exists() && file.isDirectory()) {
+            File[] afile = file.listFiles();
             ArrayList arraylist = Lists.newArrayList();
             File[] afile1 = afile;
             int i = afile.length;
 
             for (int j = 0; j < i; ++j) {
-                File file4 = afile1[j];
-                String s = file4.getName();
+                File file3 = afile1[j];
+                String s = file3.getName();
 
                 if (s.toLowerCase(Locale.ROOT).endsWith(".dat")) {
                     String s1 = s.substring(0, s.length() - ".dat".length());
@@ -266,12 +264,12 @@ public class NameReferencingFileConverter {
 
             try {
                 String[] astring = (String[]) arraylist.toArray(new String[arraylist.size()]);
-                PlayerDatFileConverter playerdatfileconverter = new PlayerDatFileConverter(dedicatedserver, file2, file3, file1, astring);
+                PlayerDatFileConverter playerdatfileconverter = new PlayerDatFileConverter(dedicatedserver, file1, file2, file, astring);
 
                 a(dedicatedserver, Lists.newArrayList(astring), playerdatfileconverter);
                 return true;
             } catch (FileConversionException fileconversionexception) {
-                e.error("Conversion failed, please try again later", fileconversionexception);
+                NameReferencingFileConverter.e.error("Conversion failed, please try again later", fileconversionexception);
                 return false;
             }
         } else {
@@ -279,13 +277,13 @@ public class NameReferencingFileConverter {
         }
     }
 
-    private static void b(File file1) {
-        if (file1.exists()) {
-            if (!file1.isDirectory()) {
-                throw new FileConversionException("Can\'t create directory " + file1.getName() + " in world save directory.", (PredicateEmptyList) null);
+    private static void b(File file) {
+        if (file.exists()) {
+            if (!file.isDirectory()) {
+                throw new FileConversionException("Can\'t create directory " + file.getName() + " in world save directory.", (PredicateEmptyList) null);
             }
-        } else if (!file1.mkdirs()) {
-            throw new FileConversionException("Can\'t create directory " + file1.getName() + " in world save directory.", (PredicateEmptyList) null);
+        } else if (!file.mkdirs()) {
+            throw new FileConversionException("Can\'t create directory " + file.getName() + " in world save directory.", (PredicateEmptyList) null);
         }
     }
 
@@ -299,47 +297,47 @@ public class NameReferencingFileConverter {
     private static boolean b(PropertyManager propertymanager) {
         boolean flag = false;
 
-        if (b.exists() && b.isFile()) {
+        if (NameReferencingFileConverter.b.exists() && NameReferencingFileConverter.b.isFile()) {
             flag = true;
         }
 
         boolean flag1 = false;
 
-        if (a.exists() && a.isFile()) {
+        if (NameReferencingFileConverter.a.exists() && NameReferencingFileConverter.a.isFile()) {
             flag1 = true;
         }
 
         boolean flag2 = false;
 
-        if (c.exists() && c.isFile()) {
+        if (NameReferencingFileConverter.c.exists() && NameReferencingFileConverter.c.isFile()) {
             flag2 = true;
         }
 
         boolean flag3 = false;
 
-        if (d.exists() && d.isFile()) {
+        if (NameReferencingFileConverter.d.exists() && NameReferencingFileConverter.d.isFile()) {
             flag3 = true;
         }
 
         if (!flag && !flag1 && !flag2 && !flag3) {
             return true;
         } else {
-            e.warn("**** FAILED TO START THE SERVER AFTER ACCOUNT CONVERSION!");
-            e.warn("** please remove the following files and restart the server:");
+            NameReferencingFileConverter.e.warn("**** FAILED TO START THE SERVER AFTER ACCOUNT CONVERSION!");
+            NameReferencingFileConverter.e.warn("** please remove the following files and restart the server:");
             if (flag) {
-                e.warn("* " + b.getName());
+                NameReferencingFileConverter.e.warn("* " + NameReferencingFileConverter.b.getName());
             }
 
             if (flag1) {
-                e.warn("* " + a.getName());
+                NameReferencingFileConverter.e.warn("* " + NameReferencingFileConverter.a.getName());
             }
 
             if (flag2) {
-                e.warn("* " + c.getName());
+                NameReferencingFileConverter.e.warn("* " + NameReferencingFileConverter.c.getName());
             }
 
             if (flag3) {
-                e.warn("* " + d.getName());
+                NameReferencingFileConverter.e.warn("* " + NameReferencingFileConverter.d.getName());
             }
 
             return false;
@@ -347,33 +345,29 @@ public class NameReferencingFileConverter {
     }
 
     private static boolean c(PropertyManager propertymanager) {
-        File file1 = d(propertymanager);
+        File file = d(propertymanager);
 
-        if (file1.exists() && file1.isDirectory()) {
-            String[] astring = file1.list(new DatFilenameFilter());
-
-            if (astring.length > 0) {
-                e.warn("**** DETECTED OLD PLAYER FILES IN THE WORLD SAVE");
-                e.warn("**** THIS USUALLY HAPPENS WHEN THE AUTOMATIC CONVERSION FAILED IN SOME WAY");
-                e.warn("** please restart the server and if the problem persists, remove the directory \'{}\'", new Object[] { file1.getPath()});
-                return false;
-            }
+        if (file.exists() && file.isDirectory() && (file.list().length > 0 || !file.delete())) {
+            NameReferencingFileConverter.e.warn("**** DETECTED OLD PLAYER DIRECTORY IN THE WORLD SAVE");
+            NameReferencingFileConverter.e.warn("**** THIS USUALLY HAPPENS WHEN THE AUTOMATIC CONVERSION FAILED IN SOME WAY");
+            NameReferencingFileConverter.e.warn("** please restart the server and if the problem persists, remove the directory \'{}\'", new Object[] { file.getPath()});
+            return false;
+        } else {
+            return true;
         }
-
-        return true;
     }
 
     private static File d(PropertyManager propertymanager) {
         String s = propertymanager.getString("level-name", "world");
-        File file1 = new File(MinecraftServer.getServer().server.getWorldContainer(), s); // CraftBukkit - Respect container setting
+        File file = new File(MinecraftServer.getServer().server.getWorldContainer(), s); // CraftBukkit - Respect container setting
 
-        return new File(file1, "players");
+        return new File(file, "players");
     }
 
-    private static void c(File file1) {
-        File file2 = new File(file1.getName() + ".converted");
+    private static void c(File file) {
+        File file1 = new File(file.getName() + ".converted");
 
-        file1.renameTo(file2);
+        file.renameTo(file1);
     }
 
     private static Date b(String s, Date date) {
@@ -389,14 +383,14 @@ public class NameReferencingFileConverter {
     }
 
     static Logger a() {
-        return e;
+        return NameReferencingFileConverter.e;
     }
 
     static Date a(String s, Date date) {
         return b(s, date);
     }
 
-    static void a(File file1) {
-        b(file1);
+    static void a(File file) {
+        b(file);
     }
 }

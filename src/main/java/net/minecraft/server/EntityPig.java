@@ -4,17 +4,17 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityPig extends EntityAnimal {
 
-    private final PathfinderGoalPassengerCarrotStick bp;
+    private final PathfinderGoalPassengerCarrotStick bk;
 
     public EntityPig(World world) {
         super(world);
         this.a(0.9F, 0.9F);
-        this.getNavigation().a(true);
+        ((Navigation) this.getNavigation()).a(true);
         this.goalSelector.a(0, new PathfinderGoalFloat(this));
         this.goalSelector.a(1, new PathfinderGoalPanic(this, 1.25D));
-        this.goalSelector.a(2, this.bp = new PathfinderGoalPassengerCarrotStick(this, 0.3F));
+        this.goalSelector.a(2, this.bk = new PathfinderGoalPassengerCarrotStick(this, 0.3F));
         this.goalSelector.a(3, new PathfinderGoalBreed(this, 1.0D));
-        this.goalSelector.a(4, new PathfinderGoalTempt(this, 1.2D, Items.CARROT_STICK, false));
+        this.goalSelector.a(4, new PathfinderGoalTempt(this, 1.2D, Items.CARROT_ON_A_STICK, false));
         this.goalSelector.a(4, new PathfinderGoalTempt(this, 1.2D, Items.CARROT, false));
         this.goalSelector.a(5, new PathfinderGoalFollowParent(this, 1.1D));
         this.goalSelector.a(6, new PathfinderGoalRandomStroll(this, 1.0D));
@@ -22,28 +22,20 @@ public class EntityPig extends EntityAnimal {
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
     }
 
-    public boolean bk() {
-        return true;
-    }
-
-    protected void aD() {
-        super.aD();
+    protected void aW() {
+        super.aW();
         this.getAttributeInstance(GenericAttributes.maxHealth).setValue(10.0D);
         this.getAttributeInstance(GenericAttributes.d).setValue(0.25D);
     }
 
-    protected void bn() {
-        super.bn();
+    public boolean bV() {
+        ItemStack itemstack = ((EntityHuman) this.passenger).bz();
+
+        return itemstack != null && itemstack.getItem() == Items.CARROT_ON_A_STICK;
     }
 
-    public boolean bE() {
-        ItemStack itemstack = ((EntityHuman) this.passenger).be();
-
-        return itemstack != null && itemstack.getItem() == Items.CARROT_STICK;
-    }
-
-    protected void c() {
-        super.c();
+    protected void h() {
+        super.h();
         this.datawatcher.a(16, Byte.valueOf((byte) 0));
     }
 
@@ -57,19 +49,19 @@ public class EntityPig extends EntityAnimal {
         this.setSaddle(nbttagcompound.getBoolean("Saddle"));
     }
 
-    protected String t() {
+    protected String z() {
         return "mob.pig.say";
     }
 
-    protected String aT() {
+    protected String bn() {
         return "mob.pig.say";
     }
 
-    protected String aU() {
+    protected String bo() {
         return "mob.pig.death";
     }
 
-    protected void a(int i, int j, int k, Block block) {
+    protected void a(BlockPosition blockposition, Block block) {
         this.makeSound("mob.pig.step", 0.15F, 1.0F);
     }
 
@@ -85,7 +77,7 @@ public class EntityPig extends EntityAnimal {
     }
 
     protected Item getLoot() {
-        return this.isBurning() ? Items.GRILLED_PORK : Items.PORK;
+        return this.isBurning() ? Items.COOKED_PORKCHOP : Items.PORKCHOP;
     }
 
     protected void dropDeathLoot(boolean flag, int i) {
@@ -93,15 +85,16 @@ public class EntityPig extends EntityAnimal {
 
         for (int k = 0; k < j; ++k) {
             if (this.isBurning()) {
-                this.a(Items.GRILLED_PORK, 1);
+                this.a(Items.COOKED_PORKCHOP, 1);
             } else {
-                this.a(Items.PORK, 1);
+                this.a(Items.PORKCHOP, 1);
             }
         }
 
         if (this.hasSaddle()) {
             this.a(Items.SADDLE, 1);
         }
+
     }
 
     public boolean hasSaddle() {
@@ -114,19 +107,20 @@ public class EntityPig extends EntityAnimal {
         } else {
             this.datawatcher.watch(16, Byte.valueOf((byte) 0));
         }
+
     }
 
-    public void a(EntityLightning entitylightning) {
+    public void onLightningStrike(EntityLightning entitylightning) {
         if (!this.world.isStatic) {
             EntityPigZombie entitypigzombie = new EntityPigZombie(this.world);
-
+ 
             // CraftBukkit start
             if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
                 return;
             }
             // CraftBukkit end
 
-            entitypigzombie.setEquipment(0, new ItemStack(Items.GOLD_SWORD));
+            entitypigzombie.setEquipment(0, new ItemStack(Items.GOLDEN_SWORD));
             entitypigzombie.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
             // CraftBukkit - added a reason for spawning this creature
             this.world.addEntity(entitypigzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
@@ -134,23 +128,24 @@ public class EntityPig extends EntityAnimal {
         }
     }
 
-    protected void b(float f) {
-        super.b(f);
+    public void e(float f, float f1) {
+        super.e(f, f1);
         if (f > 5.0F && this.passenger instanceof EntityHuman) {
-            ((EntityHuman) this.passenger).a((Statistic) AchievementList.u);
+            ((EntityHuman) this.passenger).b((Statistic) AchievementList.u);
         }
+
     }
 
     public EntityPig b(EntityAgeable entityageable) {
         return new EntityPig(this.world);
     }
 
-    public boolean c(ItemStack itemstack) {
+    public boolean d(ItemStack itemstack) {
         return itemstack != null && itemstack.getItem() == Items.CARROT;
     }
 
-    public PathfinderGoalPassengerCarrotStick ca() {
-        return this.bp;
+    public PathfinderGoalPassengerCarrotStick ck() {
+        return this.bk;
     }
 
     public EntityAgeable createChild(EntityAgeable entityageable) {

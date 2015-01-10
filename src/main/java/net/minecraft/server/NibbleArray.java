@@ -2,39 +2,57 @@ package net.minecraft.server;
 
 public class NibbleArray {
 
-    public final byte[] a;
-    private final int b;
-    private final int c;
+    private final byte[] a;
 
-    public NibbleArray(int i, int j) {
-        this.a = new byte[i >> 1];
-        this.b = j;
-        this.c = j + 4;
+    public NibbleArray() {
+        this.a = new byte[2048];
     }
 
-    public NibbleArray(byte[] abyte, int i) {
+    public NibbleArray(byte[] abyte) {
         this.a = abyte;
-        this.b = i;
-        this.c = i + 4;
+        if (abyte.length != 2048) {
+            throw new IllegalArgumentException("ChunkNibbleArrays should be 2048 bytes not: " + abyte.length);
+        }
     }
 
     public int a(int i, int j, int k) {
-        int l = j << this.c | k << this.b | i;
-        int i1 = l >> 1;
-        int j1 = l & 1;
-
-        return j1 == 0 ? this.a[i1] & 15 : this.a[i1] >> 4 & 15;
+        return this.a(this.b(i, j, k));
     }
 
     public void a(int i, int j, int k, int l) {
-        int i1 = j << this.c | k << this.b | i;
-        int j1 = i1 >> 1;
-        int k1 = i1 & 1;
+        this.a(this.b(i, j, k), l);
+    }
 
-        if (k1 == 0) {
-            this.a[j1] = (byte) (this.a[j1] & 240 | l & 15);
+    private int b(int i, int j, int k) {
+        return j << 8 | k << 4 | i;
+    }
+
+    public int a(int i) {
+        int j = this.c(i);
+
+        return this.b(i) ? this.a[j] & 15 : this.a[j] >> 4 & 15;
+    }
+
+    public void a(int i, int j) {
+        int k = this.c(i);
+
+        if (this.b(i)) {
+            this.a[k] = (byte) (this.a[k] & 240 | j & 15);
         } else {
-            this.a[j1] = (byte) (this.a[j1] & 15 | (l & 15) << 4);
+            this.a[k] = (byte) (this.a[k] & 15 | (j & 15) << 4);
         }
+
+    }
+
+    private boolean b(int i) {
+        return (i & 1) == 0;
+    }
+
+    private int c(int i) {
+        return i >> 1;
+    }
+
+    public byte[] a() {
+        return this.a;
     }
 }

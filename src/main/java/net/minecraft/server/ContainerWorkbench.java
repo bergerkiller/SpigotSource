@@ -10,15 +10,13 @@ public class ContainerWorkbench extends Container {
     public InventoryCrafting craftInventory; // CraftBukkit - move initialization into constructor
     public IInventory resultInventory; // CraftBukkit - move initialization into constructor
     private World g;
-    private int h;
-    private int i;
-    private int j;
+    private BlockPosition h;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
     // CraftBukkit end
 
-    public ContainerWorkbench(PlayerInventory playerinventory, World world, int i, int j, int k) {
+    public ContainerWorkbench(PlayerInventory playerinventory, World world, BlockPosition blockposition) {
         // CraftBukkit start - Switched order of IInventory construction and stored player
         this.resultInventory = new InventoryCraftResult();
         this.craftInventory = new InventoryCrafting(this, 3, 3, playerinventory.player); // CraftBukkit - pass player
@@ -26,34 +24,33 @@ public class ContainerWorkbench extends Container {
         this.player = playerinventory;
         // CraftBukkit end
         this.g = world;
-        this.h = i;
-        this.i = j;
-        this.j = k;
+        this.h = blockposition;
         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 124, 35)));
 
-        int l;
-        int i1;
+        int i;
+        int j;
 
-        for (l = 0; l < 3; ++l) {
-            for (i1 = 0; i1 < 3; ++i1) {
-                this.a(new Slot(this.craftInventory, i1 + l * 3, 30 + i1 * 18, 17 + l * 18));
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 3; ++j) {
+                this.a(new Slot(this.craftInventory, j + i * 3, 30 + j * 18, 17 + i * 18));
             }
         }
 
-        for (l = 0; l < 3; ++l) {
-            for (i1 = 0; i1 < 9; ++i1) {
-                this.a(new Slot(playerinventory, i1 + l * 9 + 9, 8 + i1 * 18, 84 + l * 18));
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 9; ++j) {
+                this.a(new Slot(playerinventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
             }
         }
 
-        for (l = 0; l < 9; ++l) {
-            this.a(new Slot(playerinventory, l, 8 + l * 18, 142));
+        for (i = 0; i < 9; ++i) {
+            this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
         }
 
         this.a((IInventory) this.craftInventory);
     }
 
     public void a(IInventory iinventory) {
+        // this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.g));
         // CraftBukkit start
         CraftingManager.getInstance().lastCraftView = getBukkitView();
         ItemStack craftResult = CraftingManager.getInstance().craft(this.craftInventory, this.g);
@@ -77,12 +74,13 @@ public class ContainerWorkbench extends Container {
                     entityhuman.drop(itemstack, false);
                 }
             }
+
         }
     }
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.g.getType(this.h, this.i, this.j) != Blocks.WORKBENCH ? false : entityhuman.e((double) this.h + 0.5D, (double) this.i + 0.5D, (double) this.j + 0.5D) <= 64.0D;
+        return this.g.getType(this.h).getBlock() != Blocks.CRAFTING_TABLE ? false : entityhuman.e((double) this.h.getX() + 0.5D, (double) this.h.getY() + 0.5D, (double) this.h.getZ() + 0.5D) <= 64.0D;
     }
 
     public ItemStack b(EntityHuman entityhuman, int i) {
@@ -132,6 +130,7 @@ public class ContainerWorkbench extends Container {
     }
 
     // CraftBukkit start
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;

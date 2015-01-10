@@ -7,7 +7,7 @@ public class ItemMonsterEgg extends Item {
         this.a(CreativeModeTab.f);
     }
 
-    public String n(ItemStack itemstack) {
+    public String a(ItemStack itemstack) {
         String s = ("" + LocaleI18n.get(this.getName() + ".name")).trim();
         String s1 = EntityTypes.b(itemstack.getData());
 
@@ -18,27 +18,44 @@ public class ItemMonsterEgg extends Item {
         return s;
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l, float f, float f1, float f2) {
+    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
         // CraftBukkit - check ItemStack data
         if (world.isStatic || itemstack.getData() == 48 || itemstack.getData() == 49 || itemstack.getData() == 63 || itemstack.getData() == 64) {
             return true;
+        } else if (!entityhuman.a(blockposition.shift(enumdirection), enumdirection, itemstack)) {
+            return false;
         } else {
-            Block block = world.getType(i, j, k);
+            IBlockData iblockdata = world.getType(blockposition);
 
-            i += Facing.b[l];
-            j += Facing.c[l];
-            k += Facing.d[l];
+            if (iblockdata.getBlock() == Blocks.MOB_SPAWNER) {
+                TileEntity tileentity = world.getTileEntity(blockposition);
+
+                if (tileentity instanceof TileEntityMobSpawner) {
+                    MobSpawnerAbstract mobspawnerabstract = ((TileEntityMobSpawner) tileentity).getSpawner();
+
+                    mobspawnerabstract.setMobName(EntityTypes.b(itemstack.getData()));
+                    tileentity.update();
+                    world.notify(blockposition);
+                    if (!entityhuman.abilities.canInstantlyBuild) {
+                        --itemstack.count;
+                    }
+
+                    return true;
+                }
+            }
+
+            blockposition = blockposition.shift(enumdirection);
             double d0 = 0.0D;
 
-            if (l == 1 && block.b() == 11) {
+            if (enumdirection == EnumDirection.UP && iblockdata instanceof BlockFence) {
                 d0 = 0.5D;
             }
 
-            Entity entity = a(world, itemstack.getData(), (double) i + 0.5D, (double) j + d0, (double) k + 0.5D);
+            Entity entity = a(world, itemstack.getData(), (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + d0, (double) blockposition.getZ() + 0.5D);
 
             if (entity != null) {
                 if (entity instanceof EntityLiving && itemstack.hasName()) {
-                    ((EntityInsentient) entity).setCustomName(itemstack.getName());
+                    entity.setCustomName(itemstack.getName());
                 }
 
                 if (!entityhuman.abilities.canInstantlyBuild) {
@@ -60,20 +77,18 @@ public class ItemMonsterEgg extends Item {
                 return itemstack;
             } else {
                 if (movingobjectposition.type == EnumMovingObjectType.BLOCK) {
-                    int i = movingobjectposition.b;
-                    int j = movingobjectposition.c;
-                    int k = movingobjectposition.d;
+                    BlockPosition blockposition = movingobjectposition.a();
 
-                    if (!world.a(entityhuman, i, j, k)) {
+                    if (!world.a(entityhuman, blockposition)) {
                         return itemstack;
                     }
 
-                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
+                    if (!entityhuman.a(blockposition, movingobjectposition.direction, itemstack)) {
                         return itemstack;
                     }
 
-                    if (world.getType(i, j, k) instanceof BlockFluids) {
-                        Entity entity = a(world, itemstack.getData(), (double) i, (double) j, (double) k);
+                    if (world.getType(blockposition).getBlock() instanceof BlockFluids) {
+                        Entity entity = a(world, itemstack.getData(), (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
 
                         if (entity != null) {
                             if (entity instanceof EntityLiving && itemstack.hasName()) {
@@ -83,6 +98,8 @@ public class ItemMonsterEgg extends Item {
                             if (!entityhuman.abilities.canInstantlyBuild) {
                                 --itemstack.count;
                             }
+
+                            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
                         }
                     }
                 }
@@ -106,15 +123,15 @@ public class ItemMonsterEgg extends Item {
 
             for (int j = 0; j < 1; ++j) {
                 entity = EntityTypes.a(i, world);
-                if (entity != null && entity instanceof EntityLiving) {
+                if (entity instanceof EntityLiving) {
                     EntityInsentient entityinsentient = (EntityInsentient) entity;
 
                     entity.setPositionRotation(d0, d1, d2, MathHelper.g(world.random.nextFloat() * 360.0F), 0.0F);
-                    entityinsentient.aO = entityinsentient.yaw;
-                    entityinsentient.aM = entityinsentient.yaw;
-                    entityinsentient.prepare((GroupDataEntity) null);
-                    world.addEntity(entity, spawnReason); // CraftBukkit
-                    entityinsentient.r();
+                    entityinsentient.aI = entityinsentient.yaw;
+                    entityinsentient.aG = entityinsentient.yaw;
+                    entityinsentient.prepare(world.E(new BlockPosition(entityinsentient)), (GroupDataEntity) null);
+                    world.addEntity(entity);
+                    entityinsentient.x();
                 }
             }
 

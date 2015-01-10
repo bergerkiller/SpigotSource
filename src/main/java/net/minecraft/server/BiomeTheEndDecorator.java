@@ -2,27 +2,27 @@ package net.minecraft.server;
 
 public class BiomeTheEndDecorator extends BiomeDecorator {
 
-    protected WorldGenerator J;
+    protected WorldGenerator M;
 
     public BiomeTheEndDecorator() {
-        this.J = new WorldGenEnder(Blocks.WHITESTONE);
+        this.M = new WorldGenEnder(Blocks.END_STONE);
     }
 
     protected void a(BiomeBase biomebase) {
         this.a();
         if (this.b.nextInt(5) == 0) {
-            int i = this.c + this.b.nextInt(16) + 8;
-            int j = this.d + this.b.nextInt(16) + 8;
-            int k = this.a.i(i, j);
+            int i = this.b.nextInt(16) + 8;
+            int j = this.b.nextInt(16) + 8;
 
-            this.J.generate(this.a, this.b, i, k, j);
+            this.M.generate(this.a, this.b, this.a.r(this.c.a(i, 0, j)));
         }
 
-        if (this.c == 0 && this.d == 0) {
+        if (this.c.getX() == 0 && this.c.getZ() == 0) {
             EntityEnderDragon entityenderdragon = new EntityEnderDragon(this.a);
 
             entityenderdragon.setPositionRotation(0.0D, 128.0D, 0.0D, this.b.nextFloat() * 360.0F, 0.0F);
             this.a.addEntity(entityenderdragon, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit - add SpawnReason
         }
+
     }
 }

@@ -7,31 +7,33 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerFurnace extends Container {
 
-    private TileEntityFurnace furnace;
+    private final IInventory furnace;
     private int f;
     private int g;
     private int h;
-
+    private int i;
+    
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
 
+    @Override
     public CraftInventoryView getBukkitView() {
         if (bukkitEntity != null) {
             return bukkitEntity;
         }
 
-        CraftInventoryFurnace inventory = new CraftInventoryFurnace(this.furnace);
+        CraftInventoryFurnace inventory = new CraftInventoryFurnace((TileEntityFurnace) this.furnace);
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
-    // CraftBukkit end
+    // CraftBukkit end    
 
-    public ContainerFurnace(PlayerInventory playerinventory, TileEntityFurnace tileentityfurnace) {
-        this.furnace = tileentityfurnace;
-        this.a(new Slot(tileentityfurnace, 0, 56, 17));
-        this.a(new Slot(tileentityfurnace, 1, 56, 53));
-        this.a(new SlotFurnaceResult(playerinventory.player, tileentityfurnace, 2, 116, 35));
+    public ContainerFurnace(PlayerInventory playerinventory, IInventory iinventory) {
+        this.furnace = iinventory;
+        this.a(new Slot(iinventory, 0, 56, 17));
+        this.a((Slot) (new SlotFurnaceFuel(iinventory, 1, 56, 53)));
+        this.a((Slot) (new SlotFurnaceResult(playerinventory.player, iinventory, 2, 116, 35)));
         this.player = playerinventory; // CraftBukkit - save player
 
         int i;
@@ -45,13 +47,12 @@ public class ContainerFurnace extends Container {
         for (i = 0; i < 9; ++i) {
             this.a(new Slot(playerinventory, i, 8 + i * 18, 142));
         }
+
     }
 
     public void addSlotListener(ICrafting icrafting) {
         super.addSlotListener(icrafting);
-        icrafting.setContainerData(this, 0, this.furnace.cookTime);
-        icrafting.setContainerData(this, 1, this.furnace.burnTime);
-        icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
+        icrafting.setContainerData(this, this.furnace);
     }
 
     public void b() {
@@ -60,22 +61,27 @@ public class ContainerFurnace extends Container {
         for (int i = 0; i < this.listeners.size(); ++i) {
             ICrafting icrafting = (ICrafting) this.listeners.get(i);
 
-            if (this.f != this.furnace.cookTime) {
-                icrafting.setContainerData(this, 0, this.furnace.cookTime);
+            if (this.f != this.furnace.getProperty(2)) {
+                icrafting.setContainerData(this, 2, this.furnace.getProperty(2));
             }
 
-            if (this.g != this.furnace.burnTime) {
-                icrafting.setContainerData(this, 1, this.furnace.burnTime);
+            if (this.h != this.furnace.getProperty(0)) {
+                icrafting.setContainerData(this, 0, this.furnace.getProperty(0));
             }
 
-            if (this.h != this.furnace.ticksForCurrentFuel) {
-                icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
+            if (this.i != this.furnace.getProperty(1)) {
+                icrafting.setContainerData(this, 1, this.furnace.getProperty(1));
+            }
+
+            if (this.g != this.furnace.getProperty(3)) {
+                icrafting.setContainerData(this, 3, this.furnace.getProperty(3));
             }
         }
 
-        this.f = this.furnace.cookTime;
-        this.g = this.furnace.burnTime;
-        this.h = this.furnace.ticksForCurrentFuel;
+        this.f = this.furnace.getProperty(2);
+        this.h = this.furnace.getProperty(0);
+        this.i = this.furnace.getProperty(1);
+        this.g = this.furnace.getProperty(3);
     }
 
     public boolean a(EntityHuman entityhuman) {

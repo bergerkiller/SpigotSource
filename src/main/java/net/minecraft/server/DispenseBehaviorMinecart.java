@@ -12,30 +12,41 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
     DispenseBehaviorMinecart() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumFacing enumfacing = BlockDispenser.b(isourceblock.h());
-        World world = isourceblock.k();
-        double d0 = isourceblock.getX() + (double) ((float) enumfacing.getAdjacentX() * 1.125F);
-        double d1 = isourceblock.getY() + (double) ((float) enumfacing.getAdjacentY() * 1.125F);
-        double d2 = isourceblock.getZ() + (double) ((float) enumfacing.getAdjacentZ() * 1.125F);
-        int i = isourceblock.getBlockX() + enumfacing.getAdjacentX();
-        int j = isourceblock.getBlockY() + enumfacing.getAdjacentY();
-        int k = isourceblock.getBlockZ() + enumfacing.getAdjacentZ();
-        Block block = world.getType(i, j, k);
+        EnumDirection enumdirection = BlockDispenser.b(isourceblock.f());
+        World world = isourceblock.i();
+        double d0 = isourceblock.getX() + (double) enumdirection.getAdjacentX() * 1.125D;
+        double d1 = Math.floor(isourceblock.getY()) + (double) enumdirection.getAdjacentY();
+        double d2 = isourceblock.getZ() + (double) enumdirection.getAdjacentZ() * 1.125D;
+        BlockPosition blockposition = isourceblock.getBlockPosition().shift(enumdirection);
+        IBlockData iblockdata = world.getType(blockposition);
+        EnumTrackPosition enumtrackposition = iblockdata.getBlock() instanceof BlockMinecartTrackAbstract ? (EnumTrackPosition) iblockdata.get(((BlockMinecartTrackAbstract) iblockdata.getBlock()).l()) : EnumTrackPosition.NORTH_SOUTH;
         double d3;
 
-        if (BlockMinecartTrackAbstract.a(block)) {
-            d3 = 0.0D;
+        if (BlockMinecartTrackAbstract.d(iblockdata)) {
+            if (enumtrackposition.c()) {
+                d3 = 0.6D;
+            } else {
+                d3 = 0.1D;
+            }
         } else {
-            if (block.getMaterial() != Material.AIR || !BlockMinecartTrackAbstract.a(world.getType(i, j - 1, k))) {
+            if (iblockdata.getBlock().getMaterial() != Material.AIR || !BlockMinecartTrackAbstract.d(world.getType(blockposition.down()))) {
                 return this.b.a(isourceblock, itemstack);
             }
 
-            d3 = -1.0D;
+            IBlockData iblockdata1 = world.getType(blockposition.down());
+            EnumTrackPosition enumtrackposition1 = iblockdata1.getBlock() instanceof BlockMinecartTrackAbstract ? (EnumTrackPosition) iblockdata1.get(((BlockMinecartTrackAbstract) iblockdata1.getBlock()).l()) : EnumTrackPosition.NORTH_SOUTH;
+
+            if (enumdirection != EnumDirection.DOWN && enumtrackposition1.c()) {
+                d3 = -0.4D;
+            } else {
+                d3 = -0.9D;
+            }
         }
 
         // CraftBukkit start
+        // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, d0, d1 + d3, d2, ItemMinecart.a((ItemMinecart) itemstack.getItem()));
         ItemStack itemstack1 = itemstack.a(1);
-        org.bukkit.block.Block block2 = world.getWorld().getBlockAt(isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ());
+        org.bukkit.block.Block block2 = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 
         BlockDispenseEvent event = new BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(d0, d1 + d3, d2));
@@ -52,7 +63,7 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
             itemstack.count++;
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.a.get(eventStack.getItem());
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.M.get(eventStack.getItem());
             if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;
@@ -60,11 +71,10 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
         }
 
         itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
-        EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).a);
-        // CraftBukkit end
+        EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ItemMinecart.a((ItemMinecart) itemstack1.getItem()));
 
         if (itemstack.hasName()) {
-            entityminecartabstract.a(itemstack.getName());
+            entityminecartabstract.setCustomName(itemstack.getName());
         }
 
         world.addEntity(entityminecartabstract);
@@ -73,6 +83,6 @@ final class DispenseBehaviorMinecart extends DispenseBehaviorItem {
     }
 
     protected void a(ISourceBlock isourceblock) {
-        isourceblock.k().triggerEffect(1000, isourceblock.getBlockX(), isourceblock.getBlockY(), isourceblock.getBlockZ(), 0);
+        isourceblock.i().triggerEffect(1000, isourceblock.getBlockPosition(), 0);
     }
 }

@@ -1,14 +1,15 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 
 public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
     private ItemStack a;
-
+    
     // CraftBukkit start - Delegate to new parent class with bogus info
     public RecipeFireworks() {
-        super(new ItemStack(Items.FIREWORKS, 0, 0), java.util.Arrays.asList(new ItemStack(Items.SULPHUR, 0, 5)));
+        super(new ItemStack(Items.FIREWORKS, 0, 0), java.util.Arrays.asList(new ItemStack(Items.GUNPOWDER, 0, 5)));
     }
     // CraftBukkit end
 
@@ -25,11 +26,11 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
             ItemStack itemstack = inventorycrafting.getItem(k1);
 
             if (itemstack != null) {
-                if (itemstack.getItem() == Items.SULPHUR) {
+                if (itemstack.getItem() == Items.GUNPOWDER) {
                     ++j;
-                } else if (itemstack.getItem() == Items.FIREWORKS_CHARGE) {
+                } else if (itemstack.getItem() == Items.FIREWORK_CHARGE) {
                     ++l;
-                } else if (itemstack.getItem() == Items.INK_SACK) {
+                } else if (itemstack.getItem() == Items.DYE) {
                     ++k;
                 } else if (itemstack.getItem() == Items.PAPER) {
                     ++i;
@@ -37,7 +38,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
                     ++i1;
                 } else if (itemstack.getItem() == Items.DIAMOND) {
                     ++i1;
-                } else if (itemstack.getItem() == Items.FIREBALL) {
+                } else if (itemstack.getItem() == Items.FIRE_CHARGE) {
                     ++j1;
                 } else if (itemstack.getItem() == Items.FEATHER) {
                     ++j1;
@@ -68,7 +69,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
                     for (int l1 = 0; l1 < inventorycrafting.getSize(); ++l1) {
                         ItemStack itemstack1 = inventorycrafting.getItem(l1);
 
-                        if (itemstack1 != null && itemstack1.getItem() == Items.FIREWORKS_CHARGE && itemstack1.hasTag() && itemstack1.getTag().hasKeyOfType("Explosion", 10)) {
+                        if (itemstack1 != null && itemstack1.getItem() == Items.FIREWORK_CHARGE && itemstack1.hasTag() && itemstack1.getTag().hasKeyOfType("Explosion", 10)) {
                             nbttaglist.add(itemstack1.getTag().getCompound("Explosion"));
                         }
                     }
@@ -81,23 +82,23 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
                 return true;
             } else if (j == 1 && i == 0 && l == 0 && k > 0 && j1 <= 1) {
-                this.a = new ItemStack(Items.FIREWORKS_CHARGE);
+                this.a = new ItemStack(Items.FIREWORK_CHARGE);
                 nbttagcompound = new NBTTagCompound();
                 nbttagcompound1 = new NBTTagCompound();
                 byte b0 = 0;
-                ArrayList arraylist = new ArrayList();
+                ArrayList arraylist = Lists.newArrayList();
 
                 for (int i2 = 0; i2 < inventorycrafting.getSize(); ++i2) {
                     ItemStack itemstack2 = inventorycrafting.getItem(i2);
 
                     if (itemstack2 != null) {
-                        if (itemstack2.getItem() == Items.INK_SACK) {
-                            arraylist.add(Integer.valueOf(ItemDye.c[itemstack2.getData()]));
+                        if (itemstack2.getItem() == Items.DYE) {
+                            arraylist.add(Integer.valueOf(ItemDye.a[itemstack2.getData() & 15]));
                         } else if (itemstack2.getItem() == Items.GLOWSTONE_DUST) {
                             nbttagcompound1.setBoolean("Flicker", true);
                         } else if (itemstack2.getItem() == Items.DIAMOND) {
                             nbttagcompound1.setBoolean("Trail", true);
-                        } else if (itemstack2.getItem() == Items.FIREBALL) {
+                        } else if (itemstack2.getItem() == Items.FIRE_CHARGE) {
                             b0 = 1;
                         } else if (itemstack2.getItem() == Items.FEATHER) {
                             b0 = 4;
@@ -121,15 +122,15 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
                 this.a.setTag(nbttagcompound);
                 return true;
             } else if (j == 0 && i == 0 && l == 1 && k > 0 && k == i1) {
-                ArrayList arraylist1 = new ArrayList();
+                ArrayList arraylist1 = Lists.newArrayList();
 
                 for (int k2 = 0; k2 < inventorycrafting.getSize(); ++k2) {
                     ItemStack itemstack3 = inventorycrafting.getItem(k2);
 
                     if (itemstack3 != null) {
-                        if (itemstack3.getItem() == Items.INK_SACK) {
-                            arraylist1.add(Integer.valueOf(ItemDye.c[itemstack3.getData()]));
-                        } else if (itemstack3.getItem() == Items.FIREWORKS_CHARGE) {
+                        if (itemstack3.getItem() == Items.DYE) {
+                            arraylist1.add(Integer.valueOf(ItemDye.a[itemstack3.getData() & 15]));
+                        } else if (itemstack3.getItem() == Items.FIREWORK_CHARGE) {
                             this.a = itemstack3.cloneItemStack();
                             this.a.count = 1;
                         }
@@ -172,5 +173,19 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
 
     public ItemStack b() {
         return this.a;
+    }
+
+    public ItemStack[] b(InventoryCrafting inventorycrafting) {
+        ItemStack[] aitemstack = new ItemStack[inventorycrafting.getSize()];
+
+        for (int i = 0; i < aitemstack.length; ++i) {
+            ItemStack itemstack = inventorycrafting.getItem(i);
+
+            if (itemstack != null && itemstack.getItem().r()) {
+                aitemstack[i] = new ItemStack(itemstack.getItem().q());
+            }
+        }
+
+        return aitemstack;
     }
 }

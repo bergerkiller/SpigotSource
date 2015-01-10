@@ -8,7 +8,7 @@ import org.bukkit.entity.HumanEntity;
 public class InventoryCraftResult implements IInventory {
 
     private ItemStack[] items = new ItemStack[1];
-
+    
     // CraftBukkit start
     private int maxStack = MAX_STACK;
 
@@ -30,7 +30,7 @@ public class InventoryCraftResult implements IInventory {
     public void setMaxStackSize(int size) {
         maxStack = size;
     }
-    // CraftBukkit end
+    // CraftBukkit end    
 
     public InventoryCraftResult() {}
 
@@ -42,12 +42,16 @@ public class InventoryCraftResult implements IInventory {
         return this.items[0];
     }
 
-    public String getInventoryName() {
+    public String getName() {
         return "Result";
     }
 
-    public boolean k_() {
+    public boolean hasCustomName() {
         return false;
+    }
+
+    public IChatBaseComponent getScoreboardDisplayName() {
+        return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
     public ItemStack splitStack(int i, int j) {
@@ -86,11 +90,28 @@ public class InventoryCraftResult implements IInventory {
         return true;
     }
 
-    public void startOpen() {}
+    public void startOpen(EntityHuman entityhuman) {}
 
-    public void closeContainer() {}
+    public void closeContainer(EntityHuman entityhuman) {}
 
     public boolean b(int i, ItemStack itemstack) {
         return true;
+    }
+
+    public int getProperty(int i) {
+        return 0;
+    }
+
+    public void b(int i, int j) {}
+
+    public int g() {
+        return 0;
+    }
+
+    public void l() {
+        for (int i = 0; i < this.items.length; ++i) {
+            this.items[i] = null;
+        }
+
     }
 }

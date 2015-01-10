@@ -72,9 +72,9 @@ public class OldChunkLoader {
 
             if (!flag) {
                 byte[] abyte = new byte[4096];
-                NibbleArray nibblearray = new NibbleArray(abyte.length, 4);
-                NibbleArray nibblearray1 = new NibbleArray(abyte.length, 4);
-                NibbleArray nibblearray2 = new NibbleArray(abyte.length, 4);
+                NibbleArray nibblearray = new NibbleArray();
+                NibbleArray nibblearray1 = new NibbleArray();
+                NibbleArray nibblearray2 = new NibbleArray();
 
                 for (int k1 = 0; k1 < 16; ++k1) {
                     for (int l1 = 0; l1 < 16; ++l1) {
@@ -94,9 +94,9 @@ public class OldChunkLoader {
 
                 nbttagcompound1.setByte("Y", (byte) (k & 255));
                 nbttagcompound1.setByteArray("Blocks", abyte);
-                nbttagcompound1.setByteArray("Data", nibblearray.a);
-                nbttagcompound1.setByteArray("SkyLight", nibblearray1.a);
-                nbttagcompound1.setByteArray("BlockLight", nibblearray2.a);
+                nbttagcompound1.setByteArray("Data", nibblearray.a());
+                nbttagcompound1.setByteArray("SkyLight", nibblearray1.a());
+                nbttagcompound1.setByteArray("BlockLight", nibblearray2.a());
                 nbttaglist.add(nbttagcompound1);
             }
         }
@@ -106,7 +106,7 @@ public class OldChunkLoader {
 
         for (int k2 = 0; k2 < 16; ++k2) {
             for (j = 0; j < 16; ++j) {
-                abyte1[j << 4 | k2] = (byte) (worldchunkmanager.getBiome(oldchunk.k << 4 | k2, oldchunk.l << 4 | j).id & 255);
+                abyte1[j << 4 | k2] = (byte) (worldchunkmanager.getBiome(new BlockPosition(oldchunk.k << 4 | k2, 0, oldchunk.l << 4 | j), BiomeBase.ad).id & 255);
             }
         }
 
@@ -116,5 +116,6 @@ public class OldChunkLoader {
         if (oldchunk.j != null) {
             nbttagcompound.set("TileTicks", oldchunk.j);
         }
+
     }
 }

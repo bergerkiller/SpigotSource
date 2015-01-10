@@ -1,6 +1,5 @@
 package net.minecraft.server;
 
-// CraftBukkit - package-private -> public
 public class EntityMinecartCommandBlockListener extends CommandBlockListenerAbstract {
 
     final EntityMinecartCommandBlock a;
@@ -10,16 +9,24 @@ public class EntityMinecartCommandBlockListener extends CommandBlockListenerAbst
         this.sender = (org.bukkit.craftbukkit.entity.CraftMinecartCommand) entityminecartcommandblock.getBukkitEntity(); // CraftBukkit - Set the sender
     }
 
-    public void e() {
+    public void h() {
         this.a.getDataWatcher().watch(23, this.getCommand());
-        this.a.getDataWatcher().watch(24, ChatSerializer.a(this.h()));
+        this.a.getDataWatcher().watch(24, ChatSerializer.a(this.k()));
     }
 
-    public ChunkCoordinates getChunkCoordinates() {
-        return new ChunkCoordinates(MathHelper.floor(this.a.locX), MathHelper.floor(this.a.locY + 0.5D), MathHelper.floor(this.a.locZ));
+    public BlockPosition getChunkCoordinates() {
+        return new BlockPosition(this.a.locX, this.a.locY + 0.5D, this.a.locZ);
+    }
+
+    public Vec3D d() {
+        return new Vec3D(this.a.locX, this.a.locY, this.a.locZ);
     }
 
     public World getWorld() {
         return this.a.world;
+    }
+
+    public Entity f() {
+        return this.a;
     }
 }

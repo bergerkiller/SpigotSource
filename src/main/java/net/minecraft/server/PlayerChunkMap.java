@@ -1,8 +1,11 @@
 package net.minecraft.server;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // CraftBukkit start
 import java.util.Collections;
@@ -10,14 +13,11 @@ import java.util.Queue;
 import java.util.LinkedList;
 // CraftBukkit end
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class PlayerChunkMap {
 
     private static final Logger a = LogManager.getLogger();
     private final WorldServer world;
-    private final List managedPlayers = new ArrayList();
+    private final List managedPlayers = Lists.newArrayList();
     private final LongHashMap d = new LongHashMap();
     private final Queue e = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit ArrayList -> ConcurrentLinkedQueue
     private final Queue f = new java.util.concurrent.ConcurrentLinkedQueue(); // CraftBukkit ArrayList -> ConcurrentLinkedQueue
@@ -42,7 +42,7 @@ public class PlayerChunkMap {
 
         if (i - this.h > 8000L) {
             this.h = i;
-
+            
             // CraftBukkit start - Use iterator
             java.util.Iterator iterator = this.f.iterator();
             while (iterator.hasNext()) {
@@ -95,6 +95,7 @@ public class PlayerChunkMap {
 
         return playerchunk;
     }
+    
     // CraftBukkit start - add method
     public final boolean isChunkInUse(int x, int z) {
         PlayerChunk pi = a(x, z, false);
@@ -105,14 +106,15 @@ public class PlayerChunkMap {
     }
     // CraftBukkit end
 
-    public void flagDirty(int i, int j, int k) {
-        int l = i >> 4;
-        int i1 = k >> 4;
-        PlayerChunk playerchunk = this.a(l, i1, false);
+    public void flagDirty(BlockPosition blockposition) {
+        int i = blockposition.getX() >> 4;
+        int j = blockposition.getZ() >> 4;
+        PlayerChunk playerchunk = this.a(i, j, false);
 
         if (playerchunk != null) {
-            playerchunk.a(i & 15, j, k & 15);
+            playerchunk.a(blockposition.getX() & 15, blockposition.getY(), blockposition.getZ() & 15);
         }
+
     }
 
     public void addPlayer(EntityPlayer entityplayer) {
@@ -121,27 +123,28 @@ public class PlayerChunkMap {
 
         entityplayer.d = entityplayer.locX;
         entityplayer.e = entityplayer.locZ;
-
+        
         // CraftBukkit start - Load nearby chunks first
         List<ChunkCoordIntPair> chunkList = new LinkedList<ChunkCoordIntPair>();
+
         for (int k = i - this.g; k <= i + this.g; ++k) {
             for (int l = j - this.g; l <= j + this.g; ++l) {
                 chunkList.add(new ChunkCoordIntPair(k, l));
             }
         }
-
+        
         Collections.sort(chunkList, new ChunkCoordComparator(entityplayer));
-        for (ChunkCoordIntPair pair : chunkList) {
+        for (ChunkCoordIntPair pair : chunkList) {            
             this.a(pair.x, pair.z, true).a(entityplayer);
         }
         // CraftBukkit end
-
+        
         this.managedPlayers.add(entityplayer);
         this.b(entityplayer);
     }
 
     public void b(EntityPlayer entityplayer) {
-        ArrayList arraylist = new ArrayList(entityplayer.chunkCoordIntPairQueue);
+        ArrayList arraylist = Lists.newArrayList(entityplayer.chunkCoordIntPairQueue);
         int i = 0;
         int j = this.g;
         int k = (int) entityplayer.locX >> 4;
@@ -182,6 +185,7 @@ public class PlayerChunkMap {
                 entityplayer.chunkCoordIntPairQueue.add(chunkcoordintpair);
             }
         }
+
     }
 
     public void removePlayer(EntityPlayer entityplayer) {
@@ -243,14 +247,14 @@ public class PlayerChunkMap {
                 this.b(entityplayer);
                 entityplayer.d = entityplayer.locX;
                 entityplayer.e = entityplayer.locZ;
-
-                // CraftBukkit start - send nearest chunks first
+                
+                // CraftBukkit start - send nearest chunks first       
                 Collections.sort(chunksToLoad, new ChunkCoordComparator(entityplayer));
-                for (ChunkCoordIntPair pair : chunksToLoad) {
+                for (ChunkCoordIntPair pair : chunksToLoad) {         
                     this.a(pair.x, pair.z, true).a(entityplayer);
                 }
-
-                if (j1 > 1 || j1 < -1 || k1 > 1 || k1 < -1) { // Spigot - missed diff
+                
+                if (j1 > 1 || j1 < -1 || k1 > 1 || k1 < -1) {
                     Collections.sort(entityplayer.chunkCoordIntPairQueue, new ChunkCoordComparator(entityplayer));
                 }
                 // CraftBukkit end
@@ -265,10 +269,11 @@ public class PlayerChunkMap {
     }
 
     public void a(int i) {
-        i = MathHelper.a(i, 3, 20);
+        i = MathHelper.clamp(i, 3, 32);
         if (i != this.g) {
             int j = i - this.g;
-            Iterator iterator = this.managedPlayers.iterator();
+            ArrayList arraylist = Lists.newArrayList(this.managedPlayers);
+            Iterator iterator = arraylist.iterator();
 
             while (iterator.hasNext()) {
                 EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -307,7 +312,7 @@ public class PlayerChunkMap {
     }
 
     static Logger c() {
-        return a;
+        return PlayerChunkMap.a;
     }
 
     static WorldServer a(PlayerChunkMap playerchunkmap) {
@@ -318,14 +323,14 @@ public class PlayerChunkMap {
         return playerchunkmap.d;
     }
 
-    static Queue c(PlayerChunkMap playermanager) { // CraftBukkit List -> Queue
-        return playermanager.f;
+    static Queue c(PlayerChunkMap playerchunkmap) { // CraftBukkit List -> Queue
+        return playerchunkmap.f;
     }
 
-    static Queue d(PlayerChunkMap playermanager) { // CraftBukkit List -> Queue
-        return playermanager.e;
+    static Queue d(PlayerChunkMap playerchunkmap) { // CraftBukkit List -> Queue
+        return playerchunkmap.e;
     }
-
+    
     // CraftBukkit start - Sorter to load nearby chunks first
     private static class ChunkCoordComparator implements java.util.Comparator<ChunkCoordIntPair> {
         private int x;

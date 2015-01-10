@@ -4,7 +4,7 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
 
     // CraftBukkit start - Delegate to new parent class
     public RecipeMapClone() {
-        super(new ItemStack(Items.MAP, 0, -1), java.util.Arrays.asList(new ItemStack(Items.MAP_EMPTY, 0, 0)));
+        super(new ItemStack(Items.MAP, 0, -1), java.util.Arrays.asList(new ItemStack(Items.MAP, 0, 0)));
     }
     // CraftBukkit end
 
@@ -16,14 +16,14 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
             ItemStack itemstack1 = inventorycrafting.getItem(j);
 
             if (itemstack1 != null) {
-                if (itemstack1.getItem() == Items.MAP) {
+                if (itemstack1.getItem() == Items.FILLED_MAP) {
                     if (itemstack != null) {
                         return false;
                     }
 
                     itemstack = itemstack1;
                 } else {
-                    if (itemstack1.getItem() != Items.MAP_EMPTY) {
+                    if (itemstack1.getItem() != Items.MAP) {
                         return false;
                     }
 
@@ -43,14 +43,14 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
             ItemStack itemstack1 = inventorycrafting.getItem(j);
 
             if (itemstack1 != null) {
-                if (itemstack1.getItem() == Items.MAP) {
+                if (itemstack1.getItem() == Items.FILLED_MAP) {
                     if (itemstack != null) {
                         return null;
                     }
 
                     itemstack = itemstack1;
                 } else {
-                    if (itemstack1.getItem() != Items.MAP_EMPTY) {
+                    if (itemstack1.getItem() != Items.MAP) {
                         return null;
                     }
 
@@ -60,7 +60,7 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
         }
 
         if (itemstack != null && i >= 1) {
-            ItemStack itemstack2 = new ItemStack(Items.MAP, i + 1, itemstack.getData());
+            ItemStack itemstack2 = new ItemStack(Items.FILLED_MAP, i + 1, itemstack.getData());
 
             if (itemstack.hasName()) {
                 itemstack2.c(itemstack.getName());
@@ -78,5 +78,19 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
 
     public ItemStack b() {
         return null;
+    }
+
+    public ItemStack[] b(InventoryCrafting inventorycrafting) {
+        ItemStack[] aitemstack = new ItemStack[inventorycrafting.getSize()];
+
+        for (int i = 0; i < aitemstack.length; ++i) {
+            ItemStack itemstack = inventorycrafting.getItem(i);
+
+            if (itemstack != null && itemstack.getItem().r()) {
+                aitemstack[i] = new ItemStack(itemstack.getItem().q());
+            }
+        }
+
+        return aitemstack;
     }
 }

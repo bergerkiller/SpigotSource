@@ -9,8 +9,8 @@ public class BlockOre extends Block {
         this.a(CreativeModeTab.b);
     }
 
-    public Item getDropType(int i, Random random, int j) {
-        return this == Blocks.COAL_ORE ? Items.COAL : (this == Blocks.DIAMOND_ORE ? Items.DIAMOND : (this == Blocks.LAPIS_ORE ? Items.INK_SACK : (this == Blocks.EMERALD_ORE ? Items.EMERALD : (this == Blocks.QUARTZ_ORE ? Items.QUARTZ : Item.getItemOf(this)))));
+    public Item getDropType(IBlockData iblockdata, Random random, int i) {
+        return this == Blocks.COAL_ORE ? Items.COAL : (this == Blocks.DIAMOND_ORE ? Items.DIAMOND : (this == Blocks.LAPIS_ORE ? Items.DYE : (this == Blocks.EMERALD_ORE ? Items.EMERALD : (this == Blocks.QUARTZ_ORE ? Items.QUARTZ : Item.getItemOf(this)))));
     }
 
     public int a(Random random) {
@@ -18,7 +18,7 @@ public class BlockOre extends Block {
     }
 
     public int getDropCount(int i, Random random) {
-        if (i > 0 && Item.getItemOf(this) != this.getDropType(0, random, i)) {
+        if (i > 0 && Item.getItemOf(this) != this.getDropType((IBlockData) this.O().a().iterator().next(), random, i)) {
             int j = random.nextInt(i + 2) - 1;
 
             if (j < 0) {
@@ -31,53 +31,58 @@ public class BlockOre extends Block {
         }
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        super.dropNaturally(world, i, j, k, l, f, i1);
+    public void dropNaturally(World world, BlockPosition blockposition, IBlockData iblockdata, float f, int i) {
+        super.dropNaturally(world, blockposition, iblockdata, f, i);
         /* CraftBukkit start - Delegated to getExpDrop
-        if (this.getDropType(l, world.random, i1) != Item.getItemOf(this)) {
-            int j1 = 0;
+        if (this.getDropType(iblockdata, world.random, i) != Item.getItemOf(this)) {
+            int j = 0;
 
             if (this == Blocks.COAL_ORE) {
-                j1 = MathHelper.nextInt(world.random, 0, 2);
+                j = MathHelper.nextInt(world.random, 0, 2);
             } else if (this == Blocks.DIAMOND_ORE) {
-                j1 = MathHelper.nextInt(world.random, 3, 7);
+                j = MathHelper.nextInt(world.random, 3, 7);
             } else if (this == Blocks.EMERALD_ORE) {
-                j1 = MathHelper.nextInt(world.random, 3, 7);
+                j = MathHelper.nextInt(world.random, 3, 7);
             } else if (this == Blocks.LAPIS_ORE) {
-                j1 = MathHelper.nextInt(world.random, 2, 5);
+                j = MathHelper.nextInt(world.random, 2, 5);
             } else if (this == Blocks.QUARTZ_ORE) {
-                j1 = MathHelper.nextInt(world.random, 2, 5);
+                j = MathHelper.nextInt(world.random, 2, 5);
             }
 
-            this.dropExperience(world, i, j, k, j1);
+            this.dropExperience(world, blockposition, j);
         }
-        // */
+        // */                
     }
 
-    public int getExpDrop(World world, int l, int i1) {
-        if (this.getDropType(l, world.random, i1) != Item.getItemOf(this)) {
-            int j1 = 0;
+    @Override
+    public int getExpDrop(World world, IBlockData iblockdata, int i) {
+        if (this.getDropType(iblockdata, world.random, i) != Item.getItemOf(this)) {
+            int j = 0;
 
             if (this == Blocks.COAL_ORE) {
-                j1 = MathHelper.nextInt(world.random, 0, 2);
+                j = MathHelper.nextInt(world.random, 0, 2);
             } else if (this == Blocks.DIAMOND_ORE) {
-                j1 = MathHelper.nextInt(world.random, 3, 7);
+                j = MathHelper.nextInt(world.random, 3, 7);
             } else if (this == Blocks.EMERALD_ORE) {
-                j1 = MathHelper.nextInt(world.random, 3, 7);
+                j = MathHelper.nextInt(world.random, 3, 7);
             } else if (this == Blocks.LAPIS_ORE) {
-                j1 = MathHelper.nextInt(world.random, 2, 5);
+                j = MathHelper.nextInt(world.random, 2, 5);
             } else if (this == Blocks.QUARTZ_ORE) {
-                j1 = MathHelper.nextInt(world.random, 2, 5);
+                j = MathHelper.nextInt(world.random, 2, 5);
             }
 
-            return j1;
+            return j;
         }
 
         return 0;
         // CraftBukkit end
     }
 
-    public int getDropData(int i) {
-        return this == Blocks.LAPIS_ORE ? 4 : 0;
+    public int getDropData(World world, BlockPosition blockposition) {
+        return 0;
+    }
+
+    public int getDropData(IBlockData iblockdata) {
+        return this == Blocks.LAPIS_ORE ? EnumColor.BLUE.getInvColorIndex() : 0;
     }
 }

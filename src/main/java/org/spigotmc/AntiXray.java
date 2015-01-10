@@ -1,8 +1,9 @@
 package org.spigotmc;
 
-import net.minecraft.util.gnu.trove.set.TByteSet;
-import net.minecraft.util.gnu.trove.set.hash.TByteHashSet;
+import gnu.trove.set.TByteSet;
+import gnu.trove.set.hash.TByteHashSet;
 import net.minecraft.server.Block;
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.World;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -46,12 +47,12 @@ public class AntiXray
      * Starts the timings handler, then updates all blocks within the set radius
      * of the given coordinate, revealing them if they are hidden ores.
      */
-    public void updateNearbyBlocks(World world, int x, int y, int z)
+    public void updateNearbyBlocks(World world, BlockPosition position)
     {
         if ( world.spigotConfig.antiXray )
         {
             update.startTiming();
-            updateNearbyBlocks( world, x, y, z, 2, false ); // 2 is the radius, we shouldn't change it as that would make it exponentially slower
+            updateNearbyBlocks( world, position, 2, false ); // 2 is the radius, we shouldn't change it as that would make it exponentially slower
             update.stopTiming();
         }
     }
@@ -96,7 +97,7 @@ public class AntiXray
                     replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.NETHERRACK);
                     break;
                 case THE_END:
-                    replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.WHITESTONE);
+                    replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.END_STONE);
                     break;
                 default:
                     replaceWithTypeId = (byte) CraftMagicNumbers.getId(Blocks.STONE);
@@ -124,24 +125,27 @@ public class AntiXray
                                 }
                                 // Grab the block ID in the buffer.
                                 // TODO: extended IDs are not yet supported
-                                int blockId = buffer[index] & 0xFF;
+                                int blockId = (buffer[index << 1] & 0xFF) 
+                                        | ((buffer[(index << 1) + 1] & 0xFF) << 8);
+                                blockId >>>= 4;
                                 // Check if the block should be obfuscated
                                 if ( obfuscateBlocks[blockId] )
                                 {
                                     // The world isn't loaded, bail out
-                                    if ( !isLoaded( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
+                                    if ( !isLoaded( world, new BlockPosition( startX + x, ( i << 4 ) + y, startZ + z ), initialRadius ) )
                                     {
                                         index++;
                                         continue;
                                     }
                                     // On the otherhand, if radius is 0, or the nearby blocks are all non air, we can obfuscate
-                                    if ( !hasTransparentBlockAdjacent( world, startX + x, ( i << 4 ) + y, startZ + z, initialRadius ) )
+                                    if ( !hasTransparentBlockAdjacent( world, new BlockPosition( startX + x, ( i << 4 ) + y, startZ + z ), initialRadius ) )
                                     {
+                                        int newId = blockId;
                                         switch ( world.spigotConfig.engineMode )
                                         {
                                             case 1:
                                                 // Replace with replacement material
-                                                buffer[index] = replaceWithTypeId;
+                                                newId = replaceWithTypeId & 0xFF;
                                                 break;
                                             case 2:
                                                 // Replace with random ore.
@@ -149,9 +153,12 @@ public class AntiXray
                                                 {
                                                     randomOre = 0;
                                                 }
-                                                buffer[index] = replacementOres[randomOre++];
+                                                newId = replacementOres[randomOre++] & 0xFF;
                                                 break;
                                         }
+                                        newId <<= 4;
+                                        buffer[index << 1] = (byte) (newId & 0xFF);
+                                        buffer[(index << 1) + 1] = (byte) ((newId >> 8) & 0xFF);
                                     }
                                 }
 
@@ -164,56 +171,56 @@ public class AntiXray
         }
     }
 
-    private void updateNearbyBlocks(World world, int x, int y, int z, int radius, boolean updateSelf)
+    private void updateNearbyBlocks(World world, BlockPosition position, int radius, boolean updateSelf)
     {
         // If the block in question is loaded
-        if ( world.isLoaded( x, y, z ) )
+        if ( world.isLoaded( position ) )
         {
             // Get block id
-            Block block = world.getType(x, y, z);
+            Block block = world.getType(position).getBlock();
 
             // See if it needs update
             if ( updateSelf && obfuscateBlocks[Block.getId( block )] )
             {
                 // Send the update
-                world.notify( x, y, z );
+                world.notify( position );
             }
 
             // Check other blocks for updates
             if ( radius > 0 )
             {
-                updateNearbyBlocks( world, x + 1, y, z, radius - 1, true );
-                updateNearbyBlocks( world, x - 1, y, z, radius - 1, true );
-                updateNearbyBlocks( world, x, y + 1, z, radius - 1, true );
-                updateNearbyBlocks( world, x, y - 1, z, radius - 1, true );
-                updateNearbyBlocks( world, x, y, z + 1, radius - 1, true );
-                updateNearbyBlocks( world, x, y, z - 1, radius - 1, true );
+                updateNearbyBlocks( world, position.east(), radius - 1, true );
+                updateNearbyBlocks( world, position.west(), radius - 1, true );
+                updateNearbyBlocks( world, position.up(), radius - 1, true );
+                updateNearbyBlocks( world, position.down(), radius - 1, true );
+                updateNearbyBlocks( world, position.south(), radius - 1, true );
+                updateNearbyBlocks( world, position.north(), radius - 1, true );
             }
         }
     }
 
-    private static boolean isLoaded(World world, int x, int y, int z, int radius)
+    private static boolean isLoaded(World world, BlockPosition position, int radius)
     {
-        return world.isLoaded( x, y, z )
+        return world.isLoaded( position )
                 && ( radius == 0 ||
-                ( isLoaded( world, x + 1, y, z, radius - 1 )
-                && isLoaded( world, x - 1, y, z, radius - 1 )
-                && isLoaded( world, x, y + 1, z, radius - 1 )
-                && isLoaded( world, x, y - 1, z, radius - 1 )
-                && isLoaded( world, x, y, z + 1, radius - 1 )
-                && isLoaded( world, x, y, z - 1, radius - 1 ) ) );
+                ( isLoaded( world, position.east(), radius - 1 )
+                && isLoaded( world, position.west(), radius - 1 )
+                && isLoaded( world, position.up(), radius - 1 )
+                && isLoaded( world, position.down(), radius - 1 )
+                && isLoaded( world, position.south(), radius - 1 )
+                && isLoaded( world, position.north(), radius - 1 ) ) );
     }
 
-    private static boolean hasTransparentBlockAdjacent(World world, int x, int y, int z, int radius)
+    private static boolean hasTransparentBlockAdjacent(World world, BlockPosition position, int radius)
     {
-        return !isSolidBlock(world.getType(x, y, z, false)) /* isSolidBlock */
+        return !isSolidBlock(world.getType(position, false).getBlock()) /* isSolidBlock */
                 || ( radius > 0
-                && ( hasTransparentBlockAdjacent( world, x + 1, y, z, radius - 1 )
-                || hasTransparentBlockAdjacent( world, x - 1, y, z, radius - 1 )
-                || hasTransparentBlockAdjacent( world, x, y + 1, z, radius - 1 )
-                || hasTransparentBlockAdjacent( world, x, y - 1, z, radius - 1 )
-                || hasTransparentBlockAdjacent( world, x, y, z + 1, radius - 1 )
-                || hasTransparentBlockAdjacent( world, x, y, z - 1, radius - 1 ) ) );
+                && ( hasTransparentBlockAdjacent( world, position.east(), radius - 1 )
+                || hasTransparentBlockAdjacent( world, position.west(), radius - 1 )
+                || hasTransparentBlockAdjacent( world, position.up(), radius - 1 )
+                || hasTransparentBlockAdjacent( world, position.down(), radius - 1 )
+                || hasTransparentBlockAdjacent( world, position.south(), radius - 1 )
+                || hasTransparentBlockAdjacent( world, position.north(), radius - 1 ) ) );
     }
 
     private static boolean isSolidBlock(Block block) {
@@ -222,6 +229,6 @@ public class AntiXray
         // rendering they can be seen through therefor we special
         // case them so that the antixray doesn't show the fake
         // blocks around them.
-        return block.r() && block != Blocks.MOB_SPAWNER;
+        return block.isOccluding() && block != Blocks.MOB_SPAWNER;
     }
 }

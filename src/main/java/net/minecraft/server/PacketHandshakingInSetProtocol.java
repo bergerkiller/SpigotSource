@@ -1,47 +1,41 @@
 package net.minecraft.server;
 
-import java.io.IOException; // CraftBukkit
-
-public class PacketHandshakingInSetProtocol extends Packet {
+public class PacketHandshakingInSetProtocol implements Packet {
 
     private int a;
-    public String b; // CraftBukkit private -> public
-    public int c; // CraftBukkit private -> public
+    public String b;
+    public int c;
     private EnumProtocol d;
 
     public PacketHandshakingInSetProtocol() {}
 
-    public void a(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
-        this.a = packetdataserializer.a();
+    public void a(PacketDataSerializer packetdataserializer) {
+        this.a = packetdataserializer.e();
         this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot
         this.c = packetdataserializer.readUnsignedShort();
-        this.d = EnumProtocol.a(packetdataserializer.a());
+        this.d = EnumProtocol.a(packetdataserializer.e());
     }
 
-    public void b(PacketDataSerializer packetdataserializer) throws IOException { // CraftBukkit - added throws
+    public void b(PacketDataSerializer packetdataserializer) {
         packetdataserializer.b(this.a);
         packetdataserializer.a(this.b);
         packetdataserializer.writeShort(this.c);
-        packetdataserializer.b(this.d.c());
+        packetdataserializer.b(this.d.a());
     }
 
     public void a(PacketHandshakingInListener packethandshakinginlistener) {
         packethandshakinginlistener.a(this);
     }
 
-    public boolean a() {
-        return true;
-    }
-
-    public EnumProtocol c() {
+    public EnumProtocol a() {
         return this.d;
     }
 
-    public int d() {
+    public int b() {
         return this.a;
     }
 
-    public void handle(PacketListener packetlistener) {
+    public void a(PacketListener packetlistener) {
         this.a((PacketHandshakingInListener) packetlistener);
     }
 }
