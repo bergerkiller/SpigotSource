@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
@@ -15,7 +16,7 @@ public class SlotFurnaceResult extends Slot {
         this.a = entityhuman;
     }
 
-    public boolean isAllowed(ItemStack itemstack) {
+    public boolean isAllowed(@Nullable ItemStack itemstack) {
         return false;
     }
 
@@ -39,7 +40,7 @@ public class SlotFurnaceResult extends Slot {
 
     protected void c(ItemStack itemstack) {
         itemstack.a(this.a.world, this.a, this.b);
-        if (!this.a.world.isStatic) {
+        if (!this.a.world.isClientSide) {
             int i = this.b;
             float f = RecipesFurnace.getInstance().b(itemstack);
             int j;
@@ -54,16 +55,17 @@ public class SlotFurnaceResult extends Slot {
 
                 i = j;
             }
- 
+
             // CraftBukkit start - fire FurnaceExtractEvent
             Player player = (Player) a.getBukkitEntity();
             TileEntityFurnace furnace = ((TileEntityFurnace) this.inventory);
             org.bukkit.block.Block block = a.world.getWorld().getBlockAt(furnace.position.getX(), furnace.position.getY(), furnace.position.getZ());
 
-            FurnaceExtractEvent event = new FurnaceExtractEvent(player, block, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), itemstack.count, i);
-            a.world.getServer().getPluginManager().callEvent(event);
-
-            i = event.getExpToDrop();
+            if (b != 0) {
+                FurnaceExtractEvent event = new FurnaceExtractEvent(player, block, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), b, i);
+                a.world.getServer().getPluginManager().callEvent(event);
+                i = event.getExpToDrop();
+            }
             // CraftBukkit end
 
             while (i > 0) {

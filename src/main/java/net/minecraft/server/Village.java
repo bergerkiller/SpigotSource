@@ -1,14 +1,16 @@
 package net.minecraft.server;
 
 import com.google.common.collect.Lists;
+import com.mojang.authlib.GameProfile;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.UUID;
 
 public class Village {
 
     private World a;
-    private final List b = Lists.newArrayList();
+    private final List<VillageDoor> b = Lists.newArrayList();
     private BlockPosition c;
     private BlockPosition d;
     private int e;
@@ -16,8 +18,8 @@ public class Village {
     private int g;
     private int h;
     private int i;
-    private TreeMap j;
-    private List k;
+    private TreeMap<String, Integer> j;
+    private List<Village.Aggressor> k;
     private int l;
 
     public Village() {
@@ -59,7 +61,7 @@ public class Village {
             if (vec3d != null) {
                 EntityIronGolem entityirongolem = new EntityIronGolem(this.a);
 
-                entityirongolem.setPosition(vec3d.a, vec3d.b, vec3d.c);
+                entityirongolem.setPosition(vec3d.x, vec3d.y, vec3d.z);
                 this.a.addEntity(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
                 ++this.l;
             }
@@ -80,7 +82,7 @@ public class Village {
     }
 
     private boolean a(BlockPosition blockposition, BlockPosition blockposition1) {
-        if (!World.a((IBlockAccess) this.a, blockposition1.down())) {
+        if (!this.a.getType(blockposition1.down()).q()) {
             return false;
         } else {
             int i = blockposition1.getX() - blockposition.getX() / 2;
@@ -89,7 +91,7 @@ public class Village {
             for (int k = i; k < i + blockposition.getX(); ++k) {
                 for (int l = blockposition1.getY(); l < blockposition1.getY() + blockposition.getY(); ++l) {
                     for (int i1 = j; i1 < j + blockposition.getZ(); ++i1) {
-                        if (this.a.getType(new BlockPosition(k, l, i1)).getBlock().isOccluding()) {
+                        if (this.a.getType(new BlockPosition(k, l, i1)).l()) {
                             return false;
                         }
                     }
@@ -137,10 +139,10 @@ public class Village {
     }
 
     public boolean a(BlockPosition blockposition) {
-        return this.d.i(blockposition) < (double) (this.e * this.e);
+        return this.d.n(blockposition) < (double) (this.e * this.e);
     }
 
-    public List f() {
+    public List<VillageDoor> f() {
         return this.b;
     }
 
@@ -178,8 +180,13 @@ public class Village {
             }
 
             if (j < i) {
-                villagedoor = villagedoor1;
-                i = j;
+                BlockPosition blockposition1 = villagedoor1.d();
+                EnumDirection enumdirection = villagedoor1.j();
+
+                if (this.a.getType(blockposition1.shift(enumdirection, 1)).getBlock().b(this.a, blockposition1.shift(enumdirection, 1)) && this.a.getType(blockposition1.shift(enumdirection, -1)).getBlock().b(this.a, blockposition1.shift(enumdirection, -1)) && this.a.getType(blockposition1.up().shift(enumdirection, 1)).getBlock().b(this.a, blockposition1.up().shift(enumdirection, 1)) && this.a.getType(blockposition1.up().shift(enumdirection, -1)).getBlock().b(this.a, blockposition1.up().shift(enumdirection, -1))) {
+                    villagedoor = villagedoor1;
+                    i = j;
+                }
             }
         }
 
@@ -187,7 +194,7 @@ public class Village {
     }
 
     public VillageDoor e(BlockPosition blockposition) {
-        if (this.d.i(blockposition) > (double) (this.e * this.e)) {
+        if (this.d.n(blockposition) > (double) (this.e * this.e)) {
             return null;
         } else {
             Iterator iterator = this.b.iterator();
@@ -220,35 +227,35 @@ public class Village {
     public void a(EntityLiving entityliving) {
         Iterator iterator = this.k.iterator();
 
-        VillageAggressor villageaggressor;
+        Village.Aggressor village_aggressor;
 
         do {
             if (!iterator.hasNext()) {
-                this.k.add(new VillageAggressor(this, entityliving, this.g));
+                this.k.add(new Village.Aggressor(entityliving, this.g));
                 return;
             }
 
-            villageaggressor = (VillageAggressor) iterator.next();
-        } while (villageaggressor.a != entityliving);
+            village_aggressor = (Village.Aggressor) iterator.next();
+        } while (village_aggressor.a != entityliving);
 
-        villageaggressor.b = this.g;
+        village_aggressor.b = this.g;
     }
 
     public EntityLiving b(EntityLiving entityliving) {
         double d0 = Double.MAX_VALUE;
-        VillageAggressor villageaggressor = null;
+        Village.Aggressor village_aggressor = null;
 
         for (int i = 0; i < this.k.size(); ++i) {
-            VillageAggressor villageaggressor1 = (VillageAggressor) this.k.get(i);
-            double d1 = villageaggressor1.a.h(entityliving);
+            Village.Aggressor village_aggressor1 = (Village.Aggressor) this.k.get(i);
+            double d1 = village_aggressor1.a.h(entityliving);
 
             if (d1 <= d0) {
-                villageaggressor = villageaggressor1;
+                village_aggressor = village_aggressor1;
                 d0 = d1;
             }
         }
 
-        return villageaggressor != null ? villageaggressor.a : null;
+        return village_aggressor != null ? village_aggressor.a : null;
     }
 
     public EntityHuman c(EntityLiving entityliving) {
@@ -280,9 +287,9 @@ public class Village {
         Iterator iterator = this.k.iterator();
 
         while (iterator.hasNext()) {
-            VillageAggressor villageaggressor = (VillageAggressor) iterator.next();
+            Village.Aggressor village_aggressor = (Village.Aggressor) iterator.next();
 
-            if (!villageaggressor.a.isAlive() || Math.abs(this.g - villageaggressor.b) > 300) {
+            if (!village_aggressor.a.isAlive() || Math.abs(this.g - village_aggressor.b) > 300) {
                 iterator.remove();
             }
         }
@@ -302,7 +309,7 @@ public class Village {
             }
 
             if (!this.f(villagedoor.d()) || Math.abs(this.g - villagedoor.h()) > 1200) {
-                this.c = this.c.a(villagedoor.d().a(-1));
+                this.c = this.c.b(villagedoor.d());
                 flag = true;
                 villagedoor.a(true);
                 iterator.remove();
@@ -316,16 +323,17 @@ public class Village {
     }
 
     private boolean f(BlockPosition blockposition) {
-        Block block = this.a.getType(blockposition).getBlock();
+        IBlockData iblockdata = this.a.getType(blockposition);
+        Block block = iblockdata.getBlock();
 
-        return block instanceof BlockDoor ? block.getMaterial() == Material.WOOD : false;
+        return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
     }
 
     private void n() {
         int i = this.b.size();
 
         if (i == 0) {
-            this.d = new BlockPosition(0, 0, 0);
+            this.d = BlockPosition.ZERO;
             this.e = 0;
         } else {
             this.d = new BlockPosition(this.c.getX() / i, this.c.getY() / i, this.c.getZ() / i);
@@ -382,7 +390,16 @@ public class Village {
         for (int j = 0; j < nbttaglist1.size(); ++j) {
             NBTTagCompound nbttagcompound2 = nbttaglist1.get(j);
 
-            this.j.put(nbttagcompound2.getString("Name"), Integer.valueOf(nbttagcompound2.getInt("S")));
+            if (nbttagcompound2.hasKey("UUID")) {
+                UserCache usercache = this.a.getMinecraftServer().getUserCache();
+                GameProfile gameprofile = usercache.a(UUID.fromString(nbttagcompound2.getString("UUID")));
+
+                if (gameprofile != null) {
+                    this.j.put(gameprofile.getName(), Integer.valueOf(nbttagcompound2.getInt("S")));
+                }
+            } else {
+                this.j.put(nbttagcompound2.getString("Name"), Integer.valueOf(nbttagcompound2.getInt("S")));
+            }
         }
 
     }
@@ -423,10 +440,14 @@ public class Village {
         while (iterator1.hasNext()) {
             String s = (String) iterator1.next();
             NBTTagCompound nbttagcompound2 = new NBTTagCompound();
+            UserCache usercache = this.a.getMinecraftServer().getUserCache();
+            GameProfile gameprofile = usercache.getProfile(s);
 
-            nbttagcompound2.setString("Name", s);
-            nbttagcompound2.setInt("S", ((Integer) this.j.get(s)).intValue());
-            nbttaglist1.add(nbttagcompound2);
+            if (gameprofile != null) {
+                nbttagcompound2.setString("UUID", gameprofile.getId().toString());
+                nbttagcompound2.setInt("S", ((Integer) this.j.get(s)).intValue());
+                nbttaglist1.add(nbttagcompound2);
+            }
         }
 
         nbttagcompound.set("Players", nbttaglist1);
@@ -449,5 +470,16 @@ public class Village {
             this.a(s, i);
         }
 
+    }
+
+    class Aggressor {
+
+        public EntityLiving a;
+        public int b;
+
+        Aggressor(EntityLiving entityliving, int i) {
+            this.a = entityliving;
+            this.b = i;
+        }
     }
 }

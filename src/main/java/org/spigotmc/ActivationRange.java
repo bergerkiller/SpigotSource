@@ -1,6 +1,5 @@
 package org.spigotmc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.server.AxisAlignedBB;
@@ -11,6 +10,7 @@ import net.minecraft.server.EntityAnimal;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityCreature;
+import net.minecraft.server.EntityCreeper;
 import net.minecraft.server.EntityEnderCrystal;
 import net.minecraft.server.EntityEnderDragon;
 import net.minecraft.server.EntityFireball;
@@ -34,10 +34,10 @@ import org.bukkit.craftbukkit.SpigotTimings;
 public class ActivationRange
 {
 
-    static AxisAlignedBB maxBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-    static AxisAlignedBB miscBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-    static AxisAlignedBB animalBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
-    static AxisAlignedBB monsterBB = AxisAlignedBB.a( 0, 0, 0, 0, 0, 0 );
+    static AxisAlignedBB maxBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
+    static AxisAlignedBB miscBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
+    static AxisAlignedBB animalBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
+    static AxisAlignedBB monsterBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
 
     /**
      * Initializes an entities type on construction to specify what group this
@@ -106,7 +106,7 @@ public class ActivationRange
         maxRange = Math.max( maxRange, miscActivationRange );
         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
 
-        for ( Entity player : (List<Entity>) world.players )
+        for ( EntityHuman player : world.players )
         {
 
             player.activatedTick = MinecraftServer.currentTick;
@@ -141,9 +141,9 @@ public class ActivationRange
      */
     private static void activateChunkEntities(Chunk chunk)
     {
-        for ( EntitySlice slice : chunk.entitySlices )
+        for ( List<Entity> slice : chunk.entitySlices )
         {
-            for ( Entity entity : (Set<Entity>) slice )
+            for ( Entity entity : slice )
             {
                 if ( MinecraftServer.currentTick > entity.activatedTick )
                 {
@@ -188,14 +188,13 @@ public class ActivationRange
     public static boolean checkEntityImmunities(Entity entity)
     {
         // quick checks.
-        if ( entity.inWater /* isInWater */ || entity.fireTicks > 0 )
+        if ( entity.inWater || entity.fireTicks > 0 )
         {
             return true;
         }
         if ( !( entity instanceof EntityArrow ) )
         {
-            if ( !entity.onGround || entity.passenger != null
-                    || entity.vehicle != null )
+            if ( !entity.onGround || !entity.passengers.isEmpty() || entity.isPassenger() )
             {
                 return true;
             }
@@ -215,14 +214,14 @@ public class ActivationRange
             {
                 return true;
             }
-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).ck() /* Getter for first boolean */ )
+            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).db()/* Getter for first boolean */ )
             {
                 return true;
             }
             if ( entity instanceof EntityAnimal )
             {
                 EntityAnimal animal = (EntityAnimal) entity;
-                if ( animal.isBaby() || animal.ce() /*love*/ )
+                if ( animal.isBaby() || animal.isInLove() )
                 {
                     return true;
                 }
@@ -230,6 +229,9 @@ public class ActivationRange
                 {
                     return true;
                 }
+            }
+            if (entity instanceof EntityCreeper && ((EntityCreeper) entity).isIgnited()) { // isExplosive
+                return true;
             }
         }
         return false;
@@ -244,6 +246,13 @@ public class ActivationRange
     public static boolean checkIfActive(Entity entity)
     {
         SpigotTimings.checkIfActiveTimer.startTiming();
+        // Never safe to skip fireworks or entities not yet added to chunk
+        // PAIL: inChunk
+        if ( !entity.aa || entity instanceof EntityFireworks ) {
+            SpigotTimings.checkIfActiveTimer.stopTiming();
+            return true;
+        }
+
         boolean isActive = entity.activatedTick >= MinecraftServer.currentTick || entity.defaultActivationState;
 
         // Should this entity tick?

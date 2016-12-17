@@ -6,28 +6,28 @@ public class EntitySmallFireball extends EntityFireball {
 
     public EntitySmallFireball(World world) {
         super(world);
-        this.a(0.3125F, 0.3125F);
+        this.setSize(0.3125F, 0.3125F);
     }
 
     public EntitySmallFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
         super(world, entityliving, d0, d1, d2);
-        this.a(0.3125F, 0.3125F);
+        this.setSize(0.3125F, 0.3125F);
     }
 
     public EntitySmallFireball(World world, double d0, double d1, double d2, double d3, double d4, double d5) {
         super(world, d0, d1, d2, d3, d4, d5);
-        this.a(0.3125F, 0.3125F);
+        this.setSize(0.3125F, 0.3125F);
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
-        if (!this.world.isStatic) {
+        if (!this.world.isClientSide) {
             boolean flag;
 
             if (movingobjectposition.entity != null) {
-                flag = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 5.0F);
-                if (flag) {
-                    this.a(this.shooter, movingobjectposition.entity);
-                    if (!movingobjectposition.entity.isFireProof()) {
+                if (!movingobjectposition.entity.isFireProof()) {
+                    flag = movingobjectposition.entity.damageEntity(DamageSource.fireball(this, this.shooter), 5.0F);
+                    if (flag) {
+                        this.a(this.shooter, movingobjectposition.entity);
                         // CraftBukkit start - Entity damage by entity event + combust event
                         EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), movingobjectposition.entity.getBukkitEntity(), 5);
                         movingobjectposition.entity.world.getServer().getPluginManager().callEvent(event);
@@ -49,7 +49,7 @@ public class EntitySmallFireball extends EntityFireball {
 
                     if (this.world.isEmpty(blockposition)) {
                         // CraftBukkit start
-                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {                            
+                        if (isIncendiary && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this).isCancelled()) {
                             this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
                         }
                         // CraftBukkit end
@@ -62,7 +62,7 @@ public class EntitySmallFireball extends EntityFireball {
 
     }
 
-    public boolean ad() {
+    public boolean isInteractable() {
         return false;
     }
 

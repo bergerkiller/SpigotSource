@@ -1,14 +1,20 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 public class BlockOre extends Block {
 
     public BlockOre() {
-        super(Material.STONE);
+        this(Material.STONE.r());
+    }
+
+    public BlockOre(MaterialMapColor materialmapcolor) {
+        super(Material.STONE, materialmapcolor);
         this.a(CreativeModeTab.b);
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return this == Blocks.COAL_ORE ? Items.COAL : (this == Blocks.DIAMOND_ORE ? Items.DIAMOND : (this == Blocks.LAPIS_ORE ? Items.DYE : (this == Blocks.EMERALD_ORE ? Items.EMERALD : (this == Blocks.QUARTZ_ORE ? Items.QUARTZ : Item.getItemOf(this)))));
     }
@@ -18,7 +24,7 @@ public class BlockOre extends Block {
     }
 
     public int getDropCount(int i, Random random) {
-        if (i > 0 && Item.getItemOf(this) != this.getDropType((IBlockData) this.O().a().iterator().next(), random, i)) {
+        if (i > 0 && Item.getItemOf(this) != this.getDropType((IBlockData) this.t().a().iterator().next(), random, i)) {
             int j = random.nextInt(i + 2) - 1;
 
             if (j < 0) {
@@ -51,7 +57,8 @@ public class BlockOre extends Block {
 
             this.dropExperience(world, blockposition, j);
         }
-        // */                
+        // */
+
     }
 
     @Override
@@ -76,6 +83,10 @@ public class BlockOre extends Block {
 
         return 0;
         // CraftBukkit end
+    }
+
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(this);
     }
 
     public int getDropData(World world, BlockPosition blockposition) {

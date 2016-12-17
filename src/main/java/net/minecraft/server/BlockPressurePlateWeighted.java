@@ -5,19 +5,23 @@ import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
 public class BlockPressurePlateWeighted extends BlockPressurePlateAbstract {
 
     public static final BlockStateInteger POWER = BlockStateInteger.of("power", 0, 15);
-    private final int b;
+    private final int weight;
 
-    protected BlockPressurePlateWeighted(String s, Material material, int i) {
-        super(material);
-        this.j(this.blockStateList.getBlockData().set(BlockPressurePlateWeighted.POWER, Integer.valueOf(0)));
-        this.b = i;
+    protected BlockPressurePlateWeighted(Material material, int i) {
+        this(material, i, material.r());
+    }
+
+    protected BlockPressurePlateWeighted(Material material, int i, MaterialMapColor materialmapcolor) {
+        super(material, materialmapcolor);
+        this.w(this.blockStateList.getBlockData().set(BlockPressurePlateWeighted.POWER, Integer.valueOf(0)));
+        this.weight = i;
     }
 
     protected int e(World world, BlockPosition blockposition) {
         // CraftBukkit start
-        //int i = Math.min(world.a(Entity.class, this.a(blockposition)).size(), this.b);
+        // int i = Math.min(world.a(Entity.class, BlockPressurePlateWeighted.c.a(blockposition)).size(), this.weight);
         int i = 0;
-        java.util.Iterator iterator = world.a(Entity.class, this.a(blockposition)).iterator();
+        java.util.Iterator iterator = world.a(Entity.class, BlockPressurePlateWeighted.c.a(blockposition)).iterator();
 
         while (iterator.hasNext()) {
             Entity entity = (Entity) iterator.next();
@@ -25,7 +29,7 @@ public class BlockPressurePlateWeighted extends BlockPressurePlateAbstract {
             org.bukkit.event.Cancellable cancellable;
 
             if (entity instanceof EntityHuman) {
-                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null);
+                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
             } else {
                 cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
                 world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
@@ -37,11 +41,11 @@ public class BlockPressurePlateWeighted extends BlockPressurePlateAbstract {
             }
         }
 
-        i = Math.min(i, this.b);
+        i = Math.min(i, this.weight);
         // CraftBukkit end
 
         if (i > 0) {
-            float f = (float) Math.min(this.b, i) / (float) this.b;
+            float f = (float) Math.min(this.weight, i) / (float) this.weight;
 
             return MathHelper.f(f * 15.0F);
         } else {
@@ -49,7 +53,15 @@ public class BlockPressurePlateWeighted extends BlockPressurePlateAbstract {
         }
     }
 
-    protected int e(IBlockData iblockdata) {
+    protected void b(World world, BlockPosition blockposition) {
+        world.a((EntityHuman) null, blockposition, SoundEffects.dt, SoundCategory.BLOCKS, 0.3F, 0.90000004F);
+    }
+
+    protected void c(World world, BlockPosition blockposition) {
+        world.a((EntityHuman) null, blockposition, SoundEffects.BLOCK_METAL_PRESSUREPLATE_CLICK_OFF, SoundCategory.BLOCKS, 0.3F, 0.75F);
+    }
+
+    protected int getPower(IBlockData iblockdata) {
         return ((Integer) iblockdata.get(BlockPressurePlateWeighted.POWER)).intValue();
     }
 

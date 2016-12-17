@@ -2,18 +2,21 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 import java.util.Random;
+import javax.annotation.Nullable;
 
 public class BlockReed extends Block {
 
     public static final BlockStateInteger AGE = BlockStateInteger.of("age", 0, 15);
+    protected static final AxisAlignedBB b = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 1.0D, 0.875D);
 
     protected BlockReed() {
         super(Material.PLANT);
-        this.j(this.blockStateList.getBlockData().set(BlockReed.AGE, Integer.valueOf(0)));
-        float f = 0.375F;
-
-        this.a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 1.0F, 0.5F + f);
+        this.w(this.blockStateList.getBlockData().set(BlockReed.AGE, Integer.valueOf(0)));
         this.a(true);
+    }
+
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return BlockReed.b;
     }
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
@@ -28,14 +31,13 @@ public class BlockReed extends Block {
                 if (i < 3) {
                     int j = ((Integer) iblockdata.get(BlockReed.AGE)).intValue();
 
-                    if (j >= (byte) range(3, (world.growthOdds / world.spigotConfig.caneModifier * 15) + 0.5F, 15)) { // Spigot
+                    if (j >= (byte) range(3, ((100.0F / world.spigotConfig.caneModifier) * 15) + 0.5F, 15)) { // Spigot
                         // CraftBukkit start
-                        // world.setTypeUpdate(blockposition.up(), this.getBlockData());
-                        // world.setTypeAndData(blockposition, iblockdata.set(BlockReed.AGE, Integer.valueOf(0)), 4);
-                        BlockPosition upPos = blockposition.up(); 
-                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, upPos.getX(), upPos.getY(), upPos.getZ(), this, 0); 
+                        // world.setTypeUpdate(blockposition.up(), this.getBlockData()); // CraftBukkit
+                        BlockPosition upPos = blockposition.up();
+                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, upPos.getX(), upPos.getY(), upPos.getZ(), this, 0);
+                        world.setTypeAndData(blockposition, iblockdata.set(BlockReed.AGE, Integer.valueOf(0)), 4);
                         // CraftBukkit end
-                        
                     } else {
                         world.setTypeAndData(blockposition, iblockdata.set(BlockReed.AGE, Integer.valueOf(j + 1)), 4);
                     }
@@ -53,28 +55,31 @@ public class BlockReed extends Block {
         } else if (block != Blocks.GRASS && block != Blocks.DIRT && block != Blocks.SAND) {
             return false;
         } else {
-            Iterator iterator = EnumDirectionLimit.HORIZONTAL.iterator();
+            BlockPosition blockposition1 = blockposition.down();
+            Iterator iterator = EnumDirection.EnumDirectionLimit.HORIZONTAL.iterator();
 
-            EnumDirection enumdirection;
+            IBlockData iblockdata;
 
             do {
                 if (!iterator.hasNext()) {
                     return false;
                 }
 
-                enumdirection = (EnumDirection) iterator.next();
-            } while (world.getType(blockposition.shift(enumdirection).down()).getBlock().getMaterial() != Material.WATER);
+                EnumDirection enumdirection = (EnumDirection) iterator.next();
+
+                iblockdata = world.getType(blockposition1.shift(enumdirection));
+            } while (iblockdata.getMaterial() != Material.WATER && iblockdata.getBlock() != Blocks.FROSTED_ICE);
 
             return true;
         }
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
         this.e(world, blockposition, iblockdata);
     }
 
     protected final boolean e(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        if (this.d(world, blockposition)) {
+        if (this.b(world, blockposition)) {
             return true;
         } else {
             this.b(world, blockposition, iblockdata, 0);
@@ -83,24 +88,30 @@ public class BlockReed extends Block {
         }
     }
 
-    public boolean d(World world, BlockPosition blockposition) {
+    public boolean b(World world, BlockPosition blockposition) {
         return this.canPlace(world, blockposition);
     }
 
-    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        return null;
+    @Nullable
+    public AxisAlignedBB a(IBlockData iblockdata, World world, BlockPosition blockposition) {
+        return BlockReed.k;
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return Items.REEDS;
     }
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
+    }
+
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Items.REEDS);
     }
 
     public IBlockData fromLegacyData(int i) {

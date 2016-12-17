@@ -5,7 +5,7 @@ import com.mojang.authlib.GameProfile;
 import java.util.Date;
 import java.util.UUID;
 
-public class GameProfileBanEntry extends ExpirableListEntry {
+public class GameProfileBanEntry extends ExpirableListEntry<GameProfile> {
 
     public GameProfileBanEntry(GameProfile gameprofile) {
         this(gameprofile, (Date) null, (String) null, (Date) null, (String) null);

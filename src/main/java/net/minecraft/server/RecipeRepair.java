@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import javax.annotation.Nullable;
 
 public class RecipeRepair extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
@@ -32,7 +33,8 @@ public class RecipeRepair extends ShapelessRecipes implements IRecipe { // Craft
         return arraylist.size() == 2;
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         ArrayList arraylist = Lists.newArrayList();
 
         ItemStack itemstack;
@@ -65,7 +67,7 @@ public class RecipeRepair extends ShapelessRecipes implements IRecipe { // Craft
                 if (i1 < 0) {
                     i1 = 0;
                 }
-                
+
                 // CraftBukkit start - Construct a dummy repair recipe
                 ItemStack result = new ItemStack(itemstack.getItem(), 1, i1);
                 java.util.List<ItemStack> ingredients = new ArrayList<ItemStack>();
@@ -87,6 +89,7 @@ public class RecipeRepair extends ShapelessRecipes implements IRecipe { // Craft
         return 4;
     }
 
+    @Nullable
     public ItemStack b() {
         return null;
     }

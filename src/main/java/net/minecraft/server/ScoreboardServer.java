@@ -11,8 +11,8 @@ import java.util.Set;
 public class ScoreboardServer extends Scoreboard {
 
     private final MinecraftServer a;
-    private final Set b = Sets.newHashSet();
-    private PersistentScoreboard c;
+    private final Set<ScoreboardObjective> b = Sets.newHashSet();
+    private Runnable[] c = new Runnable[0];
 
     public ScoreboardServer(MinecraftServer minecraftserver) {
         this.a = minecraftserver;
@@ -21,7 +21,7 @@ public class ScoreboardServer extends Scoreboard {
     public void handleScoreChanged(ScoreboardScore scoreboardscore) {
         super.handleScoreChanged(scoreboardscore);
         if (this.b.contains(scoreboardscore.getObjective())) {
-            this.sendAll(new PacketPlayOutScoreboardScore(scoreboardscore)); // CraftBukkit - Internal packet method
+            this.sendAll(new PacketPlayOutScoreboardScore(scoreboardscore));
         }
 
         this.b();
@@ -29,13 +29,13 @@ public class ScoreboardServer extends Scoreboard {
 
     public void handlePlayerRemoved(String s) {
         super.handlePlayerRemoved(s);
-        this.sendAll(new PacketPlayOutScoreboardScore(s)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardScore(s));
         this.b();
     }
 
     public void a(String s, ScoreboardObjective scoreboardobjective) {
         super.a(s, scoreboardobjective);
-        this.sendAll(new PacketPlayOutScoreboardScore(s, scoreboardobjective)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardScore(s, scoreboardobjective));
         this.b();
     }
 
@@ -45,7 +45,7 @@ public class ScoreboardServer extends Scoreboard {
         super.setDisplaySlot(i, scoreboardobjective);
         if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
             if (this.h(scoreboardobjective1) > 0) {
-                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective)); // CraftBukkit - Internal packet method
+                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
             } else {
                 this.g(scoreboardobjective1);
             }
@@ -53,7 +53,7 @@ public class ScoreboardServer extends Scoreboard {
 
         if (scoreboardobjective != null) {
             if (this.b.contains(scoreboardobjective)) {
-                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective)); // CraftBukkit - Internal packet method
+                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
             } else {
                 this.e(scoreboardobjective);
             }
@@ -66,7 +66,7 @@ public class ScoreboardServer extends Scoreboard {
         if (super.addPlayerToTeam(s, s1)) {
             ScoreboardTeam scoreboardteam = this.getTeam(s1);
 
-            this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3)); // CraftBukkit - Internal packet method
+            this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 3));
             this.b();
             return true;
         } else {
@@ -76,7 +76,7 @@ public class ScoreboardServer extends Scoreboard {
 
     public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
         super.removePlayerFromTeam(s, scoreboardteam);
-        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 4)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(new String[] { s}), 4));
         this.b();
     }
 
@@ -88,7 +88,7 @@ public class ScoreboardServer extends Scoreboard {
     public void handleObjectiveChanged(ScoreboardObjective scoreboardobjective) {
         super.handleObjectiveChanged(scoreboardobjective);
         if (this.b.contains(scoreboardobjective)) {
-            this.sendAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2)); // CraftBukkit - Internal packet method
+            this.sendAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
         }
 
         this.b();
@@ -105,34 +105,35 @@ public class ScoreboardServer extends Scoreboard {
 
     public void handleTeamAdded(ScoreboardTeam scoreboardteam) {
         super.handleTeamAdded(scoreboardteam);
-        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 0)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 0));
         this.b();
     }
 
     public void handleTeamChanged(ScoreboardTeam scoreboardteam) {
         super.handleTeamChanged(scoreboardteam);
-        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 2)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 2));
         this.b();
     }
 
     public void handleTeamRemoved(ScoreboardTeam scoreboardteam) {
         super.handleTeamRemoved(scoreboardteam);
-        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 1)); // CraftBukkit - Internal packet method
+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 1));
         this.b();
     }
 
-    public void a(PersistentScoreboard persistentscoreboard) {
-        this.c = persistentscoreboard;
+    public void a(Runnable runnable) {
+        this.c = (Runnable[]) Arrays.copyOf(this.c, this.c.length + 1);
+        this.c[this.c.length - 1] = runnable;
     }
 
     protected void b() {
-        if (this.c != null) {
-            this.c.c();
+        for (int i = 0; i < this.c.length; ++i) {
+            this.c[i].run();
         }
 
     }
 
-    public List getScoreboardScorePacketsForObjective(ScoreboardObjective scoreboardobjective) {
+    public List<Packet<?>> getScoreboardScorePacketsForObjective(ScoreboardObjective scoreboardobjective) {
         ArrayList arraylist = Lists.newArrayList();
 
         arraylist.add(new PacketPlayOutScoreboardObjective(scoreboardobjective, 0));
@@ -156,7 +157,7 @@ public class ScoreboardServer extends Scoreboard {
 
     public void e(ScoreboardObjective scoreboardobjective) {
         List list = this.getScoreboardScorePacketsForObjective(scoreboardobjective);
-        Iterator iterator = this.a.getPlayerList().players.iterator();
+        Iterator iterator = this.a.getPlayerList().v().iterator();
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
@@ -173,7 +174,7 @@ public class ScoreboardServer extends Scoreboard {
         this.b.add(scoreboardobjective);
     }
 
-    public List f(ScoreboardObjective scoreboardobjective) {
+    public List<Packet<?>> f(ScoreboardObjective scoreboardobjective) {
         ArrayList arraylist = Lists.newArrayList();
 
         arraylist.add(new PacketPlayOutScoreboardObjective(scoreboardobjective, 1));
@@ -189,7 +190,7 @@ public class ScoreboardServer extends Scoreboard {
 
     public void g(ScoreboardObjective scoreboardobjective) {
         List list = this.f(scoreboardobjective);
-        Iterator iterator = this.a.getPlayerList().players.iterator();
+        Iterator iterator = this.a.getPlayerList().v().iterator();
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();

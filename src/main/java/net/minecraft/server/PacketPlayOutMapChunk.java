@@ -1,115 +1,152 @@
 package net.minecraft.server;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 
-public class PacketPlayOutMapChunk implements Packet {
+public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
 
     private int a;
     private int b;
-    private ChunkMap c;
-    private boolean d;
+    private int c;
+    private byte[] d;
+    private List<NBTTagCompound> e;
+    private boolean f;
 
     public PacketPlayOutMapChunk() {}
 
-    public PacketPlayOutMapChunk(Chunk chunk, boolean flag, int i) {
+    public PacketPlayOutMapChunk(Chunk chunk, int i) {
         this.a = chunk.locX;
         this.b = chunk.locZ;
-        this.d = flag;
-        this.c = a(chunk, flag, !chunk.getWorld().worldProvider.o(), i);
-        chunk.world.spigotConfig.antiXrayInstance.obfuscateSync(chunk.locX, chunk.locZ, c.b, c.a, chunk.world);
+        this.f = i == '\uffff';
+        boolean flag = !chunk.getWorld().worldProvider.m();
+
+        this.d = new byte[this.a(chunk, flag, i)];
+        this.c = this.a(new PacketDataSerializer(this.g()), chunk, flag, i);
+        this.e = Lists.newArrayList();
+        Iterator iterator = chunk.getTileEntities().entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Entry entry = (Entry) iterator.next();
+            BlockPosition blockposition = (BlockPosition) entry.getKey();
+            TileEntity tileentity = (TileEntity) entry.getValue();
+            int j = blockposition.getY() >> 4;
+
+            if (this.e() || (i & 1 << j) != 0) {
+                NBTTagCompound nbttagcompound = tileentity.E_();
+
+                this.e.add(nbttagcompound);
+            }
+        }
+
     }
 
-    public void a(PacketDataSerializer packetdataserializer) {
+    public void a(PacketDataSerializer packetdataserializer) throws IOException {
         this.a = packetdataserializer.readInt();
         this.b = packetdataserializer.readInt();
-        this.d = packetdataserializer.readBoolean();
-        this.c = new ChunkMap();
-        this.c.b = packetdataserializer.readShort();
-        this.c.a = packetdataserializer.a();
+        this.f = packetdataserializer.readBoolean();
+        this.c = packetdataserializer.g();
+        int i = packetdataserializer.g();
+
+        if (i > 2097152) {
+            throw new RuntimeException("Chunk Packet trying to allocate too much memory on read.");
+        } else {
+            this.d = new byte[i];
+            packetdataserializer.readBytes(this.d);
+            int j = packetdataserializer.g();
+
+            this.e = Lists.newArrayList();
+
+            for (int k = 0; k < j; ++k) {
+                this.e.add(packetdataserializer.j());
+            }
+
+        }
     }
 
-    public void b(PacketDataSerializer packetdataserializer) {
+    public void b(PacketDataSerializer packetdataserializer) throws IOException {
         packetdataserializer.writeInt(this.a);
         packetdataserializer.writeInt(this.b);
-        packetdataserializer.writeBoolean(this.d);
-        packetdataserializer.writeShort((short) (this.c.b & '\uffff'));
-        packetdataserializer.a(this.c.a);
+        packetdataserializer.writeBoolean(this.f);
+        packetdataserializer.d(this.c);
+        packetdataserializer.d(this.d.length);
+        packetdataserializer.writeBytes(this.d);
+        packetdataserializer.d(this.e.size());
+        Iterator iterator = this.e.iterator();
+
+        while (iterator.hasNext()) {
+            NBTTagCompound nbttagcompound = (NBTTagCompound) iterator.next();
+
+            packetdataserializer.a(nbttagcompound);
+        }
+
     }
 
     public void a(PacketListenerPlayOut packetlistenerplayout) {
         packetlistenerplayout.a(this);
     }
 
-    protected static int a(int i, boolean flag, boolean flag1) {
-        int j = i * 2 * 16 * 16 * 16;
-        int k = i * 16 * 16 * 16 / 2;
-        int l = flag ? i * 16 * 16 * 16 / 2 : 0;
-        int i1 = flag1 ? 256 : 0;
+    private ByteBuf g() {
+        ByteBuf bytebuf = Unpooled.wrappedBuffer(this.d);
 
-        return j + k + l + i1;
+        bytebuf.writerIndex(0);
+        return bytebuf;
     }
 
-    public static ChunkMap a(Chunk chunk, boolean flag, boolean flag1, int i) {
+    public int a(PacketDataSerializer packetdataserializer, Chunk chunk, boolean flag, int i) {
+        int j = 0;
         ChunkSection[] achunksection = chunk.getSections();
-        ChunkMap chunkmap = new ChunkMap();
-        ArrayList arraylist = Lists.newArrayList();
+        int k = 0;
 
-        int j;
+        for (int l = achunksection.length; k < l; ++k) {
+            ChunkSection chunksection = achunksection[k];
 
-        for (j = 0; j < achunksection.length; ++j) {
-            ChunkSection chunksection = achunksection[j];
-
-            if (chunksection != null && (!flag || !chunksection.a()) && (i & 1 << j) != 0) {
-                chunkmap.b |= 1 << j;
-                arraylist.add(chunksection);
+            if (chunksection != Chunk.a && (!this.e() || !chunksection.a()) && (i & 1 << k) != 0) {
+                j |= 1 << k;
+                chunksection.getBlocks().b(packetdataserializer);
+                packetdataserializer.writeBytes(chunksection.getEmittedLightArray().asBytes());
+                if (flag) {
+                    packetdataserializer.writeBytes(chunksection.getSkyLightArray().asBytes());
+                }
             }
         }
 
-        chunkmap.a = new byte[a(Integer.bitCount(chunkmap.b), flag1, flag)];
-        j = 0;
-        Iterator iterator = arraylist.iterator();
-
-        ChunkSection chunksection1;
-
-        while (iterator.hasNext()) {
-            chunksection1 = (ChunkSection) iterator.next();
-            char[] achar = chunksection1.getIdArray();
-            char[] achar1 = achar;
-            int k = achar.length;
-
-            for (int l = 0; l < k; ++l) {
-                char c0 = achar1[l];
-
-                chunkmap.a[j++] = (byte) (c0 & 255);
-                chunkmap.a[j++] = (byte) (c0 >> 8 & 255);
-            }
+        if (this.e()) {
+            packetdataserializer.writeBytes(chunk.getBiomeIndex());
         }
 
-        for (iterator = arraylist.iterator(); iterator.hasNext(); j = a(chunksection1.getEmittedLightArray().a(), chunkmap.a, j)) {
-            chunksection1 = (ChunkSection) iterator.next();
-        }
-
-        if (flag1) {
-            for (iterator = arraylist.iterator(); iterator.hasNext(); j = a(chunksection1.getSkyLightArray().a(), chunkmap.a, j)) {
-                chunksection1 = (ChunkSection) iterator.next();
-            }
-        }
-
-        if (flag) {
-            a(chunk.getBiomeIndex(), chunkmap.a, j);
-        }
-
-        return chunkmap;
+        return j;
     }
 
-    private static int a(byte[] abyte, byte[] abyte1, int i) {
-        System.arraycopy(abyte, 0, abyte1, i, abyte.length);
-        return i + abyte.length;
+    protected int a(Chunk chunk, boolean flag, int i) {
+        int j = 0;
+        ChunkSection[] achunksection = chunk.getSections();
+        int k = 0;
+
+        for (int l = achunksection.length; k < l; ++k) {
+            ChunkSection chunksection = achunksection[k];
+
+            if (chunksection != Chunk.a && (!this.e() || !chunksection.a()) && (i & 1 << k) != 0) {
+                j += chunksection.getBlocks().a();
+                j += chunksection.getEmittedLightArray().asBytes().length;
+                if (flag) {
+                    j += chunksection.getSkyLightArray().asBytes().length;
+                }
+            }
+        }
+
+        if (this.e()) {
+            j += chunk.getBiomeIndex().length;
+        }
+
+        return j;
     }
 
-    public void a(PacketListener packetlistener) {
-        this.a((PacketListenerPlayOut) packetlistener);
+    public boolean e() {
+        return this.f;
     }
 }

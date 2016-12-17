@@ -30,6 +30,8 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
@@ -138,6 +140,16 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
+            new StackProvider(Material.WRITTEN_BOOK) {
+                @Override ItemStack operate(final ItemStack cleanStack) {
+                    final BookMeta meta = (BookMeta) cleanStack.getItemMeta();
+                    meta.setAuthor("Some author");
+                    meta.setPages("Page 1", "Page 2");
+                    meta.setTitle("A title");
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
             /* Skulls rely on a running server instance
             new StackProvider(Material.SKULL_ITEM) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
@@ -167,6 +179,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(Material.POTION) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
+                    meta.setBasePotionData(new PotionData(PotionType.UNCRAFTABLE, false, false));
                     meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 1), false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -207,7 +220,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             }
         );
 
-        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 2 /* Normal item meta and skulls */));
+        assertThat("Forgotten test?", providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 3/* Normal item meta, skulls and tile entities */));
 
         for (final StackProvider provider : providers) {
             downCastTest(new BukkitWrapper(provider));

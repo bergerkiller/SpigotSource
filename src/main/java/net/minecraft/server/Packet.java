@@ -1,10 +1,12 @@
 package net.minecraft.server;
 
-public interface Packet {
+import java.io.IOException;
 
-    void a(PacketDataSerializer packetdataserializer) throws java.io.IOException; // CraftBukkit - added throws
+public interface Packet<T extends PacketListener> {
 
-    void b(PacketDataSerializer packetdataserializer) throws java.io.IOException; // CraftBukkit - added throws
+    void a(PacketDataSerializer packetdataserializer) throws IOException;
 
-    void a(PacketListener packetlistener);
+    void b(PacketDataSerializer packetdataserializer) throws IOException;
+
+    void a(T t0);
 }

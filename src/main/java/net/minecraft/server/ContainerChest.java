@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -7,7 +8,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerChest extends Container {
 
-    public IInventory container;
+    private IInventory container;
     private int f;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
@@ -38,7 +39,7 @@ public class ContainerChest extends Container {
         this.f = iinventory1.getSize() / 9;
         iinventory1.startOpen(entityhuman);
         int i = (this.f - 4) * 18;
-        
+
         // CraftBukkit start - Save player
         // TODO: Should we check to make sure it really is an InventoryPlayer?
         this.player = (PlayerInventory) iinventory;
@@ -70,6 +71,7 @@ public class ContainerChest extends Container {
         return this.container.a(entityhuman);
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);

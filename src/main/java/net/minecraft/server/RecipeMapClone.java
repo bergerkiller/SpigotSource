@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
+
 public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
     // CraftBukkit start - Delegate to new parent class
@@ -35,7 +37,8 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
         return itemstack != null && i > 0;
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         int i = 0;
         ItemStack itemstack = null;
 
@@ -76,6 +79,7 @@ public class RecipeMapClone extends ShapelessRecipes implements IRecipe { // Cra
         return 9;
     }
 
+    @Nullable
     public ItemStack b() {
         return null;
     }

@@ -2,13 +2,14 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
-public class TileEntityChest extends TileEntityContainer implements IUpdatePlayerListBox, IInventory {
+public class TileEntityChest extends TileEntityLootable implements ITickable, IInventory {
 
     private ItemStack[] items = new ItemStack[27];
     public boolean a;
@@ -19,12 +20,12 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
     public float j;
     public float k;
     public int l;
-    private int n;
-    private int o = -1;
-    private String p;
+    private int p;
+    private BlockChest.Type q;
+    private String r;
 
     public TileEntityChest() {}
-    
+
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -50,49 +51,40 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
     }
     // CraftBukkit end
 
+    public TileEntityChest(BlockChest.Type blockchest_type) {
+        this.q = blockchest_type;
+    }
+
     public int getSize() {
         return 27;
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
+        this.d((EntityHuman) null);
         return this.items[i];
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.items[i] != null) {
-            ItemStack itemstack;
+        this.d((EntityHuman) null);
+        ItemStack itemstack = ContainerUtil.a(this.items, i, j);
 
-            if (this.items[i].count <= j) {
-                itemstack = this.items[i];
-                this.items[i] = null;
-                this.update();
-                return itemstack;
-            } else {
-                itemstack = this.items[i].a(j);
-                if (this.items[i].count == 0) {
-                    this.items[i] = null;
-                }
-
-                this.update();
-                return itemstack;
-            }
-        } else {
-            return null;
+        if (itemstack != null) {
+            this.update();
         }
+
+        return itemstack;
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
-        if (this.items[i] != null) {
-            ItemStack itemstack = this.items[i];
-
-            this.items[i] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        this.d((EntityHuman) null);
+        return ContainerUtil.a(this.items, i);
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
+        this.d((EntityHuman) null);
         this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
@@ -102,56 +94,62 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
     }
 
     public String getName() {
-        return this.hasCustomName() ? this.p : "container.chest";
+        return this.hasCustomName() ? this.r : "container.chest";
     }
 
     public boolean hasCustomName() {
-        return this.p != null && this.p.length() > 0;
+        return this.r != null && !this.r.isEmpty();
     }
 
     public void a(String s) {
-        this.p = s;
+        this.r = s;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
-
         this.items = new ItemStack[this.getSize()];
         if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
-            this.p = nbttagcompound.getString("CustomName");
+            this.r = nbttagcompound.getString("CustomName");
         }
 
-        for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
-            int j = nbttagcompound1.getByte("Slot") & 255;
+        if (!this.d(nbttagcompound)) {
+            NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
-            if (j >= 0 && j < this.items.length) {
-                this.items[j] = ItemStack.createStack(nbttagcompound1);
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
+                int j = nbttagcompound1.getByte("Slot") & 255;
+
+                if (j >= 0 && j < this.items.length) {
+                    this.items[j] = ItemStack.createStack(nbttagcompound1);
+                }
             }
         }
 
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-        NBTTagList nbttaglist = new NBTTagList();
+    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+        super.save(nbttagcompound);
+        if (!this.e(nbttagcompound)) {
+            NBTTagList nbttaglist = new NBTTagList();
 
-        for (int i = 0; i < this.items.length; ++i) {
-            if (this.items[i] != null) {
-                NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+            for (int i = 0; i < this.items.length; ++i) {
+                if (this.items[i] != null) {
+                    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                nbttagcompound1.setByte("Slot", (byte) i);
-                this.items[i].save(nbttagcompound1);
-                nbttaglist.add(nbttagcompound1);
+                    nbttagcompound1.setByte("Slot", (byte) i);
+                    this.items[i].save(nbttagcompound1);
+                    nbttaglist.add(nbttagcompound1);
+                }
             }
+
+            nbttagcompound.set("Items", nbttaglist);
         }
 
-        nbttagcompound.set("Items", nbttaglist);
         if (this.hasCustomName()) {
-            nbttagcompound.setString("CustomName", this.p);
+            nbttagcompound.setString("CustomName", this.r);
         }
 
+        return nbttagcompound;
     }
 
     public int getMaxStackSize() {
@@ -163,8 +161,8 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         return this.world.getTileEntity(this.position) != this ? false : entityhuman.e((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D) <= 64.0D;
     }
 
-    public void E() {
-        super.E();
+    public void invalidateBlockCache() {
+        super.invalidateBlockCache();
         this.a = false;
     }
 
@@ -172,7 +170,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         if (tileentitychest.x()) {
             this.a = false;
         } else if (this.a) {
-            switch (SwitchHelperTileEntityChest.a[enumdirection.ordinal()]) {
+            switch (TileEntityChest.SyntheticClass_1.a[enumdirection.ordinal()]) {
             case 1:
                 if (this.f != tileentitychest) {
                     this.a = false;
@@ -210,6 +208,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         }
     }
 
+    @Nullable
     protected TileEntityChest a(EnumDirection enumdirection) {
         BlockPosition blockposition = this.position.shift(enumdirection);
 
@@ -233,7 +232,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         } else {
             Block block = this.world.getType(blockposition).getBlock();
 
-            return block instanceof BlockChest && ((BlockChest) block).b == this.n();
+            return block instanceof BlockChest && ((BlockChest) block).g == this.o();
         }
     }
 
@@ -243,10 +242,10 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         int j = this.position.getY();
         int k = this.position.getZ();
 
-        ++this.n;
+        ++this.p;
         float f;
 
-        if (!this.world.isStatic && this.l != 0 && (this.n + i + j + k) % 200 == 0) {
+        if (!this.world.isClientSide && this.l != 0 && (this.p + i + j + k) % 200 == 0) {
             this.l = 0;
             f = 5.0F;
             List list = this.world.a(EntityHuman.class, new AxisAlignedBB((double) ((float) i - f), (double) ((float) j - f), (double) ((float) k - f), (double) ((float) (i + 1) + f), (double) ((float) (j + 1) + f), (double) ((float) (k + 1) + f)));
@@ -281,7 +280,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
                 d1 += 0.5D;
             }
 
-            this.world.makeSound(d1, (double) j + 0.5D, d0, "random.chestopen", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+            this.world.a((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.X, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
         }
 
         if (this.l == 0 && this.j > 0.0F || this.l > 0 && this.j < 1.0F) {
@@ -311,7 +310,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
                     d0 += 0.5D;
                 }
 
-                this.world.makeSound(d0, (double) j + 0.5D, d2, "random.chestclosed", 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+                this.world.a((EntityHuman) null, d0, (double) j + 0.5D, d2, SoundEffects.V, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
             }
 
             if (this.j < 0.0F) {
@@ -331,19 +330,18 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
     }
 
     public void startOpen(EntityHuman entityhuman) {
-        if (!entityhuman.v()) {
+        if (!entityhuman.isSpectator()) {
             if (this.l < 0) {
                 this.l = 0;
             }
-            
             int oldPower = Math.max(0, Math.min(15, this.l)); // CraftBukkit - Get power before new viewer is added
 
             ++this.l;
             if (this.world == null) return; // CraftBukkit
-            this.world.playBlockAction(this.position, this.w(), 1, this.l);
+            this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
 
             // CraftBukkit start - Call redstone event
-            if (this.w() == Blocks.TRAPPED_CHEST) {
+            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
                 int newPower = Math.max(0, Math.min(15, this.l));
 
                 if (oldPower != newPower) {
@@ -351,22 +349,21 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
                 }
             }
             // CraftBukkit end
-            this.world.applyPhysics(this.position, this.w());
-            this.world.applyPhysics(this.position.down(), this.w());
+            this.world.applyPhysics(this.position, this.getBlock());
+            this.world.applyPhysics(this.position.down(), this.getBlock());
         }
 
     }
 
     public void closeContainer(EntityHuman entityhuman) {
-        if (!entityhuman.v() && this.w() instanceof BlockChest) {
+        if (!entityhuman.isSpectator() && this.getBlock() instanceof BlockChest) {
             int oldPower = Math.max(0, Math.min(15, this.l)); // CraftBukkit - Get power before new viewer is added
-            
             --this.l;
             if (this.world == null) return; // CraftBukkit
-            this.world.playBlockAction(this.position, this.w(), 1, this.l);
-            
+            this.world.playBlockAction(this.position, this.getBlock(), 1, this.l);
+
             // CraftBukkit start - Call redstone event
-            if (this.w() == Blocks.TRAPPED_CHEST) {
+            if (this.getBlock() == Blocks.TRAPPED_CHEST) {
                 int newPower = Math.max(0, Math.min(15, this.l));
 
                 if (oldPower != newPower) {
@@ -374,8 +371,8 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
                 }
             }
             // CraftBukkit end
-            this.world.applyPhysics(this.position, this.w());
-            this.world.applyPhysics(this.position.down(), this.w());
+            this.world.applyPhysics(this.position, this.getBlock());
+            this.world.applyPhysics(this.position.down(), this.getBlock());
         }
 
     }
@@ -386,20 +383,20 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
 
     public void y() {
         super.y();
-        this.E();
+        this.invalidateBlockCache();
         this.m();
     }
 
-    public int n() {
-        if (this.o == -1) {
-            if (this.world == null || !(this.w() instanceof BlockChest)) {
-                return 0;
+    public BlockChest.Type o() {
+        if (this.q == null) {
+            if (this.world == null || !(this.getBlock() instanceof BlockChest)) {
+                return BlockChest.Type.BASIC;
             }
 
-            this.o = ((BlockChest) this.w()).b;
+            this.q = ((BlockChest) this.getBlock()).g;
         }
 
-        return this.o;
+        return this.q;
     }
 
     public String getContainerName() {
@@ -407,6 +404,7 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
     }
 
     public Container createContainer(PlayerInventory playerinventory, EntityHuman entityhuman) {
+        this.d(entityhuman);
         return new ContainerChest(playerinventory, this, entityhuman);
     }
 
@@ -414,16 +412,57 @@ public class TileEntityChest extends TileEntityContainer implements IUpdatePlaye
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;
     }
 
     public void l() {
+        this.d((EntityHuman) null);
+
         for (int i = 0; i < this.items.length; ++i) {
             this.items[i] = null;
         }
 
+    }
+
+    // CraftBukkit start
+    @Override
+    public boolean isFilteredNBT() {
+        return true;
+    }
+    // CraftBukkit end
+
+    static class SyntheticClass_1 {
+
+        static final int[] a = new int[EnumDirection.values().length];
+
+        static {
+            try {
+                TileEntityChest.SyntheticClass_1.a[EnumDirection.NORTH.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror) {
+                ;
+            }
+
+            try {
+                TileEntityChest.SyntheticClass_1.a[EnumDirection.SOUTH.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror1) {
+                ;
+            }
+
+            try {
+                TileEntityChest.SyntheticClass_1.a[EnumDirection.EAST.ordinal()] = 3;
+            } catch (NoSuchFieldError nosuchfielderror2) {
+                ;
+            }
+
+            try {
+                TileEntityChest.SyntheticClass_1.a[EnumDirection.WEST.ordinal()] = 4;
+            } catch (NoSuchFieldError nosuchfielderror3) {
+                ;
+            }
+
+        }
     }
 }

@@ -2,21 +2,19 @@ package net.minecraft.server;
 
 public class RemoteControlCommandListener implements ICommandListener {
 
-    private static final RemoteControlCommandListener instance = new RemoteControlCommandListener();
-    private StringBuffer b = new StringBuffer();
+    private final StringBuffer a = new StringBuffer();
+    private final MinecraftServer b;
 
-    public RemoteControlCommandListener() {}
-
-    public static RemoteControlCommandListener getInstance() {
-        return RemoteControlCommandListener.instance;
+    public RemoteControlCommandListener(MinecraftServer minecraftserver) {
+        this.b = minecraftserver;
     }
 
-    public void i() {
-        this.b.setLength(0);
+    public void clearMessages() {
+        this.a.setLength(0);
     }
 
-    public String j() {
-        return this.b.toString();
+    public String getMessages() {
+        return this.a.toString();
     }
 
     public String getName() {
@@ -26,15 +24,15 @@ public class RemoteControlCommandListener implements ICommandListener {
     public IChatBaseComponent getScoreboardDisplayName() {
         return new ChatComponentText(this.getName());
     }
- 
+
     // CraftBukkit start - Send a String
     public void sendMessage(String message) {
-        this.b.append(message);
+        this.a.append(message);
     }
     // CraftBukkit end
 
     public void sendMessage(IChatBaseComponent ichatbasecomponent) {
-        this.b.append(ichatbasecomponent.c());
+        this.a.append(ichatbasecomponent.toPlainText());
     }
 
     public boolean a(int i, String s) {
@@ -42,15 +40,15 @@ public class RemoteControlCommandListener implements ICommandListener {
     }
 
     public BlockPosition getChunkCoordinates() {
-        return new BlockPosition(0, 0, 0);
+        return BlockPosition.ZERO;
     }
 
     public Vec3D d() {
-        return new Vec3D(0.0D, 0.0D, 0.0D);
+        return Vec3D.a;
     }
 
     public World getWorld() {
-        return MinecraftServer.getServer().getWorld();
+        return this.b.getWorld();
     }
 
     public Entity f() {
@@ -61,5 +59,9 @@ public class RemoteControlCommandListener implements ICommandListener {
         return true;
     }
 
-    public void a(EnumCommandResult enumcommandresult, int i) {}
+    public void a(CommandObjectiveExecutor.EnumCommandResult commandobjectiveexecutor_enumcommandresult, int i) {}
+
+    public MinecraftServer h() {
+        return this.b;
+    }
 }

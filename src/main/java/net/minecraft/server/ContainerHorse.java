@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -10,7 +11,7 @@ public class ContainerHorse extends Container {
 
     private IInventory a;
     private EntityHorse f;
-    
+
     // CraftBukkit start
     org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity;
     PlayerInventory player;
@@ -25,7 +26,7 @@ public class ContainerHorse extends Container {
         return bukkitEntity = new CraftInventoryView(player.player.getBukkitEntity(), inventory, this);
     }
 
-    public ContainerHorse(IInventory iinventory, IInventory iinventory1, EntityHorse entityhorse, EntityHuman entityhuman) {
+    public ContainerHorse(IInventory iinventory, final IInventory iinventory1, final EntityHorse entityhorse, EntityHuman entityhuman) {
         player = (PlayerInventory) iinventory;
         // CraftBukkit end
         this.a = iinventory1;
@@ -35,8 +36,16 @@ public class ContainerHorse extends Container {
         iinventory1.startOpen(entityhuman);
         int i = (b0 - 4) * 18;
 
-        this.a((Slot) (new SlotHorseSaddle(this, iinventory1, 0, 8, 18)));
-        this.a((Slot) (new SlotHorseArmor(this, iinventory1, 1, 8, 36, entityhorse)));
+        this.a(new Slot(iinventory1, 0, 8, 18) {
+            public boolean isAllowed(@Nullable ItemStack itemstack) {
+                return super.isAllowed(itemstack) && itemstack.getItem() == Items.SADDLE && !this.hasItem();
+            }
+        });
+        this.a(new Slot(iinventory1, 1, 8, 36) {
+            public boolean isAllowed(@Nullable ItemStack itemstack) {
+                return super.isAllowed(itemstack) && entityhorse.getType().j() && EnumHorseArmor.b(itemstack.getItem());
+            }
+        });
         int j;
         int k;
 
@@ -64,6 +73,7 @@ public class ContainerHorse extends Container {
         return this.a.a(entityhuman) && this.f.isAlive() && this.f.g((Entity) entityhuman) < 8.0F;
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);

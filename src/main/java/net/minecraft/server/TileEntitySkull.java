@@ -2,8 +2,10 @@ package net.minecraft.server;
 
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.properties.Property;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 // Spigot start
 import com.google.common.base.Predicate;
@@ -16,13 +18,18 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.mojang.authlib.Agent;
+import com.mojang.authlib.ProfileLookupCallback;
 // Spigot end
 
-public class TileEntitySkull extends TileEntity {
+public class TileEntitySkull extends TileEntity implements ITickable {
 
     private int a;
-    public int rotation;
+    private int rotation;
     private GameProfile g = null;
+    private int h;
+    private boolean i;
+    private static UserCache j;
+    private static MinecraftSessionService k;
     // Spigot start
     public static final Executor executor = Executors.newFixedThreadPool(3,
             new ThreadFactoryBuilder()
@@ -37,8 +44,19 @@ public class TileEntitySkull extends TileEntity {
                 @Override
                 public GameProfile load(String key) throws Exception
                 {
-                    GameProfile[] profiles = new GameProfile[1];
-                    GameProfileLookup gameProfileLookup = new GameProfileLookup(profiles);
+                    final GameProfile[] profiles = new GameProfile[1];
+                    ProfileLookupCallback gameProfileLookup = new ProfileLookupCallback() {
+
+                        @Override
+                        public void onProfileLookupSucceeded(GameProfile gp) {
+                            profiles[0] = gp;
+                        }
+
+                        @Override
+                        public void onProfileLookupFailed(GameProfile gp, Exception excptn) {
+                            profiles[0] = gp;
+                        }
+                    };
 
                     MinecraftServer.getServer().getGameProfileRepository().findProfilesByNames(new String[] { key }, Agent.MINECRAFT, gameProfileLookup);
 
@@ -55,7 +73,7 @@ public class TileEntitySkull extends TileEntity {
 
                         if ( property == null )
                         {
-                            profile = MinecraftServer.getServer().aB().fillProfileProperties( profile, true );
+                            profile = MinecraftServer.getServer().ay().fillProfileProperties( profile, true );
                         }
                     }
 
@@ -63,13 +81,20 @@ public class TileEntitySkull extends TileEntity {
                     return profile;
                 }
             } );
-    
     // Spigot end
 
     public TileEntitySkull() {}
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
+    public static void a(UserCache usercache) {
+        TileEntitySkull.j = usercache;
+    }
+
+    public static void a(MinecraftSessionService minecraftsessionservice) {
+        TileEntitySkull.k = minecraftsessionservice;
+    }
+
+    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+        super.save(nbttagcompound);
         nbttagcompound.setByte("SkullType", (byte) (this.a & 255));
         nbttagcompound.setByte("Rot", (byte) (this.rotation & 255));
         if (this.g != null) {
@@ -79,6 +104,7 @@ public class TileEntitySkull extends TileEntity {
             nbttagcompound.set("Owner", nbttagcompound1);
         }
 
+        return nbttagcompound;
     }
 
     public void a(NBTTagCompound nbttagcompound) {
@@ -93,22 +119,37 @@ public class TileEntitySkull extends TileEntity {
 
                 if (!UtilColor.b(s)) {
                     this.g = new GameProfile((UUID) null, s);
-                    this.e();
+                    this.h();
                 }
             }
         }
 
     }
 
+    public void c() {
+        if (this.a == 5) {
+            if (this.world.isBlockIndirectlyPowered(this.position)) {
+                this.i = true;
+                ++this.h;
+            } else {
+                this.i = false;
+            }
+        }
+
+    }
+
+    @Nullable
     public GameProfile getGameProfile() {
         return this.g;
     }
 
-    public Packet getUpdatePacket() {
-        NBTTagCompound nbttagcompound = new NBTTagCompound();
+    @Nullable
+    public PacketPlayOutTileEntityData getUpdatePacket() {
+        return new PacketPlayOutTileEntityData(this.position, 4, this.E_());
+    }
 
-        this.b(nbttagcompound);
-        return new PacketPlayOutTileEntityData(this.position, 4, nbttagcompound);
+    public NBTTagCompound E_() {
+        return this.save(new NBTTagCompound());
     }
 
     public void setSkullType(int i) {
@@ -116,13 +157,13 @@ public class TileEntitySkull extends TileEntity {
         this.g = null;
     }
 
-    public void setGameProfile(GameProfile gameprofile) {
+    public void setGameProfile(@Nullable GameProfile gameprofile) {
         this.a = 3;
         this.g = gameprofile;
-        this.e();
+        this.h();
     }
 
-    private void e() {
+    private void h() {
         // Spigot start
         GameProfile profile = this.g;
         setSkullType( 0 ); // Work around client bug
@@ -130,10 +171,12 @@ public class TileEntitySkull extends TileEntity {
 
             @Override
             public boolean apply(GameProfile input) {
-                setSkullType( 3 ); // Work around client bug
+                setSkullType(3); // Work around client bug
                 g = input;
                 update();
-                world.notify(position);
+                if (world != null) {
+                    world.m(position); // PAIL: notify
+                }
                 return false;
             }
         }); 
@@ -149,7 +192,7 @@ public class TileEntitySkull extends TileEntity {
                 callback.apply(gameprofile);
             } else {
                 GameProfile profile = skinCache.getIfPresent(gameprofile.getName());
-                if (profile != null) {
+                if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
                     callback.apply(profile);
                 } else {
                     executor.execute(new Runnable() {
@@ -174,7 +217,7 @@ public class TileEntitySkull extends TileEntity {
             callback.apply(gameprofile);
         }
     }
-    // Spigot end    
+    // Spigot end
 
     public int getSkullType() {
         return this.a;

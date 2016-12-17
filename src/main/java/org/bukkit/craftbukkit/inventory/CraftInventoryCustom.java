@@ -14,6 +14,7 @@ import org.bukkit.inventory.InventoryHolder;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemStack;
+import org.bukkit.Location;
 
 public class CraftInventoryCustom extends CraftInventory {
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type) {
@@ -56,7 +57,6 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
-            Validate.isTrue(title.length() <= 32, "Title cannot be longer than 32 characters");
             this.items = new ItemStack[size];
             this.title = title;
             this.viewers = new ArrayList<HumanEntity>();
@@ -166,8 +166,7 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public void b(int i, int i1) {
-
+        public void setProperty(int i, int j) {
         }
 
         @Override
@@ -193,6 +192,11 @@ public class CraftInventoryCustom extends CraftInventory {
         @Override
         public IChatBaseComponent getScoreboardDisplayName() {
             return new ChatComponentText(title);
+        }
+
+        @Override
+        public Location getLocation() {
+            return null;
         }
     }
 }

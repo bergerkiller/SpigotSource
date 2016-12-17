@@ -13,20 +13,22 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 public class PersistentCollection {
 
     private IDataManager b;
-    protected Map a = Maps.newHashMap();
-    public List c = Lists.newArrayList(); // Spigot
-    private Map d = Maps.newHashMap();
+    protected Map<String, PersistentBase> a = Maps.newHashMap();
+    public List<PersistentBase> c = Lists.newArrayList(); // Spigot
+    private Map<String, Short> d = Maps.newHashMap();
 
     public PersistentCollection(IDataManager idatamanager) {
         this.b = idatamanager;
         this.b();
     }
 
-    public PersistentBase get(Class oclass, String s) {
+    @Nullable
+    public PersistentBase get(Class<? extends PersistentBase> oclass, String s) {
         PersistentBase persistentbase = (PersistentBase) this.a.get(s);
 
         if (persistentbase != null) {
@@ -92,13 +94,10 @@ public class PersistentCollection {
                 if (file != null) {
                     NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-                    persistentbase.b(nbttagcompound);
-                    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
-
-                    nbttagcompound1.set("data", nbttagcompound);
+                    nbttagcompound.set("data", persistentbase.b(new NBTTagCompound()));
                     FileOutputStream fileoutputstream = new FileOutputStream(file);
 
-                    NBTCompressedStreamTools.a(nbttagcompound1, (OutputStream) fileoutputstream);
+                    NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) fileoutputstream);
                     fileoutputstream.close();
                 }
             } catch (Exception exception) {
@@ -164,9 +163,8 @@ public class PersistentCollection {
 
                     while (iterator.hasNext()) {
                         String s1 = (String) iterator.next();
-                        short short0 = ((Short) this.d.get(s1)).shortValue();
 
-                        nbttagcompound.setShort(s1, short0);
+                        nbttagcompound.setShort(s1, ((Short) this.d.get(s1)).shortValue());
                     }
 
                     DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file));

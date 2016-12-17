@@ -4,43 +4,47 @@ import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityTNTPrimed extends Entity {
 
-    public int fuseTicks;
+    private static final DataWatcherObject<Integer> FUSE_TICKS = DataWatcher.a(EntityTNTPrimed.class, DataWatcherRegistry.b);
     private EntityLiving source;
+    private int c;
     public float yield = 4; // CraftBukkit - add field
     public boolean isIncendiary = false; // CraftBukkit - add field
 
     public EntityTNTPrimed(World world) {
         super(world);
-        this.k = true;
-        this.a(0.98F, 0.98F);
+        this.c = 80;
+        this.i = true;
+        this.setSize(0.98F, 0.98F);
     }
 
     public EntityTNTPrimed(World world, double d0, double d1, double d2, EntityLiving entityliving) {
         this(world);
         this.setPosition(d0, d1, d2);
-        float f = (float) (Math.random() * 3.1415927410125732D * 2.0D);
+        float f = (float) (Math.random() * 6.2831854820251465D);
 
         this.motX = (double) (-((float) Math.sin((double) f)) * 0.02F);
         this.motY = 0.20000000298023224D;
         this.motZ = (double) (-((float) Math.cos((double) f)) * 0.02F);
-        this.fuseTicks = 80;
+        this.setFuseTicks(80);
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
         this.source = entityliving;
     }
 
-    protected void h() {}
+    protected void i() {
+        this.datawatcher.register(EntityTNTPrimed.FUSE_TICKS, Integer.valueOf(80));
+    }
 
-    protected boolean r_() {
+    protected boolean playStepSound() {
         return false;
     }
 
-    public boolean ad() {
+    public boolean isInteractable() {
         return !this.dead;
     }
 
-    public void s_() {
+    public void m() {
         if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
         this.lastX = this.locX;
         this.lastY = this.locY;
@@ -56,16 +60,17 @@ public class EntityTNTPrimed extends Entity {
             this.motY *= -0.5D;
         }
 
-        if (this.fuseTicks-- <= 0) {
+        --this.c;
+        if (this.c <= 0) {
             // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
             // this.die();
-            if (!this.world.isStatic) {
+            if (!this.world.isClientSide) {
                 this.explode();
             }
             this.die();
             // CraftBukkit end
         } else {
-            this.W();
+            this.aj();
             this.world.addParticle(EnumParticle.SMOKE_NORMAL, this.locX, this.locY + 0.5D, this.locZ, 0.0D, 0.0D, 0.0D, new int[0]);
         }
 
@@ -87,11 +92,11 @@ public class EntityTNTPrimed extends Entity {
     }
 
     protected void b(NBTTagCompound nbttagcompound) {
-        nbttagcompound.setByte("Fuse", (byte) this.fuseTicks);
+        nbttagcompound.setShort("Fuse", (short) this.getFuseTicks());
     }
 
     protected void a(NBTTagCompound nbttagcompound) {
-        this.fuseTicks = nbttagcompound.getByte("Fuse");
+        this.setFuseTicks(nbttagcompound.getShort("Fuse"));
     }
 
     public EntityLiving getSource() {
@@ -100,5 +105,25 @@ public class EntityTNTPrimed extends Entity {
 
     public float getHeadHeight() {
         return 0.0F;
+    }
+
+    public void setFuseTicks(int i) {
+        this.datawatcher.set(EntityTNTPrimed.FUSE_TICKS, Integer.valueOf(i));
+        this.c = i;
+    }
+
+    public void a(DataWatcherObject<?> datawatcherobject) {
+        if (EntityTNTPrimed.FUSE_TICKS.equals(datawatcherobject)) {
+            this.c = this.k();
+        }
+
+    }
+
+    public int k() {
+        return ((Integer) this.datawatcher.get(EntityTNTPrimed.FUSE_TICKS)).intValue();
+    }
+
+    public int getFuseTicks() {
+        return this.c;
     }
 }

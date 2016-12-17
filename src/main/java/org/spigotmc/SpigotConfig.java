@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +30,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public class SpigotConfig
 {
 
-    private static final File CONFIG_FILE = new File( "spigot.yml" );
+    private static File CONFIG_FILE;
     private static final String HEADER = "This is the main configuration file for Spigot.\n"
             + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
             + "with caution, and make sure you know what each option does before configuring.\n"
@@ -50,8 +49,9 @@ public class SpigotConfig
     /*========================================================================*/
     private static Metrics metrics;
 
-    public static void init()
+    public static void init(File configFile)
     {
+        CONFIG_FILE = configFile;
         config = new YamlConfiguration();
         try
         {
@@ -346,10 +346,10 @@ public class SpigotConfig
         movedWronglyThreshold = getDouble( "settings.moved-wrongly-threshold", 0.0625D );
     }
 
-    public static double movedTooQuicklyThreshold;
-    private static void movedTooQuicklyThreshold()
+    public static double movedTooQuicklyMultiplier;
+    private static void movedTooQuicklyMultiplier()
     {
-        movedTooQuicklyThreshold = getDouble( "settings.moved-too-quickly-threshold", 100.0D );
+        movedTooQuicklyMultiplier = getDouble( "settings.moved-too-quickly-multiplier", 10.0D );
     }
 
     public static double maxHealth = 2048;
@@ -360,20 +360,9 @@ public class SpigotConfig
         maxHealth = getDouble( "settings.attribute.maxHealth.max", maxHealth );
         ( (AttributeRanged) GenericAttributes.maxHealth ).b = maxHealth;
         movementSpeed = getDouble( "settings.attribute.movementSpeed.max", movementSpeed );
-        ( (AttributeRanged) GenericAttributes.d ).b = movementSpeed;
+        ( (AttributeRanged) GenericAttributes.MOVEMENT_SPEED ).b = movementSpeed;
         attackDamage = getDouble( "settings.attribute.attackDamage.max", attackDamage );
-        ( (AttributeRanged) GenericAttributes.e ).b = attackDamage;
-    }
-
-    private static void globalAPICache()
-    {
-        if ( getBoolean( "settings.global-api-cache", false ) && !CachedStreamHandlerFactory.isSet )
-        {
-            Bukkit.getLogger().info( "Global API cache enabled - All requests to Mojang's API will be " +
-                    "handled by Spigot" );
-            CachedStreamHandlerFactory.isSet = true;
-            URL.setURLStreamHandlerFactory(new CachedStreamHandlerFactory());
-        }
+        ( (AttributeRanged) GenericAttributes.ATTACK_DAMAGE ).b = attackDamage;
     }
 
     public static boolean debug;

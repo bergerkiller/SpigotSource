@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import java.util.List;
+import org.bukkit.Location;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
@@ -12,7 +14,7 @@ public class InventoryLargeChest implements ITileInventory {
     private String a;
     public ITileInventory left;
     public ITileInventory right;
-    
+
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 
@@ -48,6 +50,11 @@ public class InventoryLargeChest implements ITileInventory {
         this.left.setMaxStackSize(size);
         this.right.setMaxStackSize(size);
     }
+
+    @Override
+    public Location getLocation() {
+        return left.getLocation(); // TODO: right?
+    }
     // CraftBukkit end
 
     public InventoryLargeChest(String s, ITileInventory itileinventory, ITileInventory itileinventory1) {
@@ -62,10 +69,10 @@ public class InventoryLargeChest implements ITileInventory {
 
         this.left = itileinventory;
         this.right = itileinventory1;
-        if (itileinventory.q_()) {
-            itileinventory1.a(itileinventory.i());
-        } else if (itileinventory1.q_()) {
-            itileinventory.a(itileinventory1.i());
+        if (itileinventory.x_()) {
+            itileinventory1.a(itileinventory.y_());
+        } else if (itileinventory1.x_()) {
+            itileinventory.a(itileinventory1.y_());
         }
 
     }
@@ -90,19 +97,22 @@ public class InventoryLargeChest implements ITileInventory {
         return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
         return i >= this.left.getSize() ? this.right.getItem(i - this.left.getSize()) : this.left.getItem(i);
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
         return i >= this.left.getSize() ? this.right.splitStack(i - this.left.getSize(), j) : this.left.splitStack(i, j);
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
         return i >= this.left.getSize() ? this.right.splitWithoutUpdate(i - this.left.getSize()) : this.left.splitWithoutUpdate(i);
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
         if (i >= this.left.getSize()) {
             this.right.setItem(i - this.left.getSize(), itemstack);
         } else {
@@ -142,14 +152,14 @@ public class InventoryLargeChest implements ITileInventory {
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;
     }
 
-    public boolean q_() {
-        return this.left.q_() || this.right.q_();
+    public boolean x_() {
+        return this.left.x_() || this.right.x_();
     }
 
     public void a(ChestLock chestlock) {
@@ -157,8 +167,8 @@ public class InventoryLargeChest implements ITileInventory {
         this.right.a(chestlock);
     }
 
-    public ChestLock i() {
-        return this.left.i();
+    public ChestLock y_() {
+        return this.left.y_();
     }
 
     public String getContainerName() {

@@ -14,8 +14,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class NBTCompressedStreamTools {
 
-    public static NBTTagCompound a(InputStream inputstream) {
-        try {
+    public static NBTTagCompound a(InputStream inputstream) throws IOException {
         DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(inputstream)));
 
         NBTTagCompound nbttagcompound;
@@ -27,11 +26,9 @@ public class NBTCompressedStreamTools {
         }
 
         return nbttagcompound;
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
     }
 
-    public static void a(NBTTagCompound nbttagcompound, OutputStream outputstream) {
-        try {
+    public static void a(NBTTagCompound nbttagcompound, OutputStream outputstream) throws IOException {
         DataOutputStream dataoutputstream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputstream)));
 
         try {
@@ -39,15 +36,14 @@ public class NBTCompressedStreamTools {
         } finally {
             dataoutputstream.close();
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } 
+
     }
 
-    public static NBTTagCompound a(DataInputStream datainputstream) {
+    public static NBTTagCompound a(DataInputStream datainputstream) throws IOException {
         return a((DataInput) datainputstream, NBTReadLimiter.a);
     }
 
-    public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) {
-        try {
+    public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) throws IOException {
         // Spigot start
         if ( datainput instanceof io.netty.buffer.ByteBufInputStream )
         {
@@ -61,25 +57,21 @@ public class NBTCompressedStreamTools {
         } else {
             throw new IOException("Root tag must be a named compound tag");
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
     }
 
-    public static void a(NBTTagCompound nbttagcompound, DataOutput dataoutput) {
+    public static void a(NBTTagCompound nbttagcompound, DataOutput dataoutput) throws IOException {
         a((NBTBase) nbttagcompound, dataoutput);
     }
 
-    private static void a(NBTBase nbtbase, DataOutput dataoutput) {
-        try {
+    private static void a(NBTBase nbtbase, DataOutput dataoutput) throws IOException {
         dataoutput.writeByte(nbtbase.getTypeId());
         if (nbtbase.getTypeId() != 0) {
             dataoutput.writeUTF("");
             nbtbase.write(dataoutput);
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } 
     }
 
-    private static NBTBase a(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) {
-        try {
+    private static NBTBase a(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException {
         byte b0 = datainput.readByte();
 
         if (b0 == 0) {
@@ -100,6 +92,5 @@ public class NBTCompressedStreamTools {
                 throw new ReportedException(crashreport);
             }
         }
-        } catch (IOException ex) { org.spigotmc.SneakyThrow.sneaky( ex ); } return null;
     }
 }

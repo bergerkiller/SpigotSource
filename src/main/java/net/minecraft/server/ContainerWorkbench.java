@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -58,7 +59,10 @@ public class ContainerWorkbench extends Container {
         if (super.listeners.size() < 1) {
             return;
         }
-
+        // See CraftBukkit PR #39
+        if (craftResult != null && craftResult.getItem() == Items.FILLED_MAP) {
+            return;
+        }
         EntityPlayer player = (EntityPlayer) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
         player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.activeContainer.windowId, 0, craftResult));
         // CraftBukkit end
@@ -66,7 +70,7 @@ public class ContainerWorkbench extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        if (!this.g.isStatic) {
+        if (!this.g.isClientSide) {
             for (int i = 0; i < 9; ++i) {
                 ItemStack itemstack = this.craftInventory.splitWithoutUpdate(i);
 
@@ -83,6 +87,7 @@ public class ContainerWorkbench extends Container {
         return this.g.getType(this.h).getBlock() != Blocks.CRAFTING_TABLE ? false : entityhuman.e((double) this.h.getX() + 0.5D, (double) this.h.getY() + 0.5D, (double) this.h.getZ() + 0.5D) <= 64.0D;
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);

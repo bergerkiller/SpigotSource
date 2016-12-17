@@ -6,7 +6,7 @@ public interface IDataManager {
 
     WorldData getWorldData();
 
-    void checkSession() throws ExceptionWorldConflict; // CraftBukkit - throws ExceptionWorldConflict
+    void checkSession() throws ExceptionWorldConflict;
 
     IChunkLoader createChunkLoader(WorldProvider worldprovider);
 
@@ -22,7 +22,7 @@ public interface IDataManager {
 
     File getDataFile(String s);
 
-    String g();
+    DefinedStructureManager h();
 
     java.util.UUID getUUID(); // CraftBukkit
 }

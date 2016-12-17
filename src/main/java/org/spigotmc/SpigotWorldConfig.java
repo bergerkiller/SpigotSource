@@ -1,6 +1,5 @@
 package org.spigotmc;
 
-import java.util.Arrays;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -70,17 +69,6 @@ public class SpigotWorldConfig
         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
     }
 
-    public int chunksPerTick;
-    public boolean clearChunksOnTick;
-    private void chunksPerTick()
-    {
-        chunksPerTick = getInt( "chunks-per-tick", 650 );
-        log( "Chunks to Grow per Tick: " + chunksPerTick );
-
-        clearChunksOnTick = getBoolean( "clear-tick-list", false );
-        log( "Clear tick list: " + clearChunksOnTick );
-    }
-
     // Crop growth rates
     public int cactusModifier;
     public int caneModifier;
@@ -89,6 +77,7 @@ public class SpigotWorldConfig
     public int pumpkinModifier;
     public int saplingModifier;
     public int wheatModifier;
+    public int wartModifier;
     private int getAndValidateGrowth(String crop)
     {
         int modifier = getInt( "growth." + crop.toLowerCase() + "-modifier", 100 );
@@ -110,6 +99,7 @@ public class SpigotWorldConfig
         pumpkinModifier = getAndValidateGrowth( "Pumpkin" );
         saplingModifier = getAndValidateGrowth( "Sapling" );
         wheatModifier = getAndValidateGrowth( "Wheat" );
+        wartModifier = getAndValidateGrowth( "NetherWart" );
     }
 
     public double itemMerge;
@@ -140,6 +130,13 @@ public class SpigotWorldConfig
         log( "Mob Spawn Range: " + mobSpawnRange );
     }
 
+    public int itemDespawnRate;
+    private void itemDespawnRate()
+    {
+        itemDespawnRate = getInt( "item-despawn-rate", 6000 );
+        log( "Item Despawn Rate: " + itemDespawnRate );
+    }
+
     public int animalActivationRange = 32;
     public int monsterActivationRange = 32;
     public int miscActivationRange = 16;
@@ -166,35 +163,11 @@ public class SpigotWorldConfig
         log( "Entity Tracking Range: Pl " + playerTrackingRange + " / An " + animalTrackingRange + " / Mo " + monsterTrackingRange + " / Mi " + miscTrackingRange + " / Other " + otherTrackingRange );
     }
 
-    public boolean altHopperTicking;
     public int hopperTransfer;
     public int hopperCheck;
     public int hopperAmount;
     private void hoppers()
     {
-        // Alternate ticking method. Uses inventory changes, redstone updates etc.
-        // to update hoppers. Hopper-check is disabled when this is true.
-        boolean prev = altHopperTicking;
-        altHopperTicking = getBoolean( "hopper-alt-ticking", false );
-        // Necessary for the reload command
-        if (prev != altHopperTicking) {
-            net.minecraft.server.World world = (net.minecraft.server.World) Bukkit.getWorld(this.worldName);
-            if (world != null) {
-                if (altHopperTicking) {
-                    for (Object o : world.tileEntityList) {
-                        if (o instanceof net.minecraft.server.TileEntityHopper) {
-                            ((net.minecraft.server.TileEntityHopper) o).convertToScheduling();
-                        }
-                    }
-                } else {
-                    for (Object o : world.tileEntityList) {
-                        if (o instanceof net.minecraft.server.TileEntityHopper) {
-                            ((net.minecraft.server.TileEntityHopper) o).convertToPolling();
-                        }
-                    }
-                }
-            }
-        }
         // Set the tick delay between hopper item movements
         hopperTransfer = getInt( "ticks-per.hopper-transfer", 8 );
         // Set the tick delay between checking for items after the associated
@@ -202,7 +175,6 @@ public class SpigotWorldConfig
         // hopper sorting machines from becoming out of sync.
         hopperCheck = getInt( "ticks-per.hopper-check", hopperTransfer );
         hopperAmount = getInt( "hopper-amount", 1 );
-        log( "Alternative Hopper Ticking: " + altHopperTicking );
         log( "Hopper Transfer: " + hopperTransfer + " Hopper Check: " + hopperCheck + " Hopper Amount: " + hopperAmount );
     }
 
@@ -220,16 +192,9 @@ public class SpigotWorldConfig
         log( "Structure Info Saving: " + saveStructureInfo );
         if ( !saveStructureInfo )
         {
-            log( "*** WARNING *** You have selected to NOT save structure info. This may cause structures such as fortresses to not spawn mobs when updating to 1.7!" );
+            log( "*** WARNING *** You have selected to NOT save structure info. This may cause structures such as fortresses to not spawn mobs!" );
             log( "*** WARNING *** Please use this option with caution, SpigotMC is not responsible for any issues this option may cause in the future!" );
         }
-    }
-
-    public int itemDespawnRate;
-    private void itemDespawnRate()
-    {
-        itemDespawnRate = getInt( "item-despawn-rate", 6000 );
-        log( "Item Despawn Rate: " + itemDespawnRate );
     }
 
     public int arrowDespawnRate;
@@ -237,38 +202,6 @@ public class SpigotWorldConfig
     {
         arrowDespawnRate = getInt( "arrow-despawn-rate", 1200  );
         log( "Arrow Despawn Rate: " + arrowDespawnRate );
-    }
-    
-    public boolean antiXray;
-    public int engineMode;
-    public List<Integer> hiddenBlocks;
-    public List<Integer> replaceBlocks;
-    public AntiXray antiXrayInstance;
-    private void antiXray()
-    {
-        antiXray = getBoolean( "anti-xray.enabled", true );
-        log( "Anti X-Ray: " + antiXray );
-
-        engineMode = getInt( "anti-xray.engine-mode", 1 );
-        log( "\tEngine Mode: " + engineMode );
-
-        if ( SpigotConfig.version < 5 )
-        {
-            set( "anti-xray.blocks", null );
-        }
-        hiddenBlocks = getList( "anti-xray.hide-blocks", Arrays.asList( new Integer[]
-        {
-            14, 15, 16, 21, 48, 49, 54, 56, 73, 74, 82, 129, 130
-        } ) );
-        log( "\tHidden Blocks: " + hiddenBlocks );
-
-        replaceBlocks = getList( "anti-xray.replace-blocks", Arrays.asList( new Integer[]
-        {
-            1, 5
-        } ) );
-        log( "\tReplace Blocks: " + replaceBlocks );
-
-        antiXrayInstance = new AntiXray( this );
     }
 
     public boolean zombieAggressiveTowardsVillager;
@@ -290,13 +223,6 @@ public class SpigotWorldConfig
     {
         enableZombiePigmenPortalSpawns = getBoolean( "enable-zombie-pigmen-portal-spawns", true );
         log( "Allow Zombie Pigmen to spawn from portal blocks: " + enableZombiePigmenPortalSpawns );
-    }
-
-    public int maxBulkChunk;
-    private void bulkChunkCount()
-    {
-        maxBulkChunk = getInt( "max-bulk-chunks", 10 );
-        log( "Sending up to " + maxBulkChunk + " chunks per packet" );
     }
 
     public int maxCollisionsPerEntity;
@@ -354,5 +280,14 @@ public class SpigotWorldConfig
     private void hangingTickFrequency()
     {
         hangingTickFrequency = getInt( "hanging-tick-frequency", 100 );
+    }
+
+    public int tileMaxTickTime;
+    public int entityMaxTickTime;
+    private void maxTickTimes()
+    {
+        tileMaxTickTime = getInt("max-tick-time.tile", 50);
+        entityMaxTickTime = getInt("max-tick-time.entity", 50);
+        log("Tile Max Tick Time: " + tileMaxTickTime + "ms Entity max Tick Time: " + entityMaxTickTime + "ms");
     }
 }

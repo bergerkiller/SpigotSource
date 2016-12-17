@@ -4,13 +4,15 @@ import com.google.common.collect.Maps;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.annotation.Nullable;
 
 public class RecipesFurnace {
 
     private static final RecipesFurnace a = new RecipesFurnace();
-    public Map recipes = Maps.newHashMap();
-    private Map c = Maps.newHashMap();
-    public Map customRecipes = Maps.newHashMap(); // CraftBukkit - add field
+    public Map<ItemStack, ItemStack> recipes = Maps.newHashMap();
+    private Map<ItemStack, Float> c = Maps.newHashMap(); // PAIL: rename
+    public Map<ItemStack,ItemStack> customRecipes = Maps.newHashMap(); // CraftBukkit - add field
+    public Map<ItemStack,Float> customExperience = Maps.newHashMap(); // CraftBukkit - add field
 
     public static RecipesFurnace getInstance() {
         return RecipesFurnace.a;
@@ -27,7 +29,7 @@ public class RecipesFurnace {
         this.a(Items.RABBIT, new ItemStack(Items.COOKED_RABBIT), 0.35F);
         this.a(Items.MUTTON, new ItemStack(Items.COOKED_MUTTON), 0.35F);
         this.registerRecipe(Blocks.COBBLESTONE, new ItemStack(Blocks.STONE), 0.1F);
-        this.a(new ItemStack(Blocks.STONEBRICK, 1, BlockSmoothBrick.b), new ItemStack(Blocks.STONEBRICK, 1, BlockSmoothBrick.N), 0.1F);
+        this.a(new ItemStack(Blocks.STONEBRICK, 1, BlockSmoothBrick.b), new ItemStack(Blocks.STONEBRICK, 1, BlockSmoothBrick.d), 0.1F);
         this.a(Items.CLAY_BALL, new ItemStack(Items.BRICK), 0.3F);
         this.registerRecipe(Blocks.CLAY, new ItemStack(Blocks.HARDENED_CLAY), 0.35F);
         this.registerRecipe(Blocks.CACTUS, new ItemStack(Items.DYE, 1, EnumColor.GREEN.getInvColorIndex()), 0.2F);
@@ -37,14 +39,15 @@ public class RecipesFurnace {
         this.a(Items.POTATO, new ItemStack(Items.BAKED_POTATO), 0.35F);
         this.registerRecipe(Blocks.NETHERRACK, new ItemStack(Items.NETHERBRICK), 0.1F);
         this.a(new ItemStack(Blocks.SPONGE, 1, 1), new ItemStack(Blocks.SPONGE, 1, 0), 0.15F);
-        EnumFish[] aenumfish = EnumFish.values();
-        int i = aenumfish.length;
+        this.a(Items.CHORUS_FRUIT, new ItemStack(Items.CHORUS_FRUIT_POPPED), 0.1F);
+        ItemFish.EnumFish[] aitemfish_enumfish = ItemFish.EnumFish.values();
+        int i = aitemfish_enumfish.length;
 
         for (int j = 0; j < i; ++j) {
-            EnumFish enumfish = aenumfish[j];
+            ItemFish.EnumFish itemfish_enumfish = aitemfish_enumfish[j];
 
-            if (enumfish.g()) {
-                this.a(new ItemStack(Items.FISH, 1, enumfish.a()), new ItemStack(Items.COOKED_FISH, 1, enumfish.a()), 0.35F);
+            if (itemfish_enumfish.g()) {
+                this.a(new ItemStack(Items.FISH, 1, itemfish_enumfish.a()), new ItemStack(Items.COOKED_FISH, 1, itemfish_enumfish.a()), 0.35F);
             }
         }
 
@@ -53,9 +56,9 @@ public class RecipesFurnace {
         this.registerRecipe(Blocks.LAPIS_ORE, new ItemStack(Items.DYE, 1, EnumColor.BLUE.getInvColorIndex()), 0.2F);
         this.registerRecipe(Blocks.QUARTZ_ORE, new ItemStack(Items.QUARTZ), 0.2F);
     }
- 
+
     // CraftBukkit start - add method
-    public void registerRecipe(ItemStack itemstack, ItemStack itemstack1) {
+    public void registerRecipe(ItemStack itemstack, ItemStack itemstack1, float f) {
         this.customRecipes.put(itemstack, itemstack1);
     }
     // CraftBukkit end
@@ -73,10 +76,11 @@ public class RecipesFurnace {
         this.c.put(itemstack1, Float.valueOf(f));
     }
 
+    @Nullable
     public ItemStack getResult(ItemStack itemstack) {
         // CraftBukkit start - initialize to customRecipes
         boolean vanilla = false;
-        Iterator iterator = this.customRecipes.entrySet().iterator();
+        Iterator<Entry<ItemStack, ItemStack>> iterator = this.customRecipes.entrySet().iterator();
         // CraftBukkit end
 
         Entry entry;
@@ -84,7 +88,7 @@ public class RecipesFurnace {
         do {
             if (!iterator.hasNext()) {
                 // CraftBukkit start - fall back to vanilla recipes
-                if (!vanilla && !recipes.isEmpty()) {
+                if (!vanilla && !this.recipes.isEmpty()) {
                     iterator = this.recipes.entrySet().iterator();
                     vanilla = true;
                 } else {
@@ -103,18 +107,28 @@ public class RecipesFurnace {
         return itemstack1.getItem() == itemstack.getItem() && (itemstack1.getData() == 32767 || itemstack1.getData() == itemstack.getData());
     }
 
-    public Map getRecipes() {
+    public Map<ItemStack, ItemStack> getRecipes() {
         return this.recipes;
     }
 
     public float b(ItemStack itemstack) {
-        Iterator iterator = this.c.entrySet().iterator();
+        // CraftBukkit start - initialize to customRecipes
+        boolean vanilla = false;
+        Iterator<Entry<ItemStack, Float>> iterator = this.customExperience.entrySet().iterator();
+        // CraftBukkit end
 
         Entry entry;
 
         do {
             if (!iterator.hasNext()) {
-                return 0.0F;
+                // CraftBukkit start - fall back to vanilla recipes
+                if (!vanilla && !this.c.isEmpty()) {
+                    iterator = this.c.entrySet().iterator();
+                    vanilla = true;
+                } else {
+                    return 0.0F;
+                }
+                // CraftBukkit end
             }
 
             entry = (Entry) iterator.next();

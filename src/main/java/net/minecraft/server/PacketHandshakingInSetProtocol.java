@@ -1,26 +1,28 @@
 package net.minecraft.server;
 
-public class PacketHandshakingInSetProtocol implements Packet {
+import java.io.IOException;
+
+public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingInListener> {
 
     private int a;
-    public String b;
-    public int c;
+    public String hostname;
+    public int port;
     private EnumProtocol d;
 
     public PacketHandshakingInSetProtocol() {}
 
-    public void a(PacketDataSerializer packetdataserializer) {
-        this.a = packetdataserializer.e();
-        this.b = packetdataserializer.c(Short.MAX_VALUE); // Spigot
-        this.c = packetdataserializer.readUnsignedShort();
-        this.d = EnumProtocol.a(packetdataserializer.e());
+    public void a(PacketDataSerializer packetdataserializer) throws IOException {
+        this.a = packetdataserializer.g();
+        this.hostname = packetdataserializer.e(Short.MAX_VALUE); // Spigot
+        this.port = packetdataserializer.readUnsignedShort();
+        this.d = EnumProtocol.a(packetdataserializer.g());
     }
 
-    public void b(PacketDataSerializer packetdataserializer) {
-        packetdataserializer.b(this.a);
-        packetdataserializer.a(this.b);
-        packetdataserializer.writeShort(this.c);
-        packetdataserializer.b(this.d.a());
+    public void b(PacketDataSerializer packetdataserializer) throws IOException {
+        packetdataserializer.d(this.a);
+        packetdataserializer.a(this.hostname);
+        packetdataserializer.writeShort(this.port);
+        packetdataserializer.d(this.d.a());
     }
 
     public void a(PacketHandshakingInListener packethandshakinginlistener) {
@@ -33,9 +35,5 @@ public class PacketHandshakingInSetProtocol implements Packet {
 
     public int b() {
         return this.a;
-    }
-
-    public void a(PacketListener packetlistener) {
-        this.a((PacketHandshakingInListener) packetlistener);
     }
 }

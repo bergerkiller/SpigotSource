@@ -2,7 +2,9 @@ package net.minecraft.server;
 
 import com.google.common.collect.Lists;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -15,12 +17,12 @@ import java.util.zip.InflaterInputStream;
 
 public class RegionFile {
 
-    private static final byte[] a = new byte[4096];
+    private static final byte[] a = new byte[4096]; // Spigot - note: if this ever changes to not be 4096 bytes, update constructor! // PAIL: empty 4k block
     private final File b;
     private RandomAccessFile c;
     private final int[] d = new int[1024];
     private final int[] e = new int[1024];
-    private List f;
+    private List<Boolean> f;
     private int g;
     private long h;
 
@@ -34,19 +36,14 @@ public class RegionFile {
             }
 
             this.c = new RandomAccessFile(file, "rw");
-            int i;
-
             if (this.c.length() < 4096L) {
-                for (i = 0; i < 1024; ++i) {
-                    this.c.writeInt(0);
-                }
-
-                for (i = 0; i < 1024; ++i) {
-                    this.c.writeInt(0);
-                }
-
+                // Spigot - more effecient chunk zero'ing
+                this.c.write(RegionFile.a); // Spigot
+                this.c.write(RegionFile.a); // Spigot
                 this.g += 8192;
             }
+
+            int i;
 
             if ((this.c.length() & 4095L) != 0L) {
                 for (i = 0; (long) i < (this.c.length() & 4095L); ++i) {
@@ -86,8 +83,9 @@ public class RegionFile {
         } catch (IOException ioexception) {
             ioexception.printStackTrace();
         }
+
     }
-    
+
     // CraftBukkit start - This is a copy (sort of) of the method below it, make sure they stay in sync
     public synchronized boolean chunkExists(int i, int j) {
         if (this.d(i, j)) {
@@ -175,7 +173,7 @@ public class RegionFile {
     }
 
     public DataOutputStream b(int i, int j) {
-        return this.d(i, j) ? null : new DataOutputStream(new DeflaterOutputStream(new ChunkBuffer(this, i, j)));
+        return this.d(i, j) ? null : new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new RegionFile.ChunkBuffer(i, j))));
     }
 
     protected synchronized void a(int i, int j, byte[] abyte, int k) {
@@ -245,14 +243,14 @@ public class RegionFile {
                 }
             }
 
-            this.b(i, j, (int) (MinecraftServer.ax() / 1000L));
+            this.b(i, j, (int) (MinecraftServer.av() / 1000L));
         } catch (IOException ioexception) {
             ioexception.printStackTrace();
         }
 
     }
 
-    private void a(int i, byte[] abyte, int j) throws IOException { // CraftBukkit - added throws
+    private void a(int i, byte[] abyte, int j) throws IOException {
         this.c.seek((long) (i * 4096));
         this.c.writeInt(j + 1);
         this.c.writeByte(2);
@@ -271,22 +269,38 @@ public class RegionFile {
         return this.e(i, j) != 0;
     }
 
-    private void a(int i, int j, int k) throws IOException { // CraftBukkit - added throws
+    private void a(int i, int j, int k) throws IOException {
         this.d[i + j * 32] = k;
         this.c.seek((long) ((i + j * 32) * 4));
         this.c.writeInt(k);
     }
 
-    private void b(int i, int j, int k) throws IOException { // CraftBukkit - added throws
+    private void b(int i, int j, int k) throws IOException {
         this.e[i + j * 32] = k;
         this.c.seek((long) (4096 + (i + j * 32) * 4));
         this.c.writeInt(k);
     }
 
-    public void c() throws IOException { // CraftBukkit - added throws
+    public void c() throws IOException {
         if (this.c != null) {
             this.c.close();
         }
 
+    }
+
+    class ChunkBuffer extends ByteArrayOutputStream {
+
+        private int b;
+        private int c;
+
+        public ChunkBuffer(int i, int j) {
+            super(8096);
+            this.b = i;
+            this.c = j;
+        }
+
+        public void close() {
+            RegionFile.this.a(this.b, this.c, this.buf, this.count);
+        }
     }
 }

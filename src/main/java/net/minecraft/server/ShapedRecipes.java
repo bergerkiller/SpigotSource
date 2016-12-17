@@ -1,10 +1,10 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 // CraftBukkit end
-
 
 public class ShapedRecipes implements IRecipe {
 
@@ -20,7 +20,7 @@ public class ShapedRecipes implements IRecipe {
         this.items = aitemstack;
         this.result = itemstack;
     }
-    
+
     // CraftBukkit start
     public org.bukkit.inventory.ShapedRecipe toBukkitRecipe() {
         CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
@@ -77,6 +77,7 @@ public class ShapedRecipes implements IRecipe {
     }
     // CraftBukkit end
 
+    @Nullable
     public ItemStack b() {
         return this.result;
     }
@@ -147,7 +148,8 @@ public class ShapedRecipes implements IRecipe {
         return true;
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         ItemStack itemstack = this.b().cloneItemStack();
 
         if (this.e) {
@@ -165,11 +167,6 @@ public class ShapedRecipes implements IRecipe {
 
     public int a() {
         return this.width * this.height;
-    }
-
-    public ShapedRecipes c() {
-        this.e = true;
-        return this;
     }
 
     // Spigot start

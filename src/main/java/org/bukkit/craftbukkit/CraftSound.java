@@ -1,231 +1,474 @@
 package org.bukkit.craftbukkit;
 
-import static org.bukkit.Sound.*;
+import com.google.common.base.Preconditions;
+import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.SoundEffect;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Sound;
 
-public class CraftSound {
-    private static final String[] sounds = new String[Sound.values().length];
+public enum CraftSound {
 
-    static {
-        // Ambient
-        set(AMBIENCE_CAVE, "ambient.cave.cave");
-        set(AMBIENCE_RAIN, "ambient.weather.rain");
-        set(AMBIENCE_THUNDER, "ambient.weather.thunder");
-        // Damage
-        set(HURT_FLESH, "game.neutral.hurt");
-        set(FALL_BIG, "game.neutral.hurt.fall.big");
-        set(FALL_SMALL, "game.neutral.hurt.fall.small");
-        // Dig Sounds
-        set(DIG_WOOL, "dig.cloth");
-        set(DIG_GRASS, "dig.grass");
-        set(DIG_GRAVEL, "dig.gravel");
-        set(DIG_SAND, "dig.sand");
-        set(DIG_SNOW, "dig.snow");
-        set(DIG_STONE, "dig.stone");
-        set(DIG_WOOD, "dig.wood");
-        // Fire
-        set(FIRE, "fire.fire");
-        set(FIRE_IGNITE, "fire.ignite");
-        // Fireworks
-        set(FIREWORK_BLAST, "fireworks.blast");
-        set(FIREWORK_BLAST2, "fireworks.blast_far");
-        set(FIREWORK_LARGE_BLAST, "fireworks.largeBlast");
-        set(FIREWORK_LARGE_BLAST2, "fireworks.largeBlast_far");
-        set(FIREWORK_TWINKLE, "fireworks.twinkle");
-        set(FIREWORK_TWINKLE2, "fireworks.twinkle_far");
-        set(FIREWORK_LAUNCH, "fireworks.launch");
-        // Liquid
-        set(SPLASH2, "game.neutral.swim.splash");
-        set(SWIM, "game.neutral.swim");
-        set(WATER, "liquid.water");
-        set(LAVA, "liquid.lava");
-        set(LAVA_POP, "liquid.lavapop");
-        // Minecart
-        set(MINECART_BASE, "minecart.base");
-        set(MINECART_INSIDE, "minecart.inside");
-        // Mob
-        set(BAT_DEATH, "mob.bat.death");
-        set(BAT_HURT, "mob.bat.hurt");
-        set(BAT_IDLE, "mob.bat.idle");
-        set(BAT_LOOP, "mob.bat.loop");
-        set(BAT_TAKEOFF, "mob.bat.takeoff");
-        set(BLAZE_BREATH, "mob.blaze.breathe");
-        set(BLAZE_DEATH, "mob.blaze.death");
-        set(BLAZE_HIT, "mob.blaze.hit");
-        set(CAT_HISS, "mob.cat.hiss");
-        set(CAT_HIT, "mob.cat.hitt");
-        set(CAT_MEOW, "mob.cat.meow");
-        set(CAT_PURR, "mob.cat.purr");
-        set(CAT_PURREOW, "mob.cat.purreow");
-        set(CHICKEN_IDLE, "mob.chicken.say");
-        set(CHICKEN_HURT, "mob.chicken.hurt");
-        set(CHICKEN_EGG_POP, "mob.chicken.plop");
-        set(CHICKEN_WALK, "mob.chicken.step");
-        set(COW_HURT, "mob.cow.hurt");
-        set(COW_IDLE, "mob.cow.say");
-        set(COW_WALK, "mob.cow.step");
-        set(CREEPER_DEATH, "mob.creeper.death");
-        set(CREEPER_HISS, "mob.creeper.say");
-        set(ENDERDRAGON_DEATH, "mob.enderdragon.end");
-        set(ENDERDRAGON_GROWL, "mob.enderdragon.growl");
-        set(ENDERDRAGON_HIT, "mob.enderdragon.hit");
-        set(ENDERDRAGON_WINGS, "mob.enderdragon.wings");
-        set(ENDERMAN_DEATH, "mob.endermen.death");
-        set(ENDERMAN_HIT, "mob.endermen.hit");
-        set(ENDERMAN_IDLE, "mob.endermen.idle");
-        set(ENDERMAN_TELEPORT, "mob.endermen.portal");
-        set(ENDERMAN_SCREAM, "mob.endermen.scream");
-        set(ENDERMAN_STARE, "mob.endermen.stare");
-        set(GHAST_SCREAM2, "mob.ghast.affectionate_scream");
-        set(GHAST_CHARGE, "mob.ghast.charge");
-        set(GHAST_DEATH, "mob.ghast.death");
-        set(GHAST_FIREBALL, "mob.ghast.fireball");
-        set(GHAST_MOAN, "mob.ghast.moan");
-        set(GHAST_SCREAM, "mob.ghast.scream");
-        set(HORSE_ANGRY, "mob.horse.angry");
-        set(HORSE_ARMOR, "mob.horse.armor");
-        set(HORSE_BREATHE, "mob.horse.breathe");
-        set(HORSE_DEATH, "mob.horse.death");
-        set(HORSE_GALLOP, "mob.horse.gallop");
-        set(HORSE_HIT, "mob.horse.hit");
-        set(HORSE_IDLE, "mob.horse.idle");
-        set(HORSE_JUMP, "mob.horse.jump");
-        set(HORSE_LAND, "mob.horse.land");
-        set(HORSE_SADDLE, "mob.horse.leather");
-        set(HORSE_SOFT, "mob.horse.soft");
-        set(HORSE_WOOD, "mob.horse.wood");
-        set(DONKEY_ANGRY, "mob.horse.donkey.angry");
-        set(DONKEY_DEATH, "mob.horse.donkey.death");
-        set(DONKEY_HIT, "mob.horse.donkey.hit");
-        set(DONKEY_IDLE, "mob.horse.donkey.idle");
-        set(HORSE_SKELETON_DEATH, "mob.horse.skeleton.death");
-        set(HORSE_SKELETON_HIT, "mob.horse.skeleton.hit");
-        set(HORSE_SKELETON_IDLE, "mob.horse.skeleton.idle");
-        set(HORSE_ZOMBIE_DEATH, "mob.horse.zombie.death");
-        set(HORSE_ZOMBIE_HIT, "mob.horse.zombie.hit");
-        set(HORSE_ZOMBIE_IDLE, "mob.horse.zombie.idle");
-        set(IRONGOLEM_DEATH, "mob.irongolem.death");
-        set(IRONGOLEM_HIT, "mob.irongolem.hit");
-        set(IRONGOLEM_THROW, "mob.irongolem.throw");
-        set(IRONGOLEM_WALK, "mob.irongolem.walk");
-        set(MAGMACUBE_WALK, "mob.magmacube.small");
-        set(MAGMACUBE_WALK2, "mob.magmacube.big");
-        set(MAGMACUBE_JUMP, "mob.magmacube.jump");
-        set(PIG_IDLE, "mob.pig.say");
-        set(PIG_DEATH, "mob.pig.death");
-        set(PIG_WALK, "mob.pig.step");
-        set(SHEEP_IDLE, "mob.sheep.say");
-        set(SHEEP_SHEAR, "mob.sheep.shear");
-        set(SHEEP_WALK, "mob.sheep.step");
-        set(SILVERFISH_HIT, "mob.silverfish.hit");
-        set(SILVERFISH_KILL, "mob.silverfish.kill");
-        set(SILVERFISH_IDLE, "mob.silverfish.say");
-        set(SILVERFISH_WALK, "mob.silverfish.step");
-        set(SKELETON_IDLE, "mob.skeleton.say");
-        set(SKELETON_DEATH, "mob.skeleton.death");
-        set(SKELETON_HURT, "mob.skeleton.hurt");
-        set(SKELETON_WALK, "mob.skeleton.step");
-        set(SLIME_ATTACK, "mob.slime.attack");
-        set(SLIME_WALK, "mob.slime.small");
-        set(SLIME_WALK2, "mob.slime.big");
-        set(SPIDER_IDLE, "mob.spider.say");
-        set(SPIDER_DEATH, "mob.spider.death");
-        set(SPIDER_WALK, "mob.spider.step");
-        set(VILLAGER_DEATH, "mob.villager.death");
-        set(VILLAGER_HAGGLE, "mob.villager.haggle");
-        set(VILLAGER_HIT, "mob.villager.hit");
-        set(VILLAGER_IDLE, "mob.villager.idle");
-        set(VILLAGER_NO, "mob.villager.no");
-        set(VILLAGER_YES, "mob.villager.yes");
-        set(WITHER_DEATH, "mob.wither.death");
-        set(WITHER_HURT, "mob.wither.hurt");
-        set(WITHER_IDLE, "mob.wither.idle");
-        set(WITHER_SHOOT, "mob.wither.shoot");
-        set(WITHER_SPAWN, "mob.wither.spawn");
-        set(WOLF_BARK, "mob.wolf.bark");
-        set(WOLF_DEATH, "mob.wolf.death");
-        set(WOLF_GROWL, "mob.wolf.growl");
-        set(WOLF_HOWL, "mob.wolf.howl");
-        set(WOLF_HURT, "mob.wolf.hurt");
-        set(WOLF_PANT, "mob.wolf.panting");
-        set(WOLF_SHAKE, "mob.wolf.shake");
-        set(WOLF_WALK, "mob.wolf.step");
-        set(WOLF_WHINE, "mob.wolf.whine");
-        set(ZOMBIE_METAL, "mob.zombie.metal");
-        set(ZOMBIE_WOOD, "mob.zombie.wood");
-        set(ZOMBIE_WOODBREAK, "mob.zombie.woodbreak");
-        set(ZOMBIE_IDLE, "mob.zombie.say");
-        set(ZOMBIE_DEATH, "mob.zombie.death");
-        set(ZOMBIE_HURT, "mob.zombie.hurt");
-        set(ZOMBIE_INFECT, "mob.zombie.infect");
-        set(ZOMBIE_UNFECT, "mob.zombie.unfect");
-        set(ZOMBIE_REMEDY, "mob.zombie.remedy");
-        set(ZOMBIE_WALK, "mob.zombie.step");
-        set(ZOMBIE_PIG_IDLE, "mob.zombiepig.zpig");
-        set(ZOMBIE_PIG_ANGRY, "mob.zombiepig.zpigangry");
-        set(ZOMBIE_PIG_DEATH, "mob.zombiepig.zpigdeath");
-        set(ZOMBIE_PIG_HURT, "mob.zombiepig.zpighurt");
-        // Note (blocks)
-        set(NOTE_BASS_GUITAR, "note.bassattack");
-        set(NOTE_SNARE_DRUM, "note.snare");
-        set(NOTE_PLING, "note.pling");
-        set(NOTE_BASS, "note.bass");
-        set(NOTE_PIANO, "note.harp");
-        set(NOTE_BASS_DRUM, "note.bd");
-        set(NOTE_STICKS, "note.hat");
-        // Portal
-        set(PORTAL, "portal.portal");
-        set(PORTAL_TRAVEL, "portal.travel");
-        set(PORTAL_TRIGGER, "portal.trigger");
-        // Random
-        set(ANVIL_BREAK, "random.anvil_break");
-        set(ANVIL_LAND, "random.anvil_land");
-        set(ANVIL_USE, "random.anvil_use");
-        set(SHOOT_ARROW, "random.bow");
-        set(ARROW_HIT, "random.bowhit");
-        set(ITEM_BREAK, "random.break");
-        set(BURP, "random.burp");
-        set(CHEST_CLOSE, "random.chestclosed");
-        set(CHEST_OPEN, "random.chestopen");
-        set(CLICK, "random.click");
-        set(DOOR_CLOSE, "random.door_close");
-        set(DOOR_OPEN, "random.door_open");
-        set(DRINK, "random.drink");
-        set(EAT, "random.eat");
-        set(EXPLODE, "random.explode");
-        set(FIZZ, "random.fizz");
-        set(FUSE, "creeper.primed");
-        set(GLASS, "dig.glass");
-        set(LEVEL_UP, "random.levelup");
-        set(ORB_PICKUP, "random.orb");
-        set(ITEM_PICKUP, "random.pop");
-        set(SPLASH, "random.splash");
-        set(SUCCESSFUL_HIT, "random.successful_hit");
-        set(WOOD_CLICK, "random.wood_click");
-        // Step
-        set(STEP_WOOL, "step.cloth");
-        set(STEP_GRASS, "step.grass");
-        set(STEP_GRAVEL, "step.gravel");
-        set(STEP_LADDER, "step.ladder");
-        set(STEP_SAND, "step.sand");
-        set(STEP_SNOW, "step.snow");
-        set(STEP_STONE, "step.stone");
-        set(STEP_WOOD, "step.wood");
-        // Tile
-        set(PISTON_EXTEND, "tile.piston.out");
-        set(PISTON_RETRACT, "tile.piston.in");
-    }
+    AMBIENT_CAVE("ambient.cave"),
+    BLOCK_ANVIL_BREAK("block.anvil.break"),
+    BLOCK_ANVIL_DESTROY("block.anvil.destroy"),
+    BLOCK_ANVIL_FALL("block.anvil.fall"),
+    BLOCK_ANVIL_HIT("block.anvil.hit"),
+    BLOCK_ANVIL_LAND("block.anvil.land"),
+    BLOCK_ANVIL_PLACE("block.anvil.place"),
+    BLOCK_ANVIL_STEP("block.anvil.step"),
+    BLOCK_ANVIL_USE("block.anvil.use"),
+    BLOCK_BREWING_STAND_BREW("block.brewing_stand.brew"),
+    BLOCK_CHEST_CLOSE("block.chest.close"),
+    BLOCK_CHEST_LOCKED("block.chest.locked"),
+    BLOCK_CHEST_OPEN("block.chest.open"),
+    BLOCK_CHORUS_FLOWER_DEATH("block.chorus_flower.death"),
+    BLOCK_CHORUS_FLOWER_GROW("block.chorus_flower.grow"),
+    BLOCK_CLOTH_BREAK("block.cloth.break"),
+    BLOCK_CLOTH_FALL("block.cloth.fall"),
+    BLOCK_CLOTH_HIT("block.cloth.hit"),
+    BLOCK_CLOTH_PLACE("block.cloth.place"),
+    BLOCK_CLOTH_STEP("block.cloth.step"),
+    BLOCK_COMPARATOR_CLICK("block.comparator.click"),
+    BLOCK_DISPENSER_DISPENSE("block.dispenser.dispense"),
+    BLOCK_DISPENSER_FAIL("block.dispenser.fail"),
+    BLOCK_DISPENSER_LAUNCH("block.dispenser.launch"),
+    BLOCK_ENDERCHEST_CLOSE("block.enderchest.close"),
+    BLOCK_ENDERCHEST_OPEN("block.enderchest.open"),
+    BLOCK_END_GATEWAY_SPAWN("block.end_gateway.spawn"),
+    BLOCK_FENCE_GATE_CLOSE("block.fence_gate.close"),
+    BLOCK_FENCE_GATE_OPEN("block.fence_gate.open"),
+    BLOCK_FIRE_AMBIENT("block.fire.ambient"),
+    BLOCK_FIRE_EXTINGUISH("block.fire.extinguish"),
+    BLOCK_FURNACE_FIRE_CRACKLE("block.furnace.fire_crackle"),
+    BLOCK_GLASS_BREAK("block.glass.break"),
+    BLOCK_GLASS_FALL("block.glass.fall"),
+    BLOCK_GLASS_HIT("block.glass.hit"),
+    BLOCK_GLASS_PLACE("block.glass.place"),
+    BLOCK_GLASS_STEP("block.glass.step"),
+    BLOCK_GRASS_BREAK("block.grass.break"),
+    BLOCK_GRASS_FALL("block.grass.fall"),
+    BLOCK_GRASS_HIT("block.grass.hit"),
+    BLOCK_GRASS_PLACE("block.grass.place"),
+    BLOCK_GRASS_STEP("block.grass.step"),
+    BLOCK_GRAVEL_BREAK("block.gravel.break"),
+    BLOCK_GRAVEL_FALL("block.gravel.fall"),
+    BLOCK_GRAVEL_HIT("block.gravel.hit"),
+    BLOCK_GRAVEL_PLACE("block.gravel.place"),
+    BLOCK_GRAVEL_STEP("block.gravel.step"),
+    BLOCK_IRON_DOOR_CLOSE("block.iron_door.close"),
+    BLOCK_IRON_DOOR_OPEN("block.iron_door.open"),
+    BLOCK_IRON_TRAPDOOR_CLOSE("block.iron_trapdoor.close"),
+    BLOCK_IRON_TRAPDOOR_OPEN("block.iron_trapdoor.open"),
+    BLOCK_LADDER_BREAK("block.ladder.break"),
+    BLOCK_LADDER_FALL("block.ladder.fall"),
+    BLOCK_LADDER_HIT("block.ladder.hit"),
+    BLOCK_LADDER_PLACE("block.ladder.place"),
+    BLOCK_LADDER_STEP("block.ladder.step"),
+    BLOCK_LAVA_AMBIENT("block.lava.ambient"),
+    BLOCK_LAVA_EXTINGUISH("block.lava.extinguish"),
+    BLOCK_LAVA_POP("block.lava.pop"),
+    BLOCK_LEVER_CLICK("block.lever.click"),
+    BLOCK_METAL_BREAK("block.metal.break"),
+    BLOCK_METAL_FALL("block.metal.fall"),
+    BLOCK_METAL_HIT("block.metal.hit"),
+    BLOCK_METAL_PLACE("block.metal.place"),
+    BLOCK_METAL_PRESSUREPLATE_CLICK_OFF("block.metal_pressureplate.click_off"),
+    BLOCK_METAL_PRESSUREPLATE_CLICK_ON("block.metal_pressureplate.click_on"),
+    BLOCK_METAL_STEP("block.metal.step"),
+    BLOCK_NOTE_BASEDRUM("block.note.basedrum"),
+    BLOCK_NOTE_BASS("block.note.bass"),
+    BLOCK_NOTE_HARP("block.note.harp"),
+    BLOCK_NOTE_HAT("block.note.hat"),
+    BLOCK_NOTE_PLING("block.note.pling"),
+    BLOCK_NOTE_SNARE("block.note.snare"),
+    BLOCK_PISTON_CONTRACT("block.piston.contract"),
+    BLOCK_PISTON_EXTEND("block.piston.extend"),
+    BLOCK_PORTAL_AMBIENT("block.portal.ambient"),
+    BLOCK_PORTAL_TRAVEL("block.portal.travel"),
+    BLOCK_PORTAL_TRIGGER("block.portal.trigger"),
+    BLOCK_REDSTONE_TORCH_BURNOUT("block.redstone_torch.burnout"),
+    BLOCK_SAND_BREAK("block.sand.break"),
+    BLOCK_SAND_FALL("block.sand.fall"),
+    BLOCK_SAND_HIT("block.sand.hit"),
+    BLOCK_SAND_PLACE("block.sand.place"),
+    BLOCK_SAND_STEP("block.sand.step"),
+    BLOCK_SLIME_BREAK("block.slime.break"),
+    BLOCK_SLIME_FALL("block.slime.fall"),
+    BLOCK_SLIME_HIT("block.slime.hit"),
+    BLOCK_SLIME_PLACE("block.slime.place"),
+    BLOCK_SLIME_STEP("block.slime.step"),
+    BLOCK_SNOW_BREAK("block.snow.break"),
+    BLOCK_SNOW_FALL("block.snow.fall"),
+    BLOCK_SNOW_HIT("block.snow.hit"),
+    BLOCK_SNOW_PLACE("block.snow.place"),
+    BLOCK_SNOW_STEP("block.snow.step"),
+    BLOCK_STONE_BREAK("block.stone.break"),
+    BLOCK_STONE_BUTTON_CLICK_OFF("block.stone_button.click_off"),
+    BLOCK_STONE_BUTTON_CLICK_ON("block.stone_button.click_on"),
+    BLOCK_STONE_FALL("block.stone.fall"),
+    BLOCK_STONE_HIT("block.stone.hit"),
+    BLOCK_STONE_PLACE("block.stone.place"),
+    BLOCK_STONE_PRESSUREPLATE_CLICK_OFF("block.stone_pressureplate.click_off"),
+    BLOCK_STONE_PRESSUREPLATE_CLICK_ON("block.stone_pressureplate.click_on"),
+    BLOCK_STONE_STEP("block.stone.step"),
+    BLOCK_TRIPWIRE_ATTACH("block.tripwire.attach"),
+    BLOCK_TRIPWIRE_CLICK_OFF("block.tripwire.click_off"),
+    BLOCK_TRIPWIRE_CLICK_ON("block.tripwire.click_on"),
+    BLOCK_TRIPWIRE_DETACH("block.tripwire.detach"),
+    BLOCK_WATERLILY_PLACE("block.waterlily.place"),
+    BLOCK_WATER_AMBIENT("block.water.ambient"),
+    BLOCK_WOODEN_DOOR_CLOSE("block.wooden_door.close"),
+    BLOCK_WOODEN_DOOR_OPEN("block.wooden_door.open"),
+    BLOCK_WOODEN_TRAPDOOR_CLOSE("block.wooden_trapdoor.close"),
+    BLOCK_WOODEN_TRAPDOOR_OPEN("block.wooden_trapdoor.open"),
+    BLOCK_WOOD_BREAK("block.wood.break"),
+    BLOCK_WOOD_BUTTON_CLICK_OFF("block.wood_button.click_off"),
+    BLOCK_WOOD_BUTTON_CLICK_ON("block.wood_button.click_on"),
+    BLOCK_WOOD_FALL("block.wood.fall"),
+    BLOCK_WOOD_HIT("block.wood.hit"),
+    BLOCK_WOOD_PLACE("block.wood.place"),
+    BLOCK_WOOD_PRESSUREPLATE_CLICK_OFF("block.wood_pressureplate.click_off"),
+    BLOCK_WOOD_PRESSUREPLATE_CLICK_ON("block.wood_pressureplate.click_on"),
+    BLOCK_WOOD_STEP("block.wood.step"),
+    ENCHANT_THORNS_HIT("enchant.thorns.hit"),
+    ENTITY_ARMORSTAND_BREAK("entity.armorstand.break"),
+    ENTITY_ARMORSTAND_FALL("entity.armorstand.fall"),
+    ENTITY_ARMORSTAND_HIT("entity.armorstand.hit"),
+    ENTITY_ARMORSTAND_PLACE("entity.armorstand.place"),
+    ENTITY_ARROW_HIT("entity.arrow.hit"),
+    ENTITY_ARROW_HIT_PLAYER("entity.arrow.hit_player"),
+    ENTITY_ARROW_SHOOT("entity.arrow.shoot"),
+    ENTITY_BAT_AMBIENT("entity.bat.ambient"),
+    ENTITY_BAT_DEATH("entity.bat.death"),
+    ENTITY_BAT_HURT("entity.bat.hurt"),
+    ENTITY_BAT_LOOP("entity.bat.loop"),
+    ENTITY_BAT_TAKEOFF("entity.bat.takeoff"),
+    ENTITY_BLAZE_AMBIENT("entity.blaze.ambient"),
+    ENTITY_BLAZE_BURN("entity.blaze.burn"),
+    ENTITY_BLAZE_DEATH("entity.blaze.death"),
+    ENTITY_BLAZE_HURT("entity.blaze.hurt"),
+    ENTITY_BLAZE_SHOOT("entity.blaze.shoot"),
+    ENTITY_BOBBER_SPLASH("entity.bobber.splash"),
+    ENTITY_BOBBER_THROW("entity.bobber.throw"),
+    ENTITY_CAT_AMBIENT("entity.cat.ambient"),
+    ENTITY_CAT_DEATH("entity.cat.death"),
+    ENTITY_CAT_HISS("entity.cat.hiss"),
+    ENTITY_CAT_HURT("entity.cat.hurt"),
+    ENTITY_CAT_PURR("entity.cat.purr"),
+    ENTITY_CAT_PURREOW("entity.cat.purreow"),
+    ENTITY_CHICKEN_AMBIENT("entity.chicken.ambient"),
+    ENTITY_CHICKEN_DEATH("entity.chicken.death"),
+    ENTITY_CHICKEN_EGG("entity.chicken.egg"),
+    ENTITY_CHICKEN_HURT("entity.chicken.hurt"),
+    ENTITY_CHICKEN_STEP("entity.chicken.step"),
+    ENTITY_COW_AMBIENT("entity.cow.ambient"),
+    ENTITY_COW_DEATH("entity.cow.death"),
+    ENTITY_COW_HURT("entity.cow.hurt"),
+    ENTITY_COW_MILK("entity.cow.milk"),
+    ENTITY_COW_STEP("entity.cow.step"),
+    ENTITY_CREEPER_DEATH("entity.creeper.death"),
+    ENTITY_CREEPER_HURT("entity.creeper.hurt"),
+    ENTITY_CREEPER_PRIMED("entity.creeper.primed"),
+    ENTITY_DONKEY_AMBIENT("entity.donkey.ambient"),
+    ENTITY_DONKEY_ANGRY("entity.donkey.angry"),
+    ENTITY_DONKEY_CHEST("entity.donkey.chest"),
+    ENTITY_DONKEY_DEATH("entity.donkey.death"),
+    ENTITY_DONKEY_HURT("entity.donkey.hurt"),
+    ENTITY_EGG_THROW("entity.egg.throw"),
+    ENTITY_ELDER_GUARDIAN_AMBIENT("entity.elder_guardian.ambient"),
+    ENTITY_ELDER_GUARDIAN_AMBIENT_LAND("entity.elder_guardian.ambient_land"),
+    ENTITY_ELDER_GUARDIAN_CURSE("entity.elder_guardian.curse"),
+    ENTITY_ELDER_GUARDIAN_DEATH("entity.elder_guardian.death"),
+    ENTITY_ELDER_GUARDIAN_DEATH_LAND("entity.elder_guardian.death_land"),
+    ENTITY_ELDER_GUARDIAN_HURT("entity.elder_guardian.hurt"),
+    ENTITY_ELDER_GUARDIAN_HURT_LAND("entity.elder_guardian.hurt_land"),
+    ENTITY_ENDERDRAGON_AMBIENT("entity.enderdragon.ambient"),
+    ENTITY_ENDERDRAGON_DEATH("entity.enderdragon.death"),
+    ENTITY_ENDERDRAGON_FIREBALL_EXPLODE("entity.enderdragon_fireball.explode"),
+    ENTITY_ENDERDRAGON_FLAP("entity.enderdragon.flap"),
+    ENTITY_ENDERDRAGON_GROWL("entity.enderdragon.growl"),
+    ENTITY_ENDERDRAGON_HURT("entity.enderdragon.hurt"),
+    ENTITY_ENDERDRAGON_SHOOT("entity.enderdragon.shoot"),
+    ENTITY_ENDEREYE_LAUNCH("entity.endereye.launch"),
+    ENTITY_ENDERMEN_AMBIENT("entity.endermen.ambient"),
+    ENTITY_ENDERMEN_DEATH("entity.endermen.death"),
+    ENTITY_ENDERMEN_HURT("entity.endermen.hurt"),
+    ENTITY_ENDERMEN_SCREAM("entity.endermen.scream"),
+    ENTITY_ENDERMEN_STARE("entity.endermen.stare"),
+    ENTITY_ENDERMEN_TELEPORT("entity.endermen.teleport"),
+    ENTITY_ENDERMITE_AMBIENT("entity.endermite.ambient"),
+    ENTITY_ENDERMITE_DEATH("entity.endermite.death"),
+    ENTITY_ENDERMITE_HURT("entity.endermite.hurt"),
+    ENTITY_ENDERMITE_STEP("entity.endermite.step"),
+    ENTITY_ENDERPEARL_THROW("entity.enderpearl.throw"),
+    ENTITY_EXPERIENCE_BOTTLE_THROW("entity.experience_bottle.throw"),
+    ENTITY_EXPERIENCE_ORB_PICKUP("entity.experience_orb.pickup"),
+    ENTITY_EXPERIENCE_ORB_TOUCH("entity.experience_orb.touch"),
+    ENTITY_FIREWORK_BLAST("entity.firework.blast"),
+    ENTITY_FIREWORK_BLAST_FAR("entity.firework.blast_far"),
+    ENTITY_FIREWORK_LARGE_BLAST("entity.firework.large_blast"),
+    ENTITY_FIREWORK_LARGE_BLAST_FAR("entity.firework.large_blast_far"),
+    ENTITY_FIREWORK_LAUNCH("entity.firework.launch"),
+    ENTITY_FIREWORK_SHOOT("entity.firework.shoot"),
+    ENTITY_FIREWORK_TWINKLE("entity.firework.twinkle"),
+    ENTITY_FIREWORK_TWINKLE_FAR("entity.firework.twinkle_far"),
+    ENTITY_GENERIC_BIG_FALL("entity.generic.big_fall"),
+    ENTITY_GENERIC_BURN("entity.generic.burn"),
+    ENTITY_GENERIC_DEATH("entity.generic.death"),
+    ENTITY_GENERIC_DRINK("entity.generic.drink"),
+    ENTITY_GENERIC_EAT("entity.generic.eat"),
+    ENTITY_GENERIC_EXPLODE("entity.generic.explode"),
+    ENTITY_GENERIC_EXTINGUISH_FIRE("entity.generic.extinguish_fire"),
+    ENTITY_GENERIC_HURT("entity.generic.hurt"),
+    ENTITY_GENERIC_SMALL_FALL("entity.generic.small_fall"),
+    ENTITY_GENERIC_SPLASH("entity.generic.splash"),
+    ENTITY_GENERIC_SWIM("entity.generic.swim"),
+    ENTITY_GHAST_AMBIENT("entity.ghast.ambient"),
+    ENTITY_GHAST_DEATH("entity.ghast.death"),
+    ENTITY_GHAST_HURT("entity.ghast.hurt"),
+    ENTITY_GHAST_SCREAM("entity.ghast.scream"),
+    ENTITY_GHAST_SHOOT("entity.ghast.shoot"),
+    ENTITY_GHAST_WARN("entity.ghast.warn"),
+    ENTITY_GUARDIAN_AMBIENT("entity.guardian.ambient"),
+    ENTITY_GUARDIAN_AMBIENT_LAND("entity.guardian.ambient_land"),
+    ENTITY_GUARDIAN_ATTACK("entity.guardian.attack"),
+    ENTITY_GUARDIAN_DEATH("entity.guardian.death"),
+    ENTITY_GUARDIAN_DEATH_LAND("entity.guardian.death_land"),
+    ENTITY_GUARDIAN_FLOP("entity.guardian.flop"),
+    ENTITY_GUARDIAN_HURT("entity.guardian.hurt"),
+    ENTITY_GUARDIAN_HURT_LAND("entity.guardian.hurt_land"),
+    ENTITY_HORSE_AMBIENT("entity.horse.ambient"),
+    ENTITY_HORSE_ANGRY("entity.horse.angry"),
+    ENTITY_HORSE_ARMOR("entity.horse.armor"),
+    ENTITY_HORSE_BREATHE("entity.horse.breathe"),
+    ENTITY_HORSE_DEATH("entity.horse.death"),
+    ENTITY_HORSE_EAT("entity.horse.eat"),
+    ENTITY_HORSE_GALLOP("entity.horse.gallop"),
+    ENTITY_HORSE_HURT("entity.horse.hurt"),
+    ENTITY_HORSE_JUMP("entity.horse.jump"),
+    ENTITY_HORSE_LAND("entity.horse.land"),
+    ENTITY_HORSE_SADDLE("entity.horse.saddle"),
+    ENTITY_HORSE_STEP("entity.horse.step"),
+    ENTITY_HORSE_STEP_WOOD("entity.horse.step_wood"),
+    ENTITY_HOSTILE_BIG_FALL("entity.hostile.big_fall"),
+    ENTITY_HOSTILE_DEATH("entity.hostile.death"),
+    ENTITY_HOSTILE_HURT("entity.hostile.hurt"),
+    ENTITY_HOSTILE_SMALL_FALL("entity.hostile.small_fall"),
+    ENTITY_HOSTILE_SPLASH("entity.hostile.splash"),
+    ENTITY_HOSTILE_SWIM("entity.hostile.swim"),
+    ENTITY_IRONGOLEM_ATTACK("entity.irongolem.attack"),
+    ENTITY_IRONGOLEM_DEATH("entity.irongolem.death"),
+    ENTITY_IRONGOLEM_HURT("entity.irongolem.hurt"),
+    ENTITY_IRONGOLEM_STEP("entity.irongolem.step"),
+    ENTITY_ITEMFRAME_ADD_ITEM("entity.itemframe.add_item"),
+    ENTITY_ITEMFRAME_BREAK("entity.itemframe.break"),
+    ENTITY_ITEMFRAME_PLACE("entity.itemframe.place"),
+    ENTITY_ITEMFRAME_REMOVE_ITEM("entity.itemframe.remove_item"),
+    ENTITY_ITEMFRAME_ROTATE_ITEM("entity.itemframe.rotate_item"),
+    ENTITY_ITEM_BREAK("entity.item.break"),
+    ENTITY_ITEM_PICKUP("entity.item.pickup"),
+    ENTITY_LEASHKNOT_BREAK("entity.leashknot.break"),
+    ENTITY_LEASHKNOT_PLACE("entity.leashknot.place"),
+    ENTITY_LIGHTNING_IMPACT("entity.lightning.impact"),
+    ENTITY_LIGHTNING_THUNDER("entity.lightning.thunder"),
+    ENTITY_LINGERINGPOTION_THROW("entity.lingeringpotion.throw"),
+    ENTITY_MAGMACUBE_DEATH("entity.magmacube.death"),
+    ENTITY_MAGMACUBE_HURT("entity.magmacube.hurt"),
+    ENTITY_MAGMACUBE_JUMP("entity.magmacube.jump"),
+    ENTITY_MAGMACUBE_SQUISH("entity.magmacube.squish"),
+    ENTITY_MINECART_INSIDE("entity.minecart.inside"),
+    ENTITY_MINECART_RIDING("entity.minecart.riding"),
+    ENTITY_MOOSHROOM_SHEAR("entity.mooshroom.shear"),
+    ENTITY_MULE_AMBIENT("entity.mule.ambient"),
+    ENTITY_MULE_DEATH("entity.mule.death"),
+    ENTITY_MULE_HURT("entity.mule.hurt"),
+    ENTITY_PAINTING_BREAK("entity.painting.break"),
+    ENTITY_PAINTING_PLACE("entity.painting.place"),
+    ENTITY_PIG_AMBIENT("entity.pig.ambient"),
+    ENTITY_PIG_DEATH("entity.pig.death"),
+    ENTITY_PIG_HURT("entity.pig.hurt"),
+    ENTITY_PIG_SADDLE("entity.pig.saddle"),
+    ENTITY_PIG_STEP("entity.pig.step"),
+    ENTITY_PLAYER_ATTACK_CRIT("entity.player.attack.crit"),
+    ENTITY_PLAYER_ATTACK_KNOCKBACK("entity.player.attack.knockback"),
+    ENTITY_PLAYER_ATTACK_NODAMAGE("entity.player.attack.nodamage"),
+    ENTITY_PLAYER_ATTACK_STRONG("entity.player.attack.strong"),
+    ENTITY_PLAYER_ATTACK_SWEEP("entity.player.attack.sweep"),
+    ENTITY_PLAYER_ATTACK_WEAK("entity.player.attack.weak"),
+    ENTITY_PLAYER_BIG_FALL("entity.player.big_fall"),
+    ENTITY_PLAYER_BREATH("entity.player.breath"),
+    ENTITY_PLAYER_BURP("entity.player.burp"),
+    ENTITY_PLAYER_DEATH("entity.player.death"),
+    ENTITY_PLAYER_HURT("entity.player.hurt"),
+    ENTITY_PLAYER_LEVELUP("entity.player.levelup"),
+    ENTITY_PLAYER_SMALL_FALL("entity.player.small_fall"),
+    ENTITY_PLAYER_SPLASH("entity.player.splash"),
+    ENTITY_PLAYER_SWIM("entity.player.swim"),
+    ENTITY_RABBIT_AMBIENT("entity.rabbit.ambient"),
+    ENTITY_RABBIT_ATTACK("entity.rabbit.attack"),
+    ENTITY_RABBIT_DEATH("entity.rabbit.death"),
+    ENTITY_RABBIT_HURT("entity.rabbit.hurt"),
+    ENTITY_RABBIT_JUMP("entity.rabbit.jump"),
+    ENTITY_SHEEP_AMBIENT("entity.sheep.ambient"),
+    ENTITY_SHEEP_DEATH("entity.sheep.death"),
+    ENTITY_SHEEP_HURT("entity.sheep.hurt"),
+    ENTITY_SHEEP_SHEAR("entity.sheep.shear"),
+    ENTITY_SHEEP_STEP("entity.sheep.step"),
+    ENTITY_SHULKER_AMBIENT("entity.shulker.ambient"),
+    ENTITY_SHULKER_BULLET_HIT("entity.shulker_bullet.hit"),
+    ENTITY_SHULKER_BULLET_HURT("entity.shulker_bullet.hurt"),
+    ENTITY_SHULKER_CLOSE("entity.shulker.close"),
+    ENTITY_SHULKER_DEATH("entity.shulker.death"),
+    ENTITY_SHULKER_HURT("entity.shulker.hurt"),
+    ENTITY_SHULKER_HURT_CLOSED("entity.shulker.hurt_closed"),
+    ENTITY_SHULKER_OPEN("entity.shulker.open"),
+    ENTITY_SHULKER_SHOOT("entity.shulker.shoot"),
+    ENTITY_SHULKER_TELEPORT("entity.shulker.teleport"),
+    ENTITY_SILVERFISH_AMBIENT("entity.silverfish.ambient"),
+    ENTITY_SILVERFISH_DEATH("entity.silverfish.death"),
+    ENTITY_SILVERFISH_HURT("entity.silverfish.hurt"),
+    ENTITY_SILVERFISH_STEP("entity.silverfish.step"),
+    ENTITY_SKELETON_AMBIENT("entity.skeleton.ambient"),
+    ENTITY_SKELETON_DEATH("entity.skeleton.death"),
+    ENTITY_SKELETON_HORSE_AMBIENT("entity.skeleton_horse.ambient"),
+    ENTITY_SKELETON_HORSE_DEATH("entity.skeleton_horse.death"),
+    ENTITY_SKELETON_HORSE_HURT("entity.skeleton_horse.hurt"),
+    ENTITY_SKELETON_HURT("entity.skeleton.hurt"),
+    ENTITY_SKELETON_SHOOT("entity.skeleton.shoot"),
+    ENTITY_SKELETON_STEP("entity.skeleton.step"),
+    ENTITY_SLIME_ATTACK("entity.slime.attack"),
+    ENTITY_SLIME_DEATH("entity.slime.death"),
+    ENTITY_SLIME_HURT("entity.slime.hurt"),
+    ENTITY_SLIME_JUMP("entity.slime.jump"),
+    ENTITY_SLIME_SQUISH("entity.slime.squish"),
+    ENTITY_SMALL_MAGMACUBE_DEATH("entity.small_magmacube.death"),
+    ENTITY_SMALL_MAGMACUBE_HURT("entity.small_magmacube.hurt"),
+    ENTITY_SMALL_MAGMACUBE_SQUISH("entity.small_magmacube.squish"),
+    ENTITY_SMALL_SLIME_DEATH("entity.small_slime.death"),
+    ENTITY_SMALL_SLIME_HURT("entity.small_slime.hurt"),
+    ENTITY_SMALL_SLIME_JUMP("entity.small_slime.jump"),
+    ENTITY_SMALL_SLIME_SQUISH("entity.small_slime.squish"),
+    ENTITY_SNOWBALL_THROW("entity.snowball.throw"),
+    ENTITY_SNOWMAN_AMBIENT("entity.snowman.ambient"),
+    ENTITY_SNOWMAN_DEATH("entity.snowman.death"),
+    ENTITY_SNOWMAN_HURT("entity.snowman.hurt"),
+    ENTITY_SNOWMAN_SHOOT("entity.snowman.shoot"),
+    ENTITY_SPIDER_AMBIENT("entity.spider.ambient"),
+    ENTITY_SPIDER_DEATH("entity.spider.death"),
+    ENTITY_SPIDER_HURT("entity.spider.hurt"),
+    ENTITY_SPIDER_STEP("entity.spider.step"),
+    ENTITY_SPLASH_POTION_BREAK("entity.splash_potion.break"),
+    ENTITY_SPLASH_POTION_THROW("entity.splash_potion.throw"),
+    ENTITY_SQUID_AMBIENT("entity.squid.ambient"),
+    ENTITY_SQUID_DEATH("entity.squid.death"),
+    ENTITY_SQUID_HURT("entity.squid.hurt"),
+    ENTITY_TNT_PRIMED("entity.tnt.primed"),
+    ENTITY_VILLAGER_AMBIENT("entity.villager.ambient"),
+    ENTITY_VILLAGER_DEATH("entity.villager.death"),
+    ENTITY_VILLAGER_HURT("entity.villager.hurt"),
+    ENTITY_VILLAGER_NO("entity.villager.no"),
+    ENTITY_VILLAGER_TRADING("entity.villager.trading"),
+    ENTITY_VILLAGER_YES("entity.villager.yes"),
+    ENTITY_WITCH_AMBIENT("entity.witch.ambient"),
+    ENTITY_WITCH_DEATH("entity.witch.death"),
+    ENTITY_WITCH_DRINK("entity.witch.drink"),
+    ENTITY_WITCH_HURT("entity.witch.hurt"),
+    ENTITY_WITCH_THROW("entity.witch.throw"),
+    ENTITY_WITHER_AMBIENT("entity.wither.ambient"),
+    ENTITY_WITHER_BREAK_BLOCK("entity.wither.break_block"),
+    ENTITY_WITHER_DEATH("entity.wither.death"),
+    ENTITY_WITHER_HURT("entity.wither.hurt"),
+    ENTITY_WITHER_SHOOT("entity.wither.shoot"),
+    ENTITY_WITHER_SPAWN("entity.wither.spawn"),
+    ENTITY_WOLF_AMBIENT("entity.wolf.ambient"),
+    ENTITY_WOLF_DEATH("entity.wolf.death"),
+    ENTITY_WOLF_GROWL("entity.wolf.growl"),
+    ENTITY_WOLF_HOWL("entity.wolf.howl"),
+    ENTITY_WOLF_HURT("entity.wolf.hurt"),
+    ENTITY_WOLF_PANT("entity.wolf.pant"),
+    ENTITY_WOLF_SHAKE("entity.wolf.shake"),
+    ENTITY_WOLF_STEP("entity.wolf.step"),
+    ENTITY_WOLF_WHINE("entity.wolf.whine"),
+    ENTITY_ZOMBIE_AMBIENT("entity.zombie.ambient"),
+    ENTITY_ZOMBIE_ATTACK_DOOR_WOOD("entity.zombie.attack_door_wood"),
+    ENTITY_ZOMBIE_ATTACK_IRON_DOOR("entity.zombie.attack_iron_door"),
+    ENTITY_ZOMBIE_BREAK_DOOR_WOOD("entity.zombie.break_door_wood"),
+    ENTITY_ZOMBIE_DEATH("entity.zombie.death"),
+    ENTITY_ZOMBIE_HORSE_AMBIENT("entity.zombie_horse.ambient"),
+    ENTITY_ZOMBIE_HORSE_DEATH("entity.zombie_horse.death"),
+    ENTITY_ZOMBIE_HORSE_HURT("entity.zombie_horse.hurt"),
+    ENTITY_ZOMBIE_HURT("entity.zombie.hurt"),
+    ENTITY_ZOMBIE_INFECT("entity.zombie.infect"),
+    ENTITY_ZOMBIE_PIG_AMBIENT("entity.zombie_pig.ambient"),
+    ENTITY_ZOMBIE_PIG_ANGRY("entity.zombie_pig.angry"),
+    ENTITY_ZOMBIE_PIG_DEATH("entity.zombie_pig.death"),
+    ENTITY_ZOMBIE_PIG_HURT("entity.zombie_pig.hurt"),
+    ENTITY_ZOMBIE_STEP("entity.zombie.step"),
+    ENTITY_ZOMBIE_VILLAGER_AMBIENT("entity.zombie_villager.ambient"),
+    ENTITY_ZOMBIE_VILLAGER_CONVERTED("entity.zombie_villager.converted"),
+    ENTITY_ZOMBIE_VILLAGER_CURE("entity.zombie_villager.cure"),
+    ENTITY_ZOMBIE_VILLAGER_DEATH("entity.zombie_villager.death"),
+    ENTITY_ZOMBIE_VILLAGER_HURT("entity.zombie_villager.hurt"),
+    ENTITY_ZOMBIE_VILLAGER_STEP("entity.zombie_villager.step"),
+    ITEM_ARMOR_EQUIP_CHAIN("item.armor.equip_chain"),
+    ITEM_ARMOR_EQUIP_DIAMOND("item.armor.equip_diamond"),
+    ITEM_ARMOR_EQUIP_GENERIC("item.armor.equip_generic"),
+    ITEM_ARMOR_EQUIP_GOLD("item.armor.equip_gold"),
+    ITEM_ARMOR_EQUIP_IRON("item.armor.equip_iron"),
+    ITEM_ARMOR_EQUIP_LEATHER("item.armor.equip_leather"),
+    ITEM_BOTTLE_FILL("item.bottle.fill"),
+    ITEM_BOTTLE_FILL_DRAGONBREATH("item.bottle.fill_dragonbreath"),
+    ITEM_BUCKET_EMPTY("item.bucket.empty"),
+    ITEM_BUCKET_EMPTY_LAVA("item.bucket.empty_lava"),
+    ITEM_BUCKET_FILL("item.bucket.fill"),
+    ITEM_BUCKET_FILL_LAVA("item.bucket.fill_lava"),
+    ITEM_CHORUS_FRUIT_TELEPORT("item.chorus_fruit.teleport"),
+    ITEM_ELYTRA_FLYING("item.elytra.flying"),
+    ITEM_FIRECHARGE_USE("item.firecharge.use"),
+    ITEM_FLINTANDSTEEL_USE("item.flintandsteel.use"),
+    ITEM_HOE_TILL("item.hoe.till"),
+    ITEM_SHIELD_BLOCK("item.shield.block"),
+    ITEM_SHIELD_BREAK("item.shield.break"),
+    ITEM_SHOVEL_FLATTEN("item.shovel.flatten"),
+    MUSIC_CREATIVE("music.creative"),
+    MUSIC_CREDITS("music.credits"),
+    MUSIC_DRAGON("music.dragon"),
+    MUSIC_END("music.end"),
+    MUSIC_GAME("music.game"),
+    MUSIC_MENU("music.menu"),
+    MUSIC_NETHER("music.nether"),
+    RECORD_11("record.11"),
+    RECORD_13("record.13"),
+    RECORD_BLOCKS("record.blocks"),
+    RECORD_CAT("record.cat"),
+    RECORD_CHIRP("record.chirp"),
+    RECORD_FAR("record.far"),
+    RECORD_MALL("record.mall"),
+    RECORD_MELLOHI("record.mellohi"),
+    RECORD_STAL("record.stal"),
+    RECORD_STRAD("record.strad"),
+    RECORD_WAIT("record.wait"),
+    RECORD_WARD("record.ward"),
+    UI_BUTTON_CLICK("ui.button.click"),
+    WEATHER_RAIN("weather.rain"),
+    WEATHER_RAIN_ABOVE("weather.rain.above");
+    private final String minecraftKey;
 
-    private static void set(Sound sound, String key) {
-        sounds[sound.ordinal()] = key;
+    CraftSound(String minecraftKey) {
+        this.minecraftKey = minecraftKey;
     }
 
     public static String getSound(final Sound sound) {
         Validate.notNull(sound, "Sound cannot be null");
-        return sounds[sound.ordinal()];
+
+        return CraftSound.valueOf(sound.name()).minecraftKey;
     }
 
-    private CraftSound() {}
+    public static SoundEffect getSoundEffect(String s) {
+        SoundEffect effect = SoundEffect.a.get(new MinecraftKey(s));
+        Preconditions.checkArgument(effect != null, "Sound effect %s does not exist", s);
+
+        return effect;
+    }
 }

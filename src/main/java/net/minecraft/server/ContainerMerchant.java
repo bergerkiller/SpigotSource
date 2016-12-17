@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView; // CraftBukkit
 
 public class ContainerMerchant extends Container {
@@ -7,7 +8,7 @@ public class ContainerMerchant extends Container {
     private IMerchant merchant;
     private InventoryMerchant f;
     private final World g;
-    
+
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -66,9 +67,10 @@ public class ContainerMerchant extends Container {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.merchant.u_() == entityhuman;
+        return this.merchant.getTrader() == entityhuman;
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
@@ -113,9 +115,9 @@ public class ContainerMerchant extends Container {
 
     public void b(EntityHuman entityhuman) {
         super.b(entityhuman);
-        this.merchant.a_((EntityHuman) null);
+        this.merchant.setTradingPlayer((EntityHuman) null);
         super.b(entityhuman);
-        if (!this.g.isStatic) {
+        if (!this.g.isClientSide) {
             ItemStack itemstack = this.f.splitWithoutUpdate(0);
 
             if (itemstack != null) {

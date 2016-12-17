@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import java.util.Map;
 
 import net.minecraft.server.GameProfileSerializer;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 
 import org.bukkit.Material;
@@ -15,6 +16,10 @@ import com.mojang.authlib.GameProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKey SKULL_PROFILE = new ItemMetaKey("SkullProfile");
+
     static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
     static final int MAX_OWNER_LENGTH = 16;
 
@@ -34,21 +39,39 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (tag.hasKeyOfType(SKULL_OWNER.NBT, 10)) {
             profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
-        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8)) {
+        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, 8) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
             profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
         }
     }
 
     CraftMetaSkull(Map<String, Object> map) {
         super(map);
-        setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
+        if (profile == null) {
+            setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
+        }
+    }
+
+    @Override
+    void deserializeInternal(NBTTagCompound tag) {
+        if (tag.hasKeyOfType(SKULL_PROFILE.NBT, 10)) {
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT));
+        }
+    }
+
+    @Override
+    void serializeInternal(final Map<String, NBTBase> internalTags) {
+        if (profile != null) {
+            NBTTagCompound nbtData = new NBTTagCompound();
+            GameProfileSerializer.serialize(nbtData, profile);
+            internalTags.put(SKULL_PROFILE.NBT, nbtData);
+        }
     }
 
     @Override
     void applyToItem(final NBTTagCompound tag) { // Spigot - make final
         super.applyToItem(tag);
 
-        if (hasOwner()) {
+        if (profile != null) {
             NBTTagCompound owner = new NBTTagCompound();
             GameProfileSerializer.serialize(owner, profile);
             tag.set( SKULL_OWNER.NBT, owner );
@@ -75,7 +98,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     boolean isSkullEmpty() {
-        return !(hasOwner());
+        return profile == null;
     }
 
     @Override
@@ -94,7 +117,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     public boolean hasOwner() {
-        return profile != null;
+        return profile != null && profile.getName() != null;
     }
 
     public String getOwner() {

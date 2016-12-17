@@ -2,11 +2,12 @@ package net.minecraft.server;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import javax.annotation.Nullable;
 
 public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
     private ItemStack a;
-    
+
     // CraftBukkit start - Delegate to new parent class with bogus info
     public RecipeFireworks() {
         super(new ItemStack(Items.FIREWORKS, 0, 0), java.util.Arrays.asList(new ItemStack(Items.GUNPOWDER, 0, 5)));
@@ -163,7 +164,8 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
         }
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         return this.a.cloneItemStack();
     }
 
@@ -171,6 +173,7 @@ public class RecipeFireworks extends ShapelessRecipes implements IRecipe { // Cr
         return 10;
     }
 
+    @Nullable
     public ItemStack b() {
         return this.a;
     }

@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 public class BlockIce extends BlockHalfTransparent {
 
@@ -11,25 +12,25 @@ public class BlockIce extends BlockHalfTransparent {
         this.a(CreativeModeTab.b);
     }
 
-    public void a(World world, EntityHuman entityhuman, BlockPosition blockposition, IBlockData iblockdata, TileEntity tileentity) {
-        entityhuman.b(StatisticList.MINE_BLOCK_COUNT[Block.getId(this)]);
+    public void a(World world, EntityHuman entityhuman, BlockPosition blockposition, IBlockData iblockdata, @Nullable TileEntity tileentity, @Nullable ItemStack itemstack) {
+        entityhuman.b(StatisticList.a((Block) this));
         entityhuman.applyExhaustion(0.025F);
-        if (this.G() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
-            ItemStack itemstack = this.i(iblockdata);
+        if (this.o() && EnchantmentManager.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) > 0) {
+            ItemStack itemstack1 = this.u(iblockdata);
 
-            if (itemstack != null) {
-                a(world, blockposition, itemstack);
+            if (itemstack1 != null) {
+                a(world, blockposition, itemstack1);
             }
         } else {
-            if (world.worldProvider.n()) {
+            if (world.worldProvider.l()) {
                 world.setAir(blockposition);
                 return;
             }
 
-            int i = EnchantmentManager.getBonusBlockLootEnchantmentLevel(entityhuman);
+            int i = EnchantmentManager.getEnchantmentLevel(Enchantments.LOOT_BONUS_BLOCKS, itemstack);
 
             this.b(world, blockposition, iblockdata, i);
-            Material material = world.getType(blockposition.down()).getBlock().getMaterial();
+            Material material = world.getType(blockposition.down()).getMaterial();
 
             if (material.isSolid() || material.isLiquid()) {
                 world.setTypeUpdate(blockposition, Blocks.FLOWING_WATER.getBlockData());
@@ -43,23 +44,28 @@ public class BlockIce extends BlockHalfTransparent {
     }
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-        if (world.b(EnumSkyBlock.BLOCK, blockposition) > 11 - this.n()) {
-            // CraftBukkit start
-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), world.worldProvider.n() ? Blocks.AIR : Blocks.WATER).isCancelled()) {
-                return;
-            }
-            // CraftBukkit end
-        
-            if (world.worldProvider.n()) {
-                world.setAir(blockposition);
-            } else {
-                this.b(world, blockposition, world.getType(blockposition), 0);
-                world.setTypeUpdate(blockposition, Blocks.WATER.getBlockData());
-            }
+        if (world.b(EnumSkyBlock.BLOCK, blockposition) > 11 - this.getBlockData().c()) {
+            this.b(world, blockposition);
+        }
+
+    }
+
+    protected void b(World world, BlockPosition blockposition) {
+        // CraftBukkit start
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), world.worldProvider.l() ? Blocks.AIR : Blocks.WATER).isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
+        if (world.worldProvider.l()) {
+            world.setAir(blockposition);
+        } else {
+            this.b(world, blockposition, world.getType(blockposition), 0);
+            world.setTypeUpdate(blockposition, Blocks.WATER.getBlockData());
+            world.e(blockposition, Blocks.WATER);
         }
     }
 
-    public int i() {
-        return 0;
+    public EnumPistonReaction h(IBlockData iblockdata) {
+        return EnumPistonReaction.NORMAL;
     }
 }

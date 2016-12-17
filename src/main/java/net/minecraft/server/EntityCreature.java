@@ -3,24 +3,24 @@ package net.minecraft.server;
 import java.util.UUID;
 
 // CraftBukkit start
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityUnleashEvent;
 // CraftBukkit end
 
 public abstract class EntityCreature extends EntityInsentient {
 
-    public static final UUID bi = UUID.fromString("E199AD21-BA8A-4C53-8D13-6182D5C69D3A");
-    public static final AttributeModifier bj = (new AttributeModifier(EntityCreature.bi, "Fleeing speed bonus", 2.0D, 2)).a(false);
+    public static final UUID bu = UUID.fromString("E199AD21-BA8A-4C53-8D13-6182D5C69D3A");
+    public static final AttributeModifier bv = (new AttributeModifier(EntityCreature.bu, "Fleeing speed bonus", 2.0D, 2)).a(false);
     private BlockPosition a;
     private float b;
     private PathfinderGoal c;
-    private boolean bk;
+    private boolean bw;
+    private float bx;
 
     public EntityCreature(World world) {
         super(world);
         this.a = BlockPosition.ZERO;
         this.b = -1.0F;
+        this.bx = PathType.WATER.a();
         this.c = new PathfinderGoalMoveTowardsRestriction(this, 1.0D);
     }
 
@@ -28,20 +28,20 @@ public abstract class EntityCreature extends EntityInsentient {
         return 0.0F;
     }
 
-    public boolean bQ() {
-        return super.bQ() && this.a(new BlockPosition(this.locX, this.getBoundingBox().b, this.locZ)) >= 0.0F;
+    public boolean cG() {
+        return super.cG() && this.a(new BlockPosition(this.locX, this.getBoundingBox().b, this.locZ)) >= 0.0F;
     }
 
-    public boolean cd() {
-        return !this.navigation.m();
+    public boolean cU() {
+        return !this.navigation.n();
     }
 
-    public boolean ce() {
-        return this.d(new BlockPosition(this));
+    public boolean cV() {
+        return this.f(new BlockPosition(this));
     }
 
-    public boolean d(BlockPosition blockposition) {
-        return this.b == -1.0F ? true : this.a.i(blockposition) < (double) (this.b * this.b);
+    public boolean f(BlockPosition blockposition) {
+        return this.b == -1.0F ? true : this.a.n(blockposition) < (double) (this.b * this.b);
     }
 
     public void a(BlockPosition blockposition, int i) {
@@ -49,25 +49,25 @@ public abstract class EntityCreature extends EntityInsentient {
         this.b = (float) i;
     }
 
-    public BlockPosition cf() {
+    public BlockPosition cW() {
         return this.a;
     }
 
-    public float cg() {
+    public float cX() {
         return this.b;
     }
 
-    public void ch() {
+    public void cY() {
         this.b = -1.0F;
     }
 
-    public boolean ci() {
+    public boolean cZ() {
         return this.b != -1.0F;
     }
 
-    protected void bZ() {
-        super.bZ();
-        if (this.cb() && this.getLeashHolder() != null && this.getLeashHolder().world == this.world) {
+    protected void cP() {
+        super.cP();
+        if (this.isLeashed() && this.getLeashHolder() != null && this.getLeashHolder().world == this.world) {
             Entity entity = this.getLeashHolder();
 
             this.a(new BlockPosition((int) entity.locX, (int) entity.locY, (int) entity.locZ), 5);
@@ -82,16 +82,17 @@ public abstract class EntityCreature extends EntityInsentient {
                 return;
             }
 
-            if (!this.bk) {
+            if (!this.bw) {
                 this.goalSelector.a(2, this.c);
                 if (this.getNavigation() instanceof Navigation) {
-                    ((Navigation) this.getNavigation()).a(false);
+                    this.bx = this.a(PathType.WATER);
+                    this.a(PathType.WATER, 0.0F);
                 }
 
-                this.bk = true;
+                this.bw = true;
             }
 
-            this.n(f);
+            this.q(f);
             if (f > 4.0F) {
                 this.getNavigation().a(entity, 1.0D);
             }
@@ -110,17 +111,17 @@ public abstract class EntityCreature extends EntityInsentient {
                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                 this.unleash(true, true);
             }
-        } else if (!this.cb() && this.bk) {
-            this.bk = false;
+        } else if (!this.isLeashed() && this.bw) {
+            this.bw = false;
             this.goalSelector.a(this.c);
             if (this.getNavigation() instanceof Navigation) {
-                ((Navigation) this.getNavigation()).a(true);
+                this.a(PathType.WATER, this.bx);
             }
 
-            this.ch();
+            this.cY();
         }
 
     }
 
-    protected void n(float f) {}
+    protected void q(float f) {}
 }

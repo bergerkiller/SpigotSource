@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
@@ -18,7 +19,7 @@ public class BlockRedstoneLamp extends Block {
     }
 
     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        if (!world.isStatic) {
+        if (!world.isClientSide) {
             if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
                 world.setTypeAndData(blockposition, Blocks.REDSTONE_LAMP.getBlockData(), 2);
             } else if (!this.a && world.isBlockIndirectlyPowered(blockposition)) {
@@ -33,8 +34,8 @@ public class BlockRedstoneLamp extends Block {
         }
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
-        if (!world.isStatic) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
+        if (!world.isClientSide) {
             if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
                 world.a(blockposition, (Block) this, 4);
             } else if (!this.a && world.isBlockIndirectlyPowered(blockposition)) {
@@ -50,24 +51,29 @@ public class BlockRedstoneLamp extends Block {
     }
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-        if (!world.isStatic) {
+        if (!world.isClientSide) {
             if (this.a && !world.isBlockIndirectlyPowered(blockposition)) {
-            // CraftBukkit start
-            if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
-                return;
-            }
-            // CraftBukkit end
+                // CraftBukkit start
+                if (CraftEventFactory.callRedstoneChange(world, blockposition.getX(), blockposition.getY(), blockposition.getZ(), 15, 0).getNewCurrent() != 0) {
+                    return;
+                }
+                // CraftBukkit end
                 world.setTypeAndData(blockposition, Blocks.REDSTONE_LAMP.getBlockData(), 2);
             }
 
         }
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return Item.getItemOf(Blocks.REDSTONE_LAMP);
     }
 
-    protected ItemStack i(IBlockData iblockdata) {
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Blocks.REDSTONE_LAMP);
+    }
+
+    protected ItemStack u(IBlockData iblockdata) {
         return new ItemStack(Blocks.REDSTONE_LAMP);
     }
 }

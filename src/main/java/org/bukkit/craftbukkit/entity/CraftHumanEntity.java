@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Set;
 
 import net.minecraft.server.*;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.inventory.MainHand;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
@@ -21,6 +23,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
@@ -56,6 +59,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     public Inventory getEnderChest() {
         return enderChest;
+    }
+
+    public MainHand getMainHand() {
+        return getHandle().getMainHand()== EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
     }
 
     public ItemStack getItemInHand() {
@@ -175,53 +182,75 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         EntityPlayer player = (EntityPlayer) getHandle();
         InventoryType type = inventory.getType();
         Container formerContainer = getHandle().activeContainer;
-        // TODO: Should we check that it really IS a CraftInventory first?
-        CraftInventory craftinv = (CraftInventory) inventory;
-        switch(type) {
-        case PLAYER:
-        case CHEST:
-        case ENDER_CHEST:
-            getHandle().openContainer(craftinv.getInventory());
-            break;
-        case DISPENSER:
-            if (craftinv.getInventory() instanceof TileEntityDispenser) {
-                getHandle().openTileEntity((TileEntityDispenser) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:dispenser");
-            }
-            break;
-        case FURNACE:
-            if (craftinv.getInventory() instanceof TileEntityFurnace) {
-                getHandle().openTileEntity((TileEntityFurnace) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:furnace");
-            }
-            break;
-        case WORKBENCH:
-            openCustomInventory(inventory, player, "minecraft:crafting_table");
-            break;
-        case BREWING:
-            if (craftinv.getInventory() instanceof TileEntityBrewingStand) {
-                getHandle().openTileEntity((TileEntityBrewingStand) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:brewing_stand");
-            }
-            break;
-        case ENCHANTING:
-            openCustomInventory(inventory, player, "minecraft:enchanting_table");
-            break;
-        case HOPPER:
-            if (craftinv.getInventory() instanceof TileEntityHopper) {
-                getHandle().openTileEntity((TileEntityHopper) craftinv.getInventory());
-            } else if (craftinv.getInventory() instanceof EntityMinecartHopper) {
-                getHandle().openTileEntity((EntityMinecartHopper) craftinv.getInventory());
-            } else {
-                openCustomInventory(inventory, player, "minecraft:hopper");
-            }
-            break;
-        case CREATIVE:
-        case CRAFTING:
-            throw new IllegalArgumentException("Can't open a " + type + " inventory!");
+
+        IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory) inventory).getInventory() : new org.bukkit.craftbukkit.inventory.InventoryWrapper(inventory);
+
+        switch (type) {
+            case PLAYER:
+            case CHEST:
+            case ENDER_CHEST:
+                getHandle().openContainer(iinventory);
+                break;
+            case DISPENSER:
+                if (iinventory instanceof TileEntityDispenser) {
+                    getHandle().openContainer((TileEntityDispenser) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:dispenser");
+                }
+                break;
+            case DROPPER:
+                if (iinventory instanceof TileEntityDropper) {
+                    getHandle().openContainer((TileEntityDropper) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:dropper");
+                }
+                break;
+            case FURNACE:
+                if (iinventory instanceof TileEntityFurnace) {
+                    getHandle().openContainer((TileEntityFurnace) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:furnace");
+                }
+                break;
+            case WORKBENCH:
+                openCustomInventory(inventory, player, "minecraft:crafting_table");
+                break;
+            case BREWING:
+                if (iinventory instanceof TileEntityBrewingStand) {
+                    getHandle().openContainer((TileEntityBrewingStand) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:brewing_stand");
+                }
+                break;
+            case ENCHANTING:
+                openCustomInventory(inventory, player, "minecraft:enchanting_table");
+                break;
+            case HOPPER:
+                if (iinventory instanceof TileEntityHopper) {
+                    getHandle().openContainer((TileEntityHopper) iinventory);
+                } else if (iinventory instanceof EntityMinecartHopper) {
+                    getHandle().openContainer((EntityMinecartHopper) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:hopper");
+                }
+                break;
+            case BEACON:
+                if (iinventory instanceof TileEntityBeacon) {
+                    getHandle().openContainer((TileEntityBeacon) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:beacon");
+                }
+                break;
+            case ANVIL:
+                if (iinventory instanceof BlockAnvil.TileEntityContainerAnvil) {
+                    getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:anvil");
+                }
+                break;
+            case CREATIVE:
+            case CRAFTING:
+                throw new IllegalArgumentException("Can't open a " + type + " inventory!");
         }
         if (getHandle().activeContainer == formerContainer) {
             return null;
@@ -240,6 +269,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
 
+        // Special cases
+        if (windowType.equals("minecraft:crafting_table") 
+                || windowType.equals("minecraft:anvil")
+                || windowType.equals("minecraft:enchanting_table")
+                ) {
+            size = 0;
+        }
+
         player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
@@ -255,7 +292,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity(new TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        getHandle().openTileEntity(new BlockWorkbench.TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -272,7 +309,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             location = getLocation();
         }
-        getHandle().openTileEntity((ITileEntityContainer) getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+
+        // If there isn't an enchant table we can force create one, won't be very useful though.
+        TileEntity container = getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        if (container == null && force) {
+            container = new TileEntityEnchantTable();
+        }
+        getHandle().openTileEntity((ITileEntityContainer) container);
+
         if (force) {
             getHandle().activeContainer.checkReachable = false;
         }
@@ -308,6 +352,23 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
+    }
+
+    @Override
+    public InventoryView openMerchant(Villager villager, boolean force) {
+        Preconditions.checkNotNull(villager, "villager cannot be null");
+        if (!force && villager.isTrading()) {
+            return null;
+        } else if (villager.isTrading()) {
+            // we're not supposed to have multiple people using the same villager, so we have to close it.
+            villager.getTrader().closeInventory();
+        }
+
+        EntityVillager ev = ((CraftVillager) villager).getHandle();
+        ev.setTradingPlayer(this.getHandle());
+        this.getHandle().openTrade(ev);
+
+        return this.getHandle().activeContainer.getBukkitView();
     }
 
     public void closeInventory() {

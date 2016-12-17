@@ -4,13 +4,17 @@ import java.util.Random;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
-public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantElement {
+public class BlockCocoa extends BlockFacingHorizontal implements IBlockFragilePlantElement {
 
     public static final BlockStateInteger AGE = BlockStateInteger.of("age", 0, 2);
+    protected static final AxisAlignedBB[] b = new AxisAlignedBB[] { new AxisAlignedBB(0.6875D, 0.4375D, 0.375D, 0.9375D, 0.75D, 0.625D), new AxisAlignedBB(0.5625D, 0.3125D, 0.3125D, 0.9375D, 0.75D, 0.6875D), new AxisAlignedBB(0.5625D, 0.3125D, 0.3125D, 0.9375D, 0.75D, 0.6875D)};
+    protected static final AxisAlignedBB[] c = new AxisAlignedBB[] { new AxisAlignedBB(0.0625D, 0.4375D, 0.375D, 0.3125D, 0.75D, 0.625D), new AxisAlignedBB(0.0625D, 0.3125D, 0.3125D, 0.4375D, 0.75D, 0.6875D), new AxisAlignedBB(0.0625D, 0.3125D, 0.3125D, 0.4375D, 0.75D, 0.6875D)};
+    protected static final AxisAlignedBB[] d = new AxisAlignedBB[] { new AxisAlignedBB(0.375D, 0.4375D, 0.0625D, 0.625D, 0.75D, 0.3125D), new AxisAlignedBB(0.3125D, 0.3125D, 0.0625D, 0.6875D, 0.75D, 0.4375D), new AxisAlignedBB(0.3125D, 0.3125D, 0.0625D, 0.6875D, 0.75D, 0.4375D)};
+    protected static final AxisAlignedBB[] e = new AxisAlignedBB[] { new AxisAlignedBB(0.375D, 0.4375D, 0.6875D, 0.625D, 0.75D, 0.9375D), new AxisAlignedBB(0.3125D, 0.3125D, 0.5625D, 0.6875D, 0.75D, 0.9375D), new AxisAlignedBB(0.3125D, 0.3125D, 0.5625D, 0.6875D, 0.75D, 0.9375D)};
 
     public BlockCocoa() {
         super(Material.PLANT);
-        this.j(this.blockStateList.getBlockData().set(BlockCocoa.FACING, EnumDirection.NORTH).set(BlockCocoa.AGE, Integer.valueOf(0)));
+        this.w(this.blockStateList.getBlockData().set(BlockCocoa.FACING, EnumDirection.NORTH).set(BlockCocoa.AGE, Integer.valueOf(0)));
         this.a(true);
     }
 
@@ -34,47 +38,42 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
         blockposition = blockposition.shift((EnumDirection) iblockdata.get(BlockCocoa.FACING));
         IBlockData iblockdata1 = world.getType(blockposition);
 
-        return iblockdata1.getBlock() == Blocks.LOG && iblockdata1.get(BlockWood.VARIANT) == EnumLogVariant.JUNGLE;
+        return iblockdata1.getBlock() == Blocks.LOG && iblockdata1.get(BlockLog1.VARIANT) == BlockWood.EnumLogVariant.JUNGLE;
     }
 
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        this.updateShape(world, blockposition);
-        return super.a(world, blockposition, iblockdata);
-    }
-
-    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        IBlockData iblockdata = iblockaccess.getType(blockposition);
-        EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockCocoa.FACING);
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
         int i = ((Integer) iblockdata.get(BlockCocoa.AGE)).intValue();
-        int j = 4 + i * 2;
-        int k = 5 + i * 2;
-        float f = (float) j / 2.0F;
 
-        switch (SwitchHelperBlockCocoa.a[enumdirection.ordinal()]) {
+        switch (BlockCocoa.SyntheticClass_1.a[((EnumDirection) iblockdata.get(BlockCocoa.FACING)).ordinal()]) {
         case 1:
-            this.a((8.0F - f) / 16.0F, (12.0F - (float) k) / 16.0F, (15.0F - (float) j) / 16.0F, (8.0F + f) / 16.0F, 0.75F, 0.9375F);
-            break;
+            return BlockCocoa.e[i];
 
         case 2:
-            this.a((8.0F - f) / 16.0F, (12.0F - (float) k) / 16.0F, 0.0625F, (8.0F + f) / 16.0F, 0.75F, (1.0F + (float) j) / 16.0F);
-            break;
+        default:
+            return BlockCocoa.d[i];
 
         case 3:
-            this.a(0.0625F, (12.0F - (float) k) / 16.0F, (8.0F - f) / 16.0F, (1.0F + (float) j) / 16.0F, 0.75F, (8.0F + f) / 16.0F);
-            break;
+            return BlockCocoa.c[i];
 
         case 4:
-            this.a((15.0F - (float) j) / 16.0F, (12.0F - (float) k) / 16.0F, (8.0F - f) / 16.0F, 0.9375F, 0.75F, (8.0F + f) / 16.0F);
+            return BlockCocoa.b[i];
         }
+    }
 
+    public IBlockData a(IBlockData iblockdata, EnumBlockRotation enumblockrotation) {
+        return iblockdata.set(BlockCocoa.FACING, enumblockrotation.a((EnumDirection) iblockdata.get(BlockCocoa.FACING)));
+    }
+
+    public IBlockData a(IBlockData iblockdata, EnumBlockMirror enumblockmirror) {
+        return iblockdata.a(enumblockmirror.a((EnumDirection) iblockdata.get(BlockCocoa.FACING)));
     }
 
     public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
@@ -91,7 +90,7 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
         return this.getBlockData().set(BlockCocoa.FACING, enumdirection.opposite()).set(BlockCocoa.AGE, Integer.valueOf(0));
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
         if (!this.e(world, blockposition, iblockdata)) {
             this.f(world, blockposition, iblockdata);
         }
@@ -117,8 +116,8 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
 
     }
 
-    public int getDropData(World world, BlockPosition blockposition) {
-        return EnumColor.BROWN.getInvColorIndex();
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Items.DYE, 1, EnumColor.BROWN.getInvColorIndex());
     }
 
     public boolean a(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
@@ -142,7 +141,7 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
 
     public int toLegacyData(IBlockData iblockdata) {
         byte b0 = 0;
-        int i = b0 | ((EnumDirection) iblockdata.get(BlockCocoa.FACING)).b();
+        int i = b0 | ((EnumDirection) iblockdata.get(BlockCocoa.FACING)).get2DRotationValue();
 
         i |= ((Integer) iblockdata.get(BlockCocoa.AGE)).intValue() << 2;
         return i;
@@ -150,5 +149,37 @@ public class BlockCocoa extends BlockDirectional implements IBlockFragilePlantEl
 
     protected BlockStateList getStateList() {
         return new BlockStateList(this, new IBlockState[] { BlockCocoa.FACING, BlockCocoa.AGE});
+    }
+
+    static class SyntheticClass_1 {
+
+        static final int[] a = new int[EnumDirection.values().length];
+
+        static {
+            try {
+                BlockCocoa.SyntheticClass_1.a[EnumDirection.SOUTH.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror) {
+                ;
+            }
+
+            try {
+                BlockCocoa.SyntheticClass_1.a[EnumDirection.NORTH.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror1) {
+                ;
+            }
+
+            try {
+                BlockCocoa.SyntheticClass_1.a[EnumDirection.WEST.ordinal()] = 3;
+            } catch (NoSuchFieldError nosuchfielderror2) {
+                ;
+            }
+
+            try {
+                BlockCocoa.SyntheticClass_1.a[EnumDirection.EAST.ordinal()] = 4;
+            } catch (NoSuchFieldError nosuchfielderror3) {
+                ;
+            }
+
+        }
     }
 }

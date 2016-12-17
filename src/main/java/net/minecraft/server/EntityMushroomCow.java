@@ -1,31 +1,26 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 import org.bukkit.event.player.PlayerShearEntityEvent; // CraftBukkit
 
 public class EntityMushroomCow extends EntityCow {
 
     public EntityMushroomCow(World world) {
         super(world);
-        this.a(0.9F, 1.3F);
-        this.bl = Blocks.MYCELIUM;
+        this.setSize(0.9F, 1.4F);
+        this.bz = Blocks.MYCELIUM;
     }
 
-    public boolean a(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.inventory.getItemInHand();
-
-        if (itemstack != null && itemstack.getItem() == Items.BOWL && this.getAge() >= 0) {
-            if (itemstack.count == 1) {
-                entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, new ItemStack(Items.MUSHROOM_STEW));
-                return true;
+    public boolean a(EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack) {
+        if (itemstack != null && itemstack.getItem() == Items.BOWL && this.getAge() >= 0 && !entityhuman.abilities.canInstantlyBuild) {
+            if (--itemstack.count == 0) {
+                entityhuman.a(enumhand, new ItemStack(Items.MUSHROOM_STEW));
+            } else if (!entityhuman.inventory.pickup(new ItemStack(Items.MUSHROOM_STEW))) {
+                entityhuman.drop(new ItemStack(Items.MUSHROOM_STEW), false);
             }
 
-            if (entityhuman.inventory.pickup(new ItemStack(Items.MUSHROOM_STEW)) && !entityhuman.abilities.canInstantlyBuild) {
-                entityhuman.inventory.splitStack(entityhuman.inventory.itemInHandIndex, 1);
-                return true;
-            }
-        }
-
-        if (itemstack != null && itemstack.getItem() == Items.SHEARS && this.getAge() >= 0) {
+            return true;
+        } else if (itemstack != null && itemstack.getItem() == Items.SHEARS && this.getAge() >= 0) {
             // CraftBukkit start
             PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
             this.world.getServer().getPluginManager().callEvent(event);
@@ -34,15 +29,14 @@ public class EntityMushroomCow extends EntityCow {
                 return false;
             }
             // CraftBukkit end
-            
             this.die();
             this.world.addParticle(EnumParticle.EXPLOSION_LARGE, this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D, new int[0]);
-            if (!this.world.isStatic) {
+            if (!this.world.isClientSide) {
                 EntityCow entitycow = new EntityCow(this.world);
 
                 entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
                 entitycow.setHealth(this.getHealth());
-                entitycow.aG = this.aG;
+                entitycow.aN = this.aN;
                 if (this.hasCustomName()) {
                     entitycow.setCustomName(this.getCustomName());
                 }
@@ -54,17 +48,22 @@ public class EntityMushroomCow extends EntityCow {
                 }
 
                 itemstack.damage(1, entityhuman);
-                this.makeSound("mob.sheep.shear", 1.0F, 1.0F);
+                this.a(SoundEffects.dx, 1.0F, 1.0F);
             }
 
             return true;
         } else {
-            return super.a(entityhuman);
+            return super.a(entityhuman, enumhand, itemstack);
         }
     }
 
     public EntityMushroomCow c(EntityAgeable entityageable) {
         return new EntityMushroomCow(this.world);
+    }
+
+    @Nullable
+    protected MinecraftKey J() {
+        return LootTables.I;
     }
 
     public EntityCow b(EntityAgeable entityageable) {

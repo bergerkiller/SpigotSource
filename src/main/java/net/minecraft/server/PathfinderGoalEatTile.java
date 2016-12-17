@@ -10,7 +10,7 @@ import org.bukkit.Material;
 
 public class PathfinderGoalEatTile extends PathfinderGoal {
 
-    private static final Predicate b = BlockStatePredicate.a((Block) Blocks.TALLGRASS).a(BlockLongGrass.TYPE, Predicates.equalTo(EnumTallGrassType.GRASS));
+    private static final Predicate<IBlockData> b = BlockStatePredicate.a((Block) Blocks.TALLGRASS).a(BlockLongGrass.TYPE, Predicates.equalTo(BlockLongGrass.EnumTallGrassType.GRASS));
     private EntityInsentient c;
     private World d;
     int a;
@@ -22,7 +22,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (this.c.bb().nextInt(this.c.isBaby() ? 50 : 1000) != 0) {
+        if (this.c.getRandom().nextInt(this.c.isBaby() ? 50 : 1000) != 0) {
             return false;
         } else {
             BlockPosition blockposition = new BlockPosition(this.c.locX, this.c.locY, this.c.locZ);
@@ -34,7 +34,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
     public void c() {
         this.a = 40;
         this.d.broadcastEntityEffect(this.c, (byte) 10);
-        this.c.getNavigation().n();
+        this.c.getNavigation().o();
     }
 
     public void d() {
@@ -60,18 +60,18 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
                     this.d.setAir(blockposition, false);
                 }
 
-                this.c.v();
+                this.c.B();
             } else {
                 BlockPosition blockposition1 = blockposition.down();
 
                 if (this.d.getType(blockposition1).getBlock() == Blocks.GRASS) {
                     // CraftBukkit
-                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.c, this.c.world.getWorld().getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()), Material.DIRT, !this.d.getGameRules().getBoolean("mobGriefing")).isCancelled()) {
+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.c, this.c.world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), Material.AIR, !this.d.getGameRules().getBoolean("mobGriefing")).isCancelled()) {
                         this.d.triggerEffect(2001, blockposition1, Block.getId(Blocks.GRASS));
                         this.d.setTypeAndData(blockposition1, Blocks.DIRT.getBlockData(), 2);
                     }
 
-                    this.c.v();
+                    this.c.B();
                 }
             }
 

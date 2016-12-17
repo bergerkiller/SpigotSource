@@ -2,37 +2,42 @@ package net.minecraft.server;
 
 import com.google.common.base.Predicate;
 import java.util.List;
+import javax.annotation.Nullable;
 
-public class BlockHopper extends BlockContainer {
+public class BlockHopper extends BlockTileEntity {
 
-    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", (Predicate) (new BlockHopperInnerClass1()));
+    public static final BlockStateDirection FACING = BlockStateDirection.of("facing", new Predicate() {
+        public boolean a(@Nullable EnumDirection enumdirection) {
+            return enumdirection != EnumDirection.UP;
+        }
+
+        public boolean apply(Object object) {
+            return this.a((EnumDirection) object);
+        }
+    });
     public static final BlockStateBoolean ENABLED = BlockStateBoolean.of("enabled");
+    protected static final AxisAlignedBB c = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.625D, 1.0D);
+    protected static final AxisAlignedBB d = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 0.125D);
+    protected static final AxisAlignedBB e = new AxisAlignedBB(0.0D, 0.0D, 0.875D, 1.0D, 1.0D, 1.0D);
+    protected static final AxisAlignedBB f = new AxisAlignedBB(0.875D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D);
+    protected static final AxisAlignedBB g = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.125D, 1.0D, 1.0D);
 
     public BlockHopper() {
-        super(Material.ORE);
-        this.j(this.blockStateList.getBlockData().set(BlockHopper.FACING, EnumDirection.DOWN).set(BlockHopper.ENABLED, Boolean.valueOf(true)));
+        super(Material.ORE, MaterialMapColor.m);
+        this.w(this.blockStateList.getBlockData().set(BlockHopper.FACING, EnumDirection.DOWN).set(BlockHopper.ENABLED, Boolean.valueOf(true)));
         this.a(CreativeModeTab.d);
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return BlockHopper.j;
     }
 
-    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, AxisAlignedBB axisalignedbb, List list, Entity entity) {
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.625F, 1.0F);
-        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
-        float f = 0.125F;
-
-        this.a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
-        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
-        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
-        this.a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
-        this.a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
-        super.a(world, blockposition, iblockdata, axisalignedbb, list, entity);
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, AxisAlignedBB axisalignedbb, List<AxisAlignedBB> list, @Nullable Entity entity) {
+        a(blockposition, axisalignedbb, list, BlockHopper.c);
+        a(blockposition, axisalignedbb, list, BlockHopper.g);
+        a(blockposition, axisalignedbb, list, BlockHopper.f);
+        a(blockposition, axisalignedbb, list, BlockHopper.d);
+        a(blockposition, axisalignedbb, list, BlockHopper.e);
     }
 
     public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
@@ -61,25 +66,30 @@ public class BlockHopper extends BlockContainer {
 
     }
 
+    public boolean k(IBlockData iblockdata) {
+        return true;
+    }
+
     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
         this.e(world, blockposition, iblockdata);
     }
 
-    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
-        if (world.isStatic) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2) {
+        if (world.isClientSide) {
             return true;
         } else {
             TileEntity tileentity = world.getTileEntity(blockposition);
 
             if (tileentity instanceof TileEntityHopper) {
                 entityhuman.openContainer((TileEntityHopper) tileentity);
+                entityhuman.b(StatisticList.R);
             }
 
             return true;
         }
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
         this.e(world, blockposition, iblockdata);
     }
 
@@ -88,17 +98,6 @@ public class BlockHopper extends BlockContainer {
 
         if (flag != ((Boolean) iblockdata.get(BlockHopper.ENABLED)).booleanValue()) {
             world.setTypeAndData(blockposition, iblockdata.set(BlockHopper.ENABLED, Boolean.valueOf(flag)), 4);
-            // Spigot start - When this hopper becomes unpowered, make it active.
-            // Called when this block's power level changes. flag1 is the current
-            // isNotPowered from metadata. flag is the recalculated isNotPowered.
-            if (world.spigotConfig.altHopperTicking) {
-            	// e returns the TileEntityHopper associated with this BlockHopper.
-                TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
-                if (flag && hopper != null) {
-                    hopper.makeTick();
-                }
-            }
-            // Spigot end
         }
 
     }
@@ -114,19 +113,19 @@ public class BlockHopper extends BlockContainer {
         super.remove(world, blockposition, iblockdata);
     }
 
-    public int b() {
-        return 3;
+    public EnumRenderType a(IBlockData iblockdata) {
+        return EnumRenderType.MODEL;
     }
 
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public static EnumDirection b(int i) {
+    public static EnumDirection e(int i) {
         return EnumDirection.fromType1(i & 7);
     }
 
@@ -134,16 +133,16 @@ public class BlockHopper extends BlockContainer {
         return (i & 8) != 8;
     }
 
-    public boolean isComplexRedstone() {
+    public boolean isComplexRedstone(IBlockData iblockdata) {
         return true;
     }
 
-    public int l(World world, BlockPosition blockposition) {
+    public int d(IBlockData iblockdata, World world, BlockPosition blockposition) {
         return Container.a(world.getTileEntity(blockposition));
     }
 
     public IBlockData fromLegacyData(int i) {
-        return this.getBlockData().set(BlockHopper.FACING, b(i)).set(BlockHopper.ENABLED, Boolean.valueOf(f(i)));
+        return this.getBlockData().set(BlockHopper.FACING, e(i)).set(BlockHopper.ENABLED, Boolean.valueOf(f(i)));
     }
 
     public int toLegacyData(IBlockData iblockdata) {
@@ -157,20 +156,15 @@ public class BlockHopper extends BlockContainer {
         return i;
     }
 
+    public IBlockData a(IBlockData iblockdata, EnumBlockRotation enumblockrotation) {
+        return iblockdata.set(BlockHopper.FACING, enumblockrotation.a((EnumDirection) iblockdata.get(BlockHopper.FACING)));
+    }
+
+    public IBlockData a(IBlockData iblockdata, EnumBlockMirror enumblockmirror) {
+        return iblockdata.a(enumblockmirror.a((EnumDirection) iblockdata.get(BlockHopper.FACING)));
+    }
+
     protected BlockStateList getStateList() {
         return new BlockStateList(this, new IBlockState[] { BlockHopper.FACING, BlockHopper.ENABLED});
     }
-
-    // Spigot start - Use random block updates to make hoppers active.
-    @Override
-    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, java.util.Random random) {
-        if (world.spigotConfig.altHopperTicking) {
-        	// e returns the TileEntityHopper associated with this BlockHopper.
-            TileEntityHopper hopper = (TileEntityHopper) world.getTileEntity(blockposition);
-            if (hopper != null) {
-                hopper.makeTick();
-            }
-        }
-    }
-    // Spigot end
 }

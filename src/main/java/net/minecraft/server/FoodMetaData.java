@@ -5,7 +5,7 @@ public class FoodMetaData {
     public int foodLevel = 20;
     public float saturationLevel = 5.0F;
     public float exhaustionLevel;
-    public int foodTickTimer;
+    private int foodTickTimer;
     private EntityHuman entityhuman; // CraftBukkit
     private int e = 20;
 
@@ -58,11 +58,21 @@ public class FoodMetaData {
             }
         }
 
-        if (entityhuman.world.getGameRules().getBoolean("naturalRegeneration") && this.foodLevel >= 18 && entityhuman.cl()) {
+        boolean flag = entityhuman.world.getGameRules().getBoolean("naturalRegeneration");
+
+        if (flag && this.saturationLevel > 0.0F && entityhuman.cU() && this.foodLevel >= 20) {
+            ++this.foodTickTimer;
+            if (this.foodTickTimer >= 10) {
+                float f = Math.min(this.saturationLevel, 4.0F);
+
+                entityhuman.heal(f / 4.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
+                this.a(f);
+                this.foodTickTimer = 0;
+            }
+        } else if (flag && this.foodLevel >= 18 && entityhuman.cU()) {
             ++this.foodTickTimer;
             if (this.foodTickTimer >= 80) {
-                // CraftBukkit - added RegainReason
-                entityhuman.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED);
+                entityhuman.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
                 this.a(entityhuman.world.spigotConfig.regenExhaustion); // Spigot - Change to use configurable value
                 this.foodTickTimer = 0;
             }

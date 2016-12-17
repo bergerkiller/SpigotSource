@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class RegionFileCache {
 
-    public static final Map a = Maps.newHashMap(); // Spigot - private -> public
+    public static final Map<File, RegionFile> a = Maps.newHashMap(); // Spigot - private -> public
 
     public static synchronized RegionFile a(File file, int i, int j) {
         File file1 = new File(file, "region");
@@ -64,5 +64,4 @@ public class RegionFileCache {
 
         return regionfile.b(i & 31, j & 31);
     }
-
 }

@@ -4,170 +4,174 @@ import java.util.Random;
 
 public class WorldGenForestTree extends WorldGenTreeAbstract {
 
+    private static final IBlockData a = Blocks.LOG2.getBlockData().set(BlockLog2.VARIANT, BlockWood.EnumLogVariant.DARK_OAK);
+    private static final IBlockData b = Blocks.LEAVES2.getBlockData().set(BlockLeaves2.VARIANT, BlockWood.EnumLogVariant.DARK_OAK).set(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+
     public WorldGenForestTree(boolean flag) {
         super(flag);
     }
 
     public boolean generate(World world, Random random, BlockPosition blockposition) {
         int i = random.nextInt(3) + random.nextInt(2) + 6;
-        boolean flag = true;
+        int j = blockposition.getX();
+        int k = blockposition.getY();
+        int l = blockposition.getZ();
 
-        if (blockposition.getY() >= 1 && blockposition.getY() + i + 1 <= 256) {
-            int j;
-            int k;
+        if (k >= 1 && k + i + 1 < 256) {
+            BlockPosition blockposition1 = blockposition.down();
+            Block block = world.getType(blockposition1).getBlock();
 
-            for (int l = blockposition.getY(); l <= blockposition.getY() + 1 + i; ++l) {
-                byte b0 = 1;
-
-                if (l == blockposition.getY()) {
-                    b0 = 0;
-                }
-
-                if (l >= blockposition.getY() + 1 + i - 2) {
-                    b0 = 2;
-                }
-
-                for (j = blockposition.getX() - b0; j <= blockposition.getX() + b0 && flag; ++j) {
-                    for (k = blockposition.getZ() - b0; k <= blockposition.getZ() + b0 && flag; ++k) {
-                        if (l >= 0 && l < 256) {
-                            if (!this.a(world.getType(new BlockPosition(j, l, k)).getBlock())) {
-                                flag = false;
-                            }
-                        } else {
-                            flag = false;
-                        }
-                    }
-                }
-            }
-
-            if (!flag) {
+            if (block != Blocks.GRASS && block != Blocks.DIRT) {
+                return false;
+            } else if (!this.a(world, blockposition, i)) {
                 return false;
             } else {
-                Block block = world.getType(blockposition.down()).getBlock();
+                this.a(world, blockposition1);
+                this.a(world, blockposition1.east());
+                this.a(world, blockposition1.south());
+                this.a(world, blockposition1.south().east());
+                EnumDirection enumdirection = EnumDirection.EnumDirectionLimit.HORIZONTAL.a(random);
+                int i1 = i - random.nextInt(4);
+                int j1 = 2 - random.nextInt(3);
+                int k1 = j;
+                int l1 = l;
+                int i2 = k + i - 1;
 
-                if ((block == Blocks.GRASS || block == Blocks.DIRT) && blockposition.getY() < 256 - i - 1) {
-                    this.a(world, blockposition.down());
-                    this.a(world, blockposition.a(1, -1, 0));
-                    this.a(world, blockposition.a(1, -1, 1));
-                    this.a(world, blockposition.a(0, -1, 1));
-                    EnumDirection enumdirection = EnumDirectionLimit.HORIZONTAL.a(random);
+                int j2;
+                int k2;
 
-                    j = i - random.nextInt(4);
-                    k = 2 - random.nextInt(3);
-                    int i1 = blockposition.getX();
-                    int j1 = blockposition.getZ();
-                    int k1 = 0;
-
-                    int l1;
-                    int i2;
-
-                    for (l1 = 0; l1 < i; ++l1) {
-                        i2 = blockposition.getY() + l1;
-                        if (l1 >= j && k > 0) {
-                            i1 += enumdirection.getAdjacentX();
-                            j1 += enumdirection.getAdjacentZ();
-                            --k;
-                        }
-
-                        BlockPosition blockposition1 = new BlockPosition(i1, i2, j1);
-                        Material material = world.getType(blockposition1).getBlock().getMaterial();
-
-                        if (material == Material.AIR || material == Material.LEAVES) {
-                            this.a(world, blockposition1, Blocks.LOG2, EnumLogVariant.DARK_OAK.a() - 4);
-                            this.a(world, blockposition1.east(), Blocks.LOG2, EnumLogVariant.DARK_OAK.a() - 4);
-                            this.a(world, blockposition1.south(), Blocks.LOG2, EnumLogVariant.DARK_OAK.a() - 4);
-                            this.a(world, blockposition1.east().south(), Blocks.LOG2, EnumLogVariant.DARK_OAK.a() - 4);
-                            k1 = i2;
-                        }
+                for (j2 = 0; j2 < i; ++j2) {
+                    if (j2 >= i1 && j1 > 0) {
+                        k1 += enumdirection.getAdjacentX();
+                        l1 += enumdirection.getAdjacentZ();
+                        --j1;
                     }
 
-                    for (l1 = -2; l1 <= 0; ++l1) {
-                        for (i2 = -2; i2 <= 0; ++i2) {
-                            byte b1 = -1;
+                    k2 = k + j2;
+                    BlockPosition blockposition2 = new BlockPosition(k1, k2, l1);
+                    Material material = world.getType(blockposition2).getMaterial();
 
-                            this.a(world, i1 + l1, k1 + b1, j1 + i2);
-                            this.a(world, 1 + i1 - l1, k1 + b1, j1 + i2);
-                            this.a(world, i1 + l1, k1 + b1, 1 + j1 - i2);
-                            this.a(world, 1 + i1 - l1, k1 + b1, 1 + j1 - i2);
-                            if ((l1 > -2 || i2 > -1) && (l1 != -1 || i2 != -2)) {
-                                byte b2 = 1;
-
-                                this.a(world, i1 + l1, k1 + b2, j1 + i2);
-                                this.a(world, 1 + i1 - l1, k1 + b2, j1 + i2);
-                                this.a(world, i1 + l1, k1 + b2, 1 + j1 - i2);
-                                this.a(world, 1 + i1 - l1, k1 + b2, 1 + j1 - i2);
-                            }
-                        }
+                    if (material == Material.AIR || material == Material.LEAVES) {
+                        this.b(world, blockposition2);
+                        this.b(world, blockposition2.east());
+                        this.b(world, blockposition2.south());
+                        this.b(world, blockposition2.east().south());
                     }
-
-                    if (random.nextBoolean()) {
-                        this.a(world, i1, k1 + 2, j1);
-                        this.a(world, i1 + 1, k1 + 2, j1);
-                        this.a(world, i1 + 1, k1 + 2, j1 + 1);
-                        this.a(world, i1, k1 + 2, j1 + 1);
-                    }
-
-                    for (l1 = -3; l1 <= 4; ++l1) {
-                        for (i2 = -3; i2 <= 4; ++i2) {
-                            if ((l1 != -3 || i2 != -3) && (l1 != -3 || i2 != 4) && (l1 != 4 || i2 != -3) && (l1 != 4 || i2 != 4) && (Math.abs(l1) < 3 || Math.abs(i2) < 3)) {
-                                this.a(world, i1 + l1, k1, j1 + i2);
-                            }
-                        }
-                    }
-
-                    for (l1 = -1; l1 <= 2; ++l1) {
-                        for (i2 = -1; i2 <= 2; ++i2) {
-                            if ((l1 < 0 || l1 > 1 || i2 < 0 || i2 > 1) && random.nextInt(3) <= 0) {
-                                int j2 = random.nextInt(3) + 2;
-
-                                int k2;
-
-                                for (k2 = 0; k2 < j2; ++k2) {
-                                    // Spigot start
-                                    BlockPosition position = new BlockPosition(blockposition.getX() + l1, k1 - k2 - 1, blockposition.getZ() + i2);
-                                    Block bl = world.getType(position).getBlock();
-
-                                    if (bl.getMaterial() == Material.AIR || bl.getMaterial() == Material.LEAVES)
-                                    {
-                                        this.a(world, position, Blocks.LOG2, EnumLogVariant.DARK_OAK.a() - 4);
-                                    }
-                                    // Spigot end
-                                }
-
-                                int l2;
-
-                                for (k2 = -1; k2 <= 1; ++k2) {
-                                    for (l2 = -1; l2 <= 1; ++l2) {
-                                        this.a(world, i1 + l1 + k2, k1 - 0, j1 + i2 + l2);
-                                    }
-                                }
-
-                                for (k2 = -2; k2 <= 2; ++k2) {
-                                    for (l2 = -2; l2 <= 2; ++l2) {
-                                        if (Math.abs(k2) != 2 || Math.abs(l2) != 2) {
-                                            this.a(world, i1 + l1 + k2, k1 - 1, j1 + i2 + l2);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return true;
-                } else {
-                    return false;
                 }
+
+                for (j2 = -2; j2 <= 0; ++j2) {
+                    for (k2 = -2; k2 <= 0; ++k2) {
+                        byte b0 = -1;
+
+                        this.a(world, k1 + j2, i2 + b0, l1 + k2);
+                        this.a(world, 1 + k1 - j2, i2 + b0, l1 + k2);
+                        this.a(world, k1 + j2, i2 + b0, 1 + l1 - k2);
+                        this.a(world, 1 + k1 - j2, i2 + b0, 1 + l1 - k2);
+                        if ((j2 > -2 || k2 > -1) && (j2 != -1 || k2 != -2)) {
+                            byte b1 = 1;
+
+                            this.a(world, k1 + j2, i2 + b1, l1 + k2);
+                            this.a(world, 1 + k1 - j2, i2 + b1, l1 + k2);
+                            this.a(world, k1 + j2, i2 + b1, 1 + l1 - k2);
+                            this.a(world, 1 + k1 - j2, i2 + b1, 1 + l1 - k2);
+                        }
+                    }
+                }
+
+                if (random.nextBoolean()) {
+                    this.a(world, k1, i2 + 2, l1);
+                    this.a(world, k1 + 1, i2 + 2, l1);
+                    this.a(world, k1 + 1, i2 + 2, l1 + 1);
+                    this.a(world, k1, i2 + 2, l1 + 1);
+                }
+
+                for (j2 = -3; j2 <= 4; ++j2) {
+                    for (k2 = -3; k2 <= 4; ++k2) {
+                        if ((j2 != -3 || k2 != -3) && (j2 != -3 || k2 != 4) && (j2 != 4 || k2 != -3) && (j2 != 4 || k2 != 4) && (Math.abs(j2) < 3 || Math.abs(k2) < 3)) {
+                            this.a(world, k1 + j2, i2, l1 + k2);
+                        }
+                    }
+                }
+
+                for (j2 = -1; j2 <= 2; ++j2) {
+                    for (k2 = -1; k2 <= 2; ++k2) {
+                        if ((j2 < 0 || j2 > 1 || k2 < 0 || k2 > 1) && random.nextInt(3) <= 0) {
+                            int l2 = random.nextInt(3) + 2;
+
+                            int i3;
+
+                            for (i3 = 0; i3 < l2; ++i3) {
+                                this.b(world, new BlockPosition(j + j2, i2 - i3 - 1, l + k2));
+                            }
+
+                            int j3;
+
+                            for (i3 = -1; i3 <= 1; ++i3) {
+                                for (j3 = -1; j3 <= 1; ++j3) {
+                                    this.a(world, k1 + j2 + i3, i2, l1 + k2 + j3);
+                                }
+                            }
+
+                            for (i3 = -2; i3 <= 2; ++i3) {
+                                for (j3 = -2; j3 <= 2; ++j3) {
+                                    if (Math.abs(i3) != 2 || Math.abs(j3) != 2) {
+                                        this.a(world, k1 + j2 + i3, i2 - 1, l1 + k2 + j3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return true;
             }
         } else {
             return false;
         }
     }
 
-    private void a(World world, int i, int j, int k) {
-        Block block = world.getType(new BlockPosition(i, j, k)).getBlock();
+    private boolean a(World world, BlockPosition blockposition, int i) {
+        int j = blockposition.getX();
+        int k = blockposition.getY();
+        int l = blockposition.getZ();
+        BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
 
-        if (block.getMaterial() == Material.AIR) {
-            this.a(world, new BlockPosition(i, j, k), Blocks.LEAVES2, 1);
+        for (int i1 = 0; i1 <= i + 1; ++i1) {
+            byte b0 = 1;
+
+            if (i1 == 0) {
+                b0 = 0;
+            }
+
+            if (i1 >= i - 1) {
+                b0 = 2;
+            }
+
+            for (int j1 = -b0; j1 <= b0; ++j1) {
+                for (int k1 = -b0; k1 <= b0; ++k1) {
+                    if (!this.a(world.getType(blockposition_mutableblockposition.c(j + j1, k + i1, l + k1)).getBlock())) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void b(World world, BlockPosition blockposition) {
+        if (this.a(world.getType(blockposition).getBlock())) {
+            this.a(world, blockposition, WorldGenForestTree.a);
+        }
+
+    }
+
+    private void a(World world, int i, int j, int k) {
+        BlockPosition blockposition = new BlockPosition(i, j, k);
+        Material material = world.getType(blockposition).getMaterial();
+
+        if (material == Material.AIR) {
+            this.a(world, blockposition, WorldGenForestTree.b);
         }
 
     }

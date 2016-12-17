@@ -20,6 +20,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.server.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.Items;
+import net.minecraft.server.NBTTagString;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -226,7 +231,7 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null) {
             return 0;
         }
-        return EnchantmentManager.getEnchantmentLevel(ench.getId(), handle);
+        return EnchantmentManager.getEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
     }
 
     @Override
@@ -322,6 +327,7 @@ public final class CraftItemStack extends ItemStack {
         }
         switch (getType(item)) {
             case WRITTEN_BOOK:
+                return new CraftMetaBookSigned(item.getTag());
             case BOOK_AND_QUILL:
                 return new CraftMetaBook(item.getTag());
             case SKULL_ITEM:
@@ -332,6 +338,9 @@ public final class CraftItemStack extends ItemStack {
             case LEATHER_BOOTS:
                 return new CraftMetaLeatherArmor(item.getTag());
             case POTION:
+            case SPLASH_POTION:
+            case LINGERING_POTION:
+            case TIPPED_ARROW:
                 return new CraftMetaPotion(item.getTag());
             case MAP:
                 return new CraftMetaMap(item.getTag());
@@ -343,6 +352,29 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaEnchantedBook(item.getTag());
             case BANNER:
                 return new CraftMetaBanner(item.getTag());
+            case FURNACE:
+            case CHEST:
+            case TRAPPED_CHEST:
+            case JUKEBOX:
+            case DISPENSER:
+            case DROPPER:
+            case SIGN:
+            case MOB_SPAWNER:
+            case NOTE_BLOCK:
+            case PISTON_BASE:
+            case BREWING_STAND_ITEM:
+            case ENCHANTMENT_TABLE:
+            case COMMAND:
+            case COMMAND_REPEATING:
+            case COMMAND_CHAIN:
+            case BEACON:
+            case DAYLIGHT_DETECTOR:
+            case DAYLIGHT_DETECTOR_INVERTED:
+            case HOPPER:
+            case REDSTONE_COMPARATOR:
+            case FLOWER_POT_ITEM:
+            case SHIELD:
+                return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             default:
                 return new CraftMetaItem(item.getTag());
         }
@@ -370,10 +402,14 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
 
+        itemMeta = CraftItemFactory.instance().asMetaFor(itemMeta, getType(item));
+        if (itemMeta == null) return true;
+
         NBTTagCompound tag = new NBTTagCompound();
         item.setTag(tag);
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
+
         return true;
     }
 

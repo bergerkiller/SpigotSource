@@ -1,28 +1,80 @@
 package net.minecraft.server;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 public class BiomeTheEndDecorator extends BiomeDecorator {
 
-    protected WorldGenerator M;
+    private static final LoadingCache<Long, WorldGenEnder.Spike[]> L = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.MINUTES).build(new BiomeTheEndDecorator.SpikeCache((BiomeTheEndDecorator.SyntheticClass_1) null));
+    private final WorldGenEnder M = new WorldGenEnder();
 
-    public BiomeTheEndDecorator() {
-        this.M = new WorldGenEnder(Blocks.END_STONE);
+    public BiomeTheEndDecorator() {}
+
+    protected void a(BiomeBase biomebase, World world, Random random) {
+        this.a(world, random);
+        WorldGenEnder.Spike[] aworldgenender_spike = a(world);
+        WorldGenEnder.Spike[] aworldgenender_spike1 = aworldgenender_spike;
+        int i = aworldgenender_spike.length;
+
+        for (int j = 0; j < i; ++j) {
+            WorldGenEnder.Spike worldgenender_spike = aworldgenender_spike1[j];
+
+            if (worldgenender_spike.a(this.b)) {
+                this.M.a(worldgenender_spike);
+                this.M.generate(world, random, new BlockPosition(worldgenender_spike.a(), 45, worldgenender_spike.b()));
+            }
+        }
+
     }
 
-    protected void a(BiomeBase biomebase) {
-        this.a();
-        if (this.b.nextInt(5) == 0) {
-            int i = this.b.nextInt(16) + 8;
-            int j = this.b.nextInt(16) + 8;
+    public static WorldGenEnder.Spike[] a(World world) {
+        Random random = new Random(world.getSeed());
+        long i = random.nextLong() & 65535L;
 
-            this.M.generate(this.a, this.b, this.a.r(this.c.a(i, 0, j)));
+        return (WorldGenEnder.Spike[]) BiomeTheEndDecorator.L.getUnchecked(Long.valueOf(i));
+    }
+
+    static class SyntheticClass_1 {    }
+
+    static class SpikeCache extends CacheLoader<Long, WorldGenEnder.Spike[]> {
+
+        private SpikeCache() {}
+
+        public WorldGenEnder.Spike[] a(Long olong) throws Exception {
+            ArrayList arraylist = Lists.newArrayList(ContiguousSet.create(Range.closedOpen(Integer.valueOf(0), Integer.valueOf(10)), DiscreteDomain.integers()));
+
+            Collections.shuffle(arraylist, new Random(olong.longValue()));
+            WorldGenEnder.Spike[] aworldgenender_spike = new WorldGenEnder.Spike[10];
+
+            for (int i = 0; i < 10; ++i) {
+                int j = (int) (42.0D * Math.cos(2.0D * (-3.141592653589793D + 0.3141592653589793D * (double) i)));
+                int k = (int) (42.0D * Math.sin(2.0D * (-3.141592653589793D + 0.3141592653589793D * (double) i)));
+                int l = ((Integer) arraylist.get(i)).intValue();
+                int i1 = 2 + l / 3;
+                int j1 = 76 + l * 3;
+                boolean flag = l == 1 || l == 2;
+
+                aworldgenender_spike[i] = new WorldGenEnder.Spike(j, k, i1, j1, flag);
+            }
+
+            return aworldgenender_spike;
         }
 
-        if (this.c.getX() == 0 && this.c.getZ() == 0) {
-            EntityEnderDragon entityenderdragon = new EntityEnderDragon(this.a);
-
-            entityenderdragon.setPositionRotation(0.0D, 128.0D, 0.0D, this.b.nextFloat() * 360.0F, 0.0F);
-            this.a.addEntity(entityenderdragon, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit - add SpawnReason
+        public Object load(Object object) throws Exception {
+            return this.a((Long) object);
         }
 
+        SpikeCache(BiomeTheEndDecorator.SyntheticClass_1 biometheenddecorator_syntheticclass_1) {
+            this();
+        }
     }
 }

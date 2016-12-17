@@ -1,27 +1,37 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
-public class BlockCommand extends BlockContainer {
+public class BlockCommand extends BlockTileEntity {
 
-    public static final BlockStateBoolean TRIGGERED = BlockStateBoolean.of("triggered");
+    public static final BlockStateDirection a = BlockDirectional.FACING;
+    public static final BlockStateBoolean b = BlockStateBoolean.of("conditional");
 
-    public BlockCommand() {
-        super(Material.ORE);
-        this.j(this.blockStateList.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf(false)));
+    public BlockCommand(MaterialMapColor materialmapcolor) {
+        super(Material.ORE, materialmapcolor);
+        this.w(this.blockStateList.getBlockData().set(BlockCommand.a, EnumDirection.NORTH).set(BlockCommand.b, Boolean.valueOf(false)));
     }
 
     public TileEntity a(World world, int i) {
-        return new TileEntityCommand();
+        TileEntityCommand tileentitycommand = new TileEntityCommand();
+
+        tileentitycommand.b(this == Blocks.dd);
+        return tileentitycommand;
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
-        if (!world.isStatic) {
-            boolean flag = world.isBlockIndirectlyPowered(blockposition);
-            boolean flag1 = ((Boolean) iblockdata.get(BlockCommand.TRIGGERED)).booleanValue();
-            
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
+        if (!world.isClientSide) {
+            TileEntity tileentity = world.getTileEntity(blockposition);
+
+            if (tileentity instanceof TileEntityCommand) {
+                TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+                boolean flag = world.isBlockIndirectlyPowered(blockposition);
+                boolean flag1 = tileentitycommand.e();
+                boolean flag2 = tileentitycommand.g();
+
             // CraftBukkit start
             org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
             int old = flag1 ? 15 : 0;
@@ -32,57 +42,127 @@ public class BlockCommand extends BlockContainer {
             // CraftBukkit end
 
             if (eventRedstone.getNewCurrent() > 0 && !(eventRedstone.getOldCurrent() > 0)) { // CraftBukkit
-                world.setTypeAndData(blockposition, iblockdata.set(BlockCommand.TRIGGERED, Boolean.valueOf(true)), 4);
-                world.a(blockposition, (Block) this, this.a(world));
+                    tileentitycommand.a(true);
+                    if (tileentitycommand.j() != TileEntityCommand.Type.SEQUENCE && !flag2) {
+                        boolean flag3 = !tileentitycommand.k() || this.e(world, blockposition, iblockdata);
+
+                        tileentitycommand.c(flag3);
+                        world.a(blockposition, (Block) this, this.a(world));
+                        if (flag3) {
+                            this.c(world, blockposition);
+                        }
+                    }
             } else if (!(eventRedstone.getNewCurrent() > 0) && eventRedstone.getOldCurrent() > 0) { // CraftBukkit
-                world.setTypeAndData(blockposition, iblockdata.set(BlockCommand.TRIGGERED, Boolean.valueOf(false)), 4);
+                    tileentitycommand.a(false);
+                }
+
             }
         }
-
     }
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-        TileEntity tileentity = world.getTileEntity(blockposition);
+        if (!world.isClientSide) {
+            TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentity instanceof TileEntityCommand) {
-            ((TileEntityCommand) tileentity).getCommandBlock().a(world);
-            world.updateAdjacentComparators(blockposition, this);
+            if (tileentity instanceof TileEntityCommand) {
+                TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+                CommandBlockListenerAbstract commandblocklistenerabstract = tileentitycommand.getCommandBlock();
+                boolean flag = !UtilColor.b(commandblocklistenerabstract.getCommand());
+                TileEntityCommand.Type tileentitycommand_type = tileentitycommand.j();
+                boolean flag1 = !tileentitycommand.k() || this.e(world, blockposition, iblockdata);
+                boolean flag2 = tileentitycommand.h();
+                boolean flag3 = false;
+
+                if (tileentitycommand_type != TileEntityCommand.Type.SEQUENCE && flag2 && flag) {
+                    commandblocklistenerabstract.a(world);
+                    flag3 = true;
+                }
+
+                if (tileentitycommand.e() || tileentitycommand.g()) {
+                    if (tileentitycommand_type == TileEntityCommand.Type.SEQUENCE && flag1 && flag) {
+                        commandblocklistenerabstract.a(world);
+                        flag3 = true;
+                    }
+
+                    if (tileentitycommand_type == TileEntityCommand.Type.AUTO) {
+                        world.a(blockposition, (Block) this, this.a(world));
+                        if (flag1) {
+                            this.c(world, blockposition);
+                        }
+                    }
+                }
+
+                if (!flag3) {
+                    commandblocklistenerabstract.a(0);
+                }
+
+                tileentitycommand.c(flag1);
+                world.updateAdjacentComparators(blockposition, this);
+            }
+
         }
+    }
 
+    public boolean e(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockCommand.a);
+        TileEntity tileentity = world.getTileEntity(blockposition.shift(enumdirection.opposite()));
+
+        return tileentity instanceof TileEntityCommand && ((TileEntityCommand) tileentity).getCommandBlock().k() > 0;
     }
 
     public int a(World world) {
         return 1;
     }
 
-    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2) {
         TileEntity tileentity = world.getTileEntity(blockposition);
 
-        return tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().a(entityhuman) : false;
+        if (tileentity instanceof TileEntityCommand) {
+            if (!entityhuman.abilities.canInstantlyBuild) {
+                return false;
+            } else {
+                entityhuman.a((TileEntityCommand) tileentity);
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
-    public boolean isComplexRedstone() {
+    public boolean isComplexRedstone(IBlockData iblockdata) {
         return true;
     }
 
-    public int l(World world, BlockPosition blockposition) {
+    public int d(IBlockData iblockdata, World world, BlockPosition blockposition) {
         TileEntity tileentity = world.getTileEntity(blockposition);
 
-        return tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().j() : 0;
+        return tileentity instanceof TileEntityCommand ? ((TileEntityCommand) tileentity).getCommandBlock().k() : 0;
     }
 
     public void postPlace(World world, BlockPosition blockposition, IBlockData iblockdata, EntityLiving entityliving, ItemStack itemstack) {
         TileEntity tileentity = world.getTileEntity(blockposition);
 
         if (tileentity instanceof TileEntityCommand) {
-            CommandBlockListenerAbstract commandblocklistenerabstract = ((TileEntityCommand) tileentity).getCommandBlock();
+            TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+            CommandBlockListenerAbstract commandblocklistenerabstract = tileentitycommand.getCommandBlock();
 
             if (itemstack.hasName()) {
                 commandblocklistenerabstract.setName(itemstack.getName());
             }
 
-            if (!world.isStatic) {
-                commandblocklistenerabstract.a(world.getGameRules().getBoolean("sendCommandFeedback"));
+            if (!world.isClientSide) {
+                NBTTagCompound nbttagcompound = itemstack.getTag();
+
+                if (nbttagcompound == null || !nbttagcompound.hasKeyOfType("BlockEntityTag", 10)) {
+                    commandblocklistenerabstract.a(world.getGameRules().getBoolean("sendCommandFeedback"));
+                    tileentitycommand.b(this == Blocks.dd);
+                }
+
+                if (tileentitycommand.j() == TileEntityCommand.Type.SEQUENCE) {
+                    boolean flag = world.isBlockIndirectlyPowered(blockposition);
+
+                    tileentitycommand.a(flag);
+                }
             }
 
         }
@@ -92,29 +172,60 @@ public class BlockCommand extends BlockContainer {
         return 0;
     }
 
-    public int b() {
-        return 3;
+    public EnumRenderType a(IBlockData iblockdata) {
+        return EnumRenderType.MODEL;
     }
 
     public IBlockData fromLegacyData(int i) {
-        return this.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf((i & 1) > 0));
+        return this.getBlockData().set(BlockCommand.a, EnumDirection.fromType1(i & 7)).set(BlockCommand.b, Boolean.valueOf((i & 8) != 0));
     }
 
     public int toLegacyData(IBlockData iblockdata) {
-        int i = 0;
+        return ((EnumDirection) iblockdata.get(BlockCommand.a)).a() | (((Boolean) iblockdata.get(BlockCommand.b)).booleanValue() ? 8 : 0);
+    }
 
-        if (((Boolean) iblockdata.get(BlockCommand.TRIGGERED)).booleanValue()) {
-            i |= 1;
-        }
+    public IBlockData a(IBlockData iblockdata, EnumBlockRotation enumblockrotation) {
+        return iblockdata.set(BlockCommand.a, enumblockrotation.a((EnumDirection) iblockdata.get(BlockCommand.a)));
+    }
 
-        return i;
+    public IBlockData a(IBlockData iblockdata, EnumBlockMirror enumblockmirror) {
+        return iblockdata.a(enumblockmirror.a((EnumDirection) iblockdata.get(BlockCommand.a)));
     }
 
     protected BlockStateList getStateList() {
-        return new BlockStateList(this, new IBlockState[] { BlockCommand.TRIGGERED});
+        return new BlockStateList(this, new IBlockState[] { BlockCommand.a, BlockCommand.b});
     }
 
     public IBlockData getPlacedState(World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2, int i, EntityLiving entityliving) {
-        return this.getBlockData().set(BlockCommand.TRIGGERED, Boolean.valueOf(false));
+        return this.getBlockData().set(BlockCommand.a, BlockPiston.a(blockposition, entityliving)).set(BlockCommand.b, Boolean.valueOf(false));
+    }
+
+    public void c(World world, BlockPosition blockposition) {
+        IBlockData iblockdata = world.getType(blockposition);
+
+        if (iblockdata.getBlock() == Blocks.COMMAND_BLOCK || iblockdata.getBlock() == Blocks.dc) {
+            BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition(blockposition);
+
+            blockposition_mutableblockposition.c((EnumDirection) iblockdata.get(BlockCommand.a));
+
+            for (TileEntity tileentity = world.getTileEntity(blockposition_mutableblockposition); tileentity instanceof TileEntityCommand; tileentity = world.getTileEntity(blockposition_mutableblockposition)) {
+                TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
+
+                if (tileentitycommand.j() != TileEntityCommand.Type.SEQUENCE) {
+                    break;
+                }
+
+                IBlockData iblockdata1 = world.getType(blockposition_mutableblockposition);
+                Block block = iblockdata1.getBlock();
+
+                if (block != Blocks.dd || world.b((BlockPosition) blockposition_mutableblockposition, block)) {
+                    break;
+                }
+
+                world.a(new BlockPosition(blockposition_mutableblockposition), block, this.a(world));
+                blockposition_mutableblockposition.c((EnumDirection) iblockdata1.get(BlockCommand.a));
+            }
+
+        }
     }
 }

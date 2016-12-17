@@ -34,17 +34,13 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @BeforeClass
     public static void getFireValues() {
-        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "S");
+        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "flameChances");
     }
 
     @Parameters(name= "{index}: {0}")
     public static List<Object[]> data() {
         List<Object[]> list = Lists.newArrayList();
         for (Material material : Material.values()) {
-            if (INVALIDATED_MATERIALS.contains(material)) {
-                continue;
-            }
-
             list.add(new Object[] {material});
         }
         return list;
@@ -57,7 +53,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertFalse(material.isSolid());
         } else if (material.isBlock()) {
-            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).getMaterial().isSolid()));
+            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().isSolid()));
         } else {
             assertFalse(material.isSolid());
         }
@@ -75,6 +71,8 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @Test
     public void maxDurability() {
+        if (INVALIDATED_MATERIALS.contains(material)) return;
+
         if (material == Material.AIR) {
             assertThat((int) material.getMaxDurability(), is(0));
         } else if (material.isBlock()){
@@ -85,6 +83,8 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @Test
     public void maxStackSize() {
+        if (INVALIDATED_MATERIALS.contains(material)) return;
+
         final ItemStack bukkit = new ItemStack(material);
         final CraftItemStack craft = CraftItemStack.asCraftCopy(bukkit);
         if (material == Material.AIR) {
@@ -104,7 +104,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertTrue(material.isTransparent());
         } else if (material.isBlock()) {
-            assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getMaterial().blocksLight())));
+            assertThat(material.isTransparent(), is(not(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().blocksLight())));
         } else {
             assertFalse(material.isTransparent());
         }
@@ -113,7 +113,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isFlammable() {
         if (material != Material.AIR && material.isBlock()) {
-            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).getMaterial().isBurnable()));
+            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).getBlockData().getMaterial().isBurnable()));
         } else {
             assertFalse(material.isFlammable());
         }
@@ -132,7 +132,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isOccluding() {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding()));
+            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).isOccluding(CraftMagicNumbers.getBlock(material).getBlockData())));
         } else {
             assertFalse(material.isOccluding());
         }

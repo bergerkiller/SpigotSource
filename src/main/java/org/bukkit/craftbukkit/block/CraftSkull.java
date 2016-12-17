@@ -1,8 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TileEntitySkull;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 
 import org.bukkit.SkullType;
 import org.bukkit.block.Block;
@@ -24,11 +28,20 @@ public class CraftSkull extends CraftBlockState implements Skull {
         skull = (TileEntitySkull) world.getTileEntityAt(getX(), getY(), getZ());
         profile = skull.getGameProfile();
         skullType = getSkullType(skull.getSkullType());
-        rotation = (byte) skull.rotation;
+        rotation = (byte) skull.getRotation();
+    }
+
+    public CraftSkull(final Material material, final TileEntitySkull te) {
+        super(material);
+        skull = te;
+        profile = skull.getGameProfile();
+        skullType = getSkullType(skull.getSkullType());
+        rotation = (byte) skull.getRotation();
     }
 
     static SkullType getSkullType(int id) {
         switch (id) {
+            default:
             case 0:
                 return SkullType.SKELETON;
             case 1:
@@ -39,13 +52,14 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return SkullType.PLAYER;
             case 4:
                 return SkullType.CREEPER;
-            default:
-                throw new AssertionError(id);
+            case 5:
+                return SkullType.DRAGON;
         }
     }
 
     static int getSkullType(SkullType type) {
         switch(type) {
+            default:
             case SKELETON:
                 return 0;
             case WITHER:
@@ -56,8 +70,8 @@ public class CraftSkull extends CraftBlockState implements Skull {
                 return 3;
             case CREEPER:
                 return 4;
-            default:
-                throw new AssertionError(type);
+            case DRAGON:
+                return 5;
         }
     }
 
@@ -165,6 +179,22 @@ public class CraftSkull extends CraftBlockState implements Skull {
         return true;
     }
 
+    @Override
+    public OfflinePlayer getOwningPlayer() {
+        return hasOwner() ? Bukkit.getOfflinePlayer(profile.getId()) : null;
+    }
+
+    @Override
+    public void setOwningPlayer(OfflinePlayer player) {
+        Preconditions.checkNotNull(player, "player");
+
+        if (skullType != SkullType.PLAYER) {
+            skullType = SkullType.PLAYER;
+        }
+
+        this.profile = new GameProfile(player.getUniqueId(), player.getName());
+    }
+
     public BlockFace getRotation() {
     	return getBlockFace(rotation);
     }
@@ -201,5 +231,10 @@ public class CraftSkull extends CraftBlockState implements Skull {
         }
 
         return result;
+    }
+
+    @Override
+    public TileEntitySkull getTileEntity() {
+        return skull;
     }
 }

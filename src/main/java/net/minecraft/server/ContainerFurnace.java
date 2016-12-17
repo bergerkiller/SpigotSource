@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -12,7 +13,7 @@ public class ContainerFurnace extends Container {
     private int g;
     private int h;
     private int i;
-    
+
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -27,7 +28,7 @@ public class ContainerFurnace extends Container {
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }
-    // CraftBukkit end    
+    // CraftBukkit end
 
     public ContainerFurnace(PlayerInventory playerinventory, IInventory iinventory) {
         this.furnace = iinventory;
@@ -89,6 +90,7 @@ public class ContainerFurnace extends Container {
         return this.furnace.a(entityhuman);
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);

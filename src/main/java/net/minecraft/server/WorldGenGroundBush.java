@@ -4,27 +4,27 @@ import java.util.Random;
 
 public class WorldGenGroundBush extends WorldGenTrees {
 
-    private int a;
-    private int b;
+    private final IBlockData a;
+    private final IBlockData b;
 
-    public WorldGenGroundBush(int i, int j) {
+    public WorldGenGroundBush(IBlockData iblockdata, IBlockData iblockdata1) {
         super(false);
-        this.b = i;
-        this.a = j;
+        this.b = iblockdata;
+        this.a = iblockdata1;
     }
 
     public boolean generate(World world, Random random, BlockPosition blockposition) {
-        Block block;
+        IBlockData iblockdata;
 
-        while (((block = world.getType(blockposition).getBlock()).getMaterial() == Material.AIR || block.getMaterial() == Material.LEAVES) && blockposition.getY() > 0) {
+        while (((iblockdata = world.getType(blockposition)).getMaterial() == Material.AIR || iblockdata.getMaterial() == Material.LEAVES) && blockposition.getY() > 0) {
             blockposition = blockposition.down();
         }
 
-        Block block1 = world.getType(blockposition).getBlock();
+        Block block = world.getType(blockposition).getBlock();
 
-        if (block1 == Blocks.DIRT || block1 == Blocks.GRASS) {
+        if (block == Blocks.DIRT || block == Blocks.GRASS) {
             blockposition = blockposition.up();
-            this.a(world, blockposition, Blocks.LOG, this.b);
+            this.a(world, blockposition, this.b);
 
             for (int i = blockposition.getY(); i <= blockposition.getY() + 2; ++i) {
                 int j = i - blockposition.getY();
@@ -38,9 +38,10 @@ public class WorldGenGroundBush extends WorldGenTrees {
 
                         if (Math.abs(i1) != k || Math.abs(k1) != k || random.nextInt(2) != 0) {
                             BlockPosition blockposition1 = new BlockPosition(l, i, j1);
+                            Material material = world.getType(blockposition1).getMaterial();
 
-                            if (!world.getType(blockposition1).getBlock().m()) {
-                                this.a(world, blockposition1, Blocks.LEAVES, this.a);
+                            if (material == Material.AIR || material == Material.LEAVES) {
+                                this.a(world, blockposition1, this.a);
                             }
                         }
                     }
@@ -51,6 +52,7 @@ public class WorldGenGroundBush extends WorldGenTrees {
             return false;
         }
         // CraftBukkit end
+
 
         return true;
     }

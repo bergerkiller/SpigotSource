@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -7,12 +8,12 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 
 public class BlockDropper extends BlockDispenser {
 
-    private final IDispenseBehavior O = new DispenseBehaviorItem();
+    private final IDispenseBehavior e = new DispenseBehaviorItem();
 
     public BlockDropper() {}
 
-    protected IDispenseBehavior a(ItemStack itemstack) {
-        return this.O;
+    protected IDispenseBehavior a(@Nullable ItemStack itemstack) {
+        return this.e;
     }
 
     public TileEntity a(World world, int i) {
@@ -38,13 +39,13 @@ public class BlockDropper extends BlockDispenser {
                     ItemStack itemstack1;
 
                     if (iinventory == null) {
-                        itemstack1 = this.O.a(sourceblock, itemstack);
-                        if (itemstack1 != null && itemstack1.count == 0) {
+                        itemstack1 = this.e.a(sourceblock, itemstack);
+                        if (itemstack1 != null && itemstack1.count <= 0) {
                             itemstack1 = null;
                         }
                     } else {
                         // CraftBukkit start - Fire event when pushing items into other inventories
-                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.cloneItemStack().a(1));
+                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.cloneItemStack().cloneAndSubtract(1));
 
                         org.bukkit.inventory.Inventory destinationInventory;
                         // Have to special case large chests as they work oddly
@@ -63,7 +64,7 @@ public class BlockDropper extends BlockDispenser {
                         if (event.getItem().equals(oitemstack) && itemstack1 == null) {
                             // CraftBukkit end
                             itemstack1 = itemstack.cloneItemStack();
-                            if (--itemstack1.count == 0) {
+                            if (--itemstack1.count <= 0) {
                                 itemstack1 = null;
                             }
                         } else {

@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class VillageSiege {
 
@@ -20,7 +21,7 @@ public class VillageSiege {
     }
 
     public void a() {
-        if (this.a.w()) {
+        if (this.a.B()) {
             this.c = 0;
         } else if (this.c != 2) {
             if (this.c == 0) {
@@ -69,8 +70,8 @@ public class VillageSiege {
         while (iterator.hasNext()) {
             EntityHuman entityhuman = (EntityHuman) iterator.next();
 
-            if (!entityhuman.v()) {
-                this.f = this.a.ae().getClosestVillage(new BlockPosition(entityhuman), 1);
+            if (!entityhuman.isSpectator()) {
+                this.f = this.a.ai().getClosestVillage(new BlockPosition(entityhuman), 1);
                 if (this.f != null && this.f.c() >= 10 && this.f.d() >= 20 && this.f.e() >= 20) {
                     BlockPosition blockposition = this.f.a();
                     float f = (float) this.f.b();
@@ -79,13 +80,13 @@ public class VillageSiege {
 
                     while (true) {
                         if (i < 10) {
-                            float f1 = this.a.random.nextFloat() * 3.1415927F * 2.0F;
+                            float f1 = this.a.random.nextFloat() * 6.2831855F;
 
                             this.g = blockposition.getX() + (int) ((double) (MathHelper.cos(f1) * f) * 0.9D);
                             this.h = blockposition.getY();
                             this.i = blockposition.getZ() + (int) ((double) (MathHelper.sin(f1) * f) * 0.9D);
                             flag = false;
-                            Iterator iterator1 = this.a.ae().getVillages().iterator();
+                            Iterator iterator1 = this.a.ai().getVillages().iterator();
 
                             while (iterator1.hasNext()) {
                                 Village village = (Village) iterator1.next();
@@ -132,15 +133,15 @@ public class VillageSiege {
 
             try {
                 entityzombie = new EntityZombie(this.a);
-                entityzombie.prepare(this.a.E(new BlockPosition(entityzombie)), (GroupDataEntity) null);
-                entityzombie.setVillager(false);
+                entityzombie.prepare(this.a.D(new BlockPosition(entityzombie)), (GroupDataEntity) null);
+                entityzombie.clearVillagerType();
             } catch (Exception exception) {
                 exception.printStackTrace();
                 return false;
             }
 
-            entityzombie.setPositionRotation(vec3d.a, vec3d.b, vec3d.c, this.a.random.nextFloat() * 360.0F, 0.0F);
-            this.a.addEntity(entityzombie,  org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_INVASION); // CraftBukkit
+            entityzombie.setPositionRotation(vec3d.x, vec3d.y, vec3d.z, this.a.random.nextFloat() * 360.0F, 0.0F);
+            this.a.addEntity(entityzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_INVASION); // CraftBukkit
             BlockPosition blockposition = this.f.a();
 
             entityzombie.a(blockposition, this.f.b());
@@ -148,11 +149,12 @@ public class VillageSiege {
         }
     }
 
+    @Nullable
     private Vec3D a(BlockPosition blockposition) {
         for (int i = 0; i < 10; ++i) {
             BlockPosition blockposition1 = blockposition.a(this.a.random.nextInt(16) - 8, this.a.random.nextInt(6) - 3, this.a.random.nextInt(16) - 8);
 
-            if (this.f.a(blockposition1) && SpawnerCreature.a(EnumEntityPositionType.ON_GROUND, this.a, blockposition1)) {
+            if (this.f.a(blockposition1) && SpawnerCreature.a(EntityInsentient.EnumEntityPositionType.ON_GROUND, this.a, blockposition1)) {
                 return new Vec3D((double) blockposition1.getX(), (double) blockposition1.getY(), (double) blockposition1.getZ());
             }
         }

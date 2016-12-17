@@ -1,58 +1,83 @@
 package net.minecraft.server;
 
-import com.google.common.collect.Maps;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Callable;
 
 public abstract class StructureGenerator extends WorldGenBase {
 
-    private PersistentStructure d;
-    protected Map e = Maps.newHashMap();
+    private PersistentStructure a;
+    protected Long2ObjectMap<StructureStart> c = new Long2ObjectOpenHashMap(1024);
 
     public StructureGenerator() {}
 
     public abstract String a();
 
-    protected final void a(World world, int i, int j, int k, int l, ChunkSnapshot chunksnapshot) {
+    protected final synchronized void a(World world, final int i, final int j, int k, int l, ChunkSnapshot chunksnapshot) {
         this.a(world);
-        if (!this.e.containsKey(Long.valueOf(ChunkCoordIntPair.a(i, j)))) {
-            this.b.nextInt();
+        if (!this.c.containsKey(ChunkCoordIntPair.a(i, j))) {
+            this.f.nextInt();
 
             try {
                 if (this.a(i, j)) {
                     StructureStart structurestart = this.b(i, j);
 
-                    this.e.put(Long.valueOf(ChunkCoordIntPair.a(i, j)), structurestart);
-                    this.a(i, j, structurestart);
+                    this.c.put(ChunkCoordIntPair.a(i, j), structurestart);
+                    if (structurestart.a()) {
+                        this.a(i, j, structurestart);
+                    }
                 }
 
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.a(throwable, "Exception preparing structure feature");
                 CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Feature being prepared");
 
-                crashreportsystemdetails.a("Is feature chunk", (Callable) (new CrashReportIsFeatureChunk(this, i, j)));
+                crashreportsystemdetails.a("Is feature chunk", new CrashReportCallable() {
+                    public String a() throws Exception {
+                        return StructureGenerator.this.a(i, j) ? "True" : "False";
+                    }
+
+                    public Object call() throws Exception {
+                        return this.a();
+                    }
+                });
                 crashreportsystemdetails.a("Chunk location", (Object) String.format("%d,%d", new Object[] { Integer.valueOf(i), Integer.valueOf(j)}));
-                crashreportsystemdetails.a("Chunk pos hash", (Callable) (new CrashReportChunkPosHash(this, i, j)));
-                crashreportsystemdetails.a("Structure type", (Callable) (new CrashReportStructureType(this)));
+                crashreportsystemdetails.a("Chunk pos hash", new CrashReportCallable() {
+                    public String a() throws Exception {
+                        return String.valueOf(ChunkCoordIntPair.a(i, j));
+                    }
+
+                    public Object call() throws Exception {
+                        return this.a();
+                    }
+                });
+                crashreportsystemdetails.a("Structure type", new CrashReportCallable() {
+                    public String a() throws Exception {
+                        return StructureGenerator.this.getClass().getCanonicalName();
+                    }
+
+                    public Object call() throws Exception {
+                        return this.a();
+                    }
+                });
                 throw new ReportedException(crashreport);
             }
         }
     }
 
-    public boolean a(World world, Random random, ChunkCoordIntPair chunkcoordintpair) {
+    public synchronized boolean a(World world, Random random, ChunkCoordIntPair chunkcoordintpair) {
         this.a(world);
         int i = (chunkcoordintpair.x << 4) + 8;
         int j = (chunkcoordintpair.z << 4) + 8;
         boolean flag = false;
-        Iterator iterator = this.e.values().iterator();
+        Iterator iterator = this.c.values().iterator();
 
         while (iterator.hasNext()) {
             StructureStart structurestart = (StructureStart) iterator.next();
 
-            if (structurestart.d() && structurestart.a(chunkcoordintpair) && structurestart.a().a(i, j, i + 15, j + 15)) {
+            if (structurestart.a() && structurestart.a(chunkcoordintpair) && structurestart.b().a(i, j, i + 15, j + 15)) {
                 structurestart.a(world, random, new StructureBoundingBox(i, j, i + 15, j + 15));
                 structurestart.b(chunkcoordintpair);
                 flag = true;
@@ -64,18 +89,18 @@ public abstract class StructureGenerator extends WorldGenBase {
     }
 
     public boolean b(BlockPosition blockposition) {
-        this.a(this.c);
+        this.a(this.g);
         return this.c(blockposition) != null;
     }
 
-    protected StructureStart c(BlockPosition blockposition) {
-        Iterator iterator = this.e.values().iterator();
+    protected synchronized StructureStart c(BlockPosition blockposition) { // CraftBukkit - synchronized
+        Iterator iterator = this.c.values().iterator();
 
         while (iterator.hasNext()) {
             StructureStart structurestart = (StructureStart) iterator.next();
 
-            if (structurestart.d() && structurestart.a().b((BaseBlockPosition) blockposition)) {
-                Iterator iterator1 = structurestart.b().iterator();
+            if (structurestart.a() && structurestart.b().b((BaseBlockPosition) blockposition)) {
+                Iterator iterator1 = structurestart.c().iterator();
 
                 while (iterator1.hasNext()) {
                     StructurePiece structurepiece = (StructurePiece) iterator1.next();
@@ -90,9 +115,9 @@ public abstract class StructureGenerator extends WorldGenBase {
         return null;
     }
 
-    public boolean a(World world, BlockPosition blockposition) {
+    public synchronized boolean b(World world, BlockPosition blockposition) { // CraftBukkit - synchronized
         this.a(world);
-        Iterator iterator = this.e.values().iterator();
+        Iterator iterator = this.c.values().iterator();
 
         StructureStart structurestart;
 
@@ -102,25 +127,25 @@ public abstract class StructureGenerator extends WorldGenBase {
             }
 
             structurestart = (StructureStart) iterator.next();
-        } while (!structurestart.d() || !structurestart.a().b((BaseBlockPosition) blockposition));
+        } while (!structurestart.a() || !structurestart.b().b((BaseBlockPosition) blockposition));
 
         return true;
     }
 
-    public BlockPosition getNearestGeneratedFeature(World world, BlockPosition blockposition) {
-        this.c = world;
+    public synchronized BlockPosition getNearestGeneratedFeature(World world, BlockPosition blockposition) { // CraftBukkit - synchronized
+        this.g = world;
         this.a(world);
-        this.b.setSeed(world.getSeed());
-        long i = this.b.nextLong();
-        long j = this.b.nextLong();
+        this.f.setSeed(world.getSeed());
+        long i = this.f.nextLong();
+        long j = this.f.nextLong();
         long k = (long) (blockposition.getX() >> 4) * i;
         long l = (long) (blockposition.getZ() >> 4) * j;
 
-        this.b.setSeed(k ^ l ^ world.getSeed());
+        this.f.setSeed(k ^ l ^ world.getSeed());
         this.a(world, blockposition.getX() >> 4, blockposition.getZ() >> 4, 0, 0, (ChunkSnapshot) null);
         double d0 = Double.MAX_VALUE;
         BlockPosition blockposition1 = null;
-        Iterator iterator = this.e.values().iterator();
+        Iterator iterator = this.c.values().iterator();
 
         BlockPosition blockposition2;
         double d1;
@@ -128,11 +153,11 @@ public abstract class StructureGenerator extends WorldGenBase {
         while (iterator.hasNext()) {
             StructureStart structurestart = (StructureStart) iterator.next();
 
-            if (structurestart.d()) {
-                StructurePiece structurepiece = (StructurePiece) structurestart.b().get(0);
+            if (structurestart.a()) {
+                StructurePiece structurepiece = (StructurePiece) structurestart.c().get(0);
 
                 blockposition2 = structurepiece.a();
-                d1 = blockposition2.i(blockposition);
+                d1 = blockposition2.n(blockposition);
                 if (d1 < d0) {
                     d0 = d1;
                     blockposition1 = blockposition2;
@@ -143,7 +168,7 @@ public abstract class StructureGenerator extends WorldGenBase {
         if (blockposition1 != null) {
             return blockposition1;
         } else {
-            List list = this.y_();
+            List list = this.F_();
 
             if (list != null) {
                 BlockPosition blockposition3 = null;
@@ -151,7 +176,7 @@ public abstract class StructureGenerator extends WorldGenBase {
 
                 while (iterator1.hasNext()) {
                     blockposition2 = (BlockPosition) iterator1.next();
-                    d1 = blockposition2.i(blockposition);
+                    d1 = blockposition2.n(blockposition);
                     if (d1 < d0) {
                         d0 = d1;
                         blockposition3 = blockposition2;
@@ -165,26 +190,24 @@ public abstract class StructureGenerator extends WorldGenBase {
         }
     }
 
-    protected List y_() {
+    protected List<BlockPosition> F_() {
         return null;
     }
 
-    private void a(World world) {
-        if (this.d == null) {
+    protected synchronized void a(World world) { // CraftBukkit - synchronized
+        if (this.a == null) {
             // Spigot Start
-            if ( world.spigotConfig.saveStructureInfo && !this.a().equals( "Mineshaft" ) )
-            {
-            this.d = (PersistentStructure) world.a(PersistentStructure.class, this.a());
-            } else
-            {
-                this.d = new PersistentStructure( this.a() );
+            if (world.spigotConfig.saveStructureInfo && !this.a().equals( "Mineshaft" )) {
+                this.a = (PersistentStructure) world.a(PersistentStructure.class, this.a());
+            } else {
+                this.a = new PersistentStructure(this.a());
             }
             // Spigot End
-            if (this.d == null) {
-                this.d = new PersistentStructure(this.a());
-                world.a(this.a(), (PersistentBase) this.d);
+            if (this.a == null) {
+                this.a = new PersistentStructure(this.a());
+                world.a(this.a(), (PersistentBase) this.a);
             } else {
-                NBTTagCompound nbttagcompound = this.d.a();
+                NBTTagCompound nbttagcompound = this.a.a();
                 Iterator iterator = nbttagcompound.c().iterator();
 
                 while (iterator.hasNext()) {
@@ -200,7 +223,7 @@ public abstract class StructureGenerator extends WorldGenBase {
                             StructureStart structurestart = WorldGenFactory.a(nbttagcompound1, world);
 
                             if (structurestart != null) {
-                                this.e.put(Long.valueOf(ChunkCoordIntPair.a(i, j)), structurestart);
+                                this.c.put(ChunkCoordIntPair.a(i, j), structurestart);
                             }
                         }
                     }
@@ -211,8 +234,8 @@ public abstract class StructureGenerator extends WorldGenBase {
     }
 
     private void a(int i, int j, StructureStart structurestart) {
-        this.d.a(structurestart.a(i, j), i, j);
-        this.d.c();
+        this.a.a(structurestart.a(i, j), i, j);
+        this.a.c();
     }
 
     protected abstract boolean a(int i, int j);

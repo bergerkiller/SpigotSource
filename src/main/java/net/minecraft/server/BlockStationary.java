@@ -15,7 +15,7 @@ public class BlockStationary extends BlockFluids {
 
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
         if (!this.e(world, blockposition, iblockdata)) {
             this.f(world, blockposition, iblockdata);
         }
@@ -39,10 +39,14 @@ public class BlockStationary extends BlockFluids {
 
                     for (int j = 0; j < i; ++j) {
                         blockposition1 = blockposition1.a(random.nextInt(3) - 1, 1, random.nextInt(3) - 1);
+                        if (blockposition1.getY() >= 0 && blockposition1.getY() < 256 && !world.isLoaded(blockposition1)) {
+                            return;
+                        }
+
                         Block block = world.getType(blockposition1).getBlock();
 
                         if (block.material == Material.AIR) {
-                            if (this.e(world, blockposition1)) {
+                            if (this.c(world, blockposition1)) {
                                  // CraftBukkit start - Prevent lava putting something on fire
                                 if (world.getType(blockposition1) != Blocks.FIRE) {
                                     if (CraftEventFactory.callBlockIgniteEvent(world, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ(), blockposition.getX(), blockposition.getY(), blockposition.getZ()).isCancelled()) {
@@ -61,7 +65,11 @@ public class BlockStationary extends BlockFluids {
                     for (int k = 0; k < 3; ++k) {
                         BlockPosition blockposition2 = blockposition.a(random.nextInt(3) - 1, 0, random.nextInt(3) - 1);
 
-                        if (world.isEmpty(blockposition2.up()) && this.m(world, blockposition2)) {
+                        if (blockposition2.getY() >= 0 && blockposition2.getY() < 256 && !world.isLoaded(blockposition2)) {
+                            return;
+                        }
+
+                        if (world.isEmpty(blockposition2.up()) && this.d(world, blockposition2)) {
                             // CraftBukkit start - Prevent lava putting something on fire
                             BlockPosition up = blockposition2.up();
                             if (world.getType(up) != Blocks.FIRE) {
@@ -79,14 +87,14 @@ public class BlockStationary extends BlockFluids {
         }
     }
 
-    protected boolean e(World world, BlockPosition blockposition) {
+    protected boolean c(World world, BlockPosition blockposition) {
         EnumDirection[] aenumdirection = EnumDirection.values();
         int i = aenumdirection.length;
 
         for (int j = 0; j < i; ++j) {
             EnumDirection enumdirection = aenumdirection[j];
 
-            if (this.m(world, blockposition.shift(enumdirection))) {
+            if (this.d(world, blockposition.shift(enumdirection))) {
                 return true;
             }
         }
@@ -94,7 +102,7 @@ public class BlockStationary extends BlockFluids {
         return false;
     }
 
-    private boolean m(World world, BlockPosition blockposition) {
-        return world.getType(blockposition).getBlock().getMaterial().isBurnable();
+    private boolean d(World world, BlockPosition blockposition) {
+        return blockposition.getY() >= 0 && blockposition.getY() < 256 && !world.isLoaded(blockposition) ? false : world.getType(blockposition).getMaterial().isBurnable();
     }
 }

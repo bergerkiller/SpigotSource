@@ -17,7 +17,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
         } else {
             BlockDoor blockdoor = this.c;
 
-            return !BlockDoor.f((IBlockAccess) this.a.world, this.b);
+            return !BlockDoor.d(this.a.world, this.b);
         }
     }
 
@@ -27,13 +27,13 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
     }
 
     public boolean b() {
-        double d0 = this.a.b(this.b);
+        double d0 = this.a.c(this.b);
         boolean flag;
 
         if (this.g <= 240) {
             BlockDoor blockdoor = this.c;
 
-            if (!BlockDoor.f((IBlockAccess) this.a.world, this.b) && d0 < 4.0D) {
+            if (!BlockDoor.d(this.a.world, this.b) && d0 < 4.0D) {
                 flag = true;
                 return flag;
             }
@@ -50,8 +50,8 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
 
     public void e() {
         super.e();
-        if (this.a.bb().nextInt(20) == 0) {
-            this.a.world.triggerEffect(1010, this.b, 0);
+        if (this.a.getRandom().nextInt(20) == 0) {
+            this.a.world.triggerEffect(1019, this.b, 0);
         }
 
         ++this.g;
@@ -70,7 +70,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
             }
             // CraftBukkit end
             this.a.world.setAir(this.b);
-            this.a.world.triggerEffect(1012, this.b, 0);
+            this.a.world.triggerEffect(1021, this.b, 0);
             this.a.world.triggerEffect(2001, this.b, Block.getId(this.c));
         }
 

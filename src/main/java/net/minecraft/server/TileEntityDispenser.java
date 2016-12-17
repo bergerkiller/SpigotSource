@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 // CraftBukkit start
 import java.util.List;
@@ -9,12 +10,12 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
-public class TileEntityDispenser extends TileEntityContainer implements IInventory {
+public class TileEntityDispenser extends TileEntityLootable implements IInventory {
 
     private static final Random f = new Random();
     private ItemStack[] items = new ItemStack[9];
     protected String a;
-    
+
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -38,7 +39,7 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
     public void setMaxStackSize(int size) {
         maxStack = size;
     }
-    // CraftBukkit end    
+    // CraftBukkit end
 
     public TileEntityDispenser() {}
 
@@ -46,45 +47,32 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
         return 9;
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
+        this.d((EntityHuman) null);
         return this.items[i];
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.items[i] != null) {
-            ItemStack itemstack;
+        this.d((EntityHuman) null);
+        ItemStack itemstack = ContainerUtil.a(this.items, i, j);
 
-            if (this.items[i].count <= j) {
-                itemstack = this.items[i];
-                this.items[i] = null;
-                this.update();
-                return itemstack;
-            } else {
-                itemstack = this.items[i].a(j);
-                if (this.items[i].count == 0) {
-                    this.items[i] = null;
-                }
-
-                this.update();
-                return itemstack;
-            }
-        } else {
-            return null;
+        if (itemstack != null) {
+            this.update();
         }
+
+        return itemstack;
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
-        if (this.items[i] != null) {
-            ItemStack itemstack = this.items[i];
-
-            this.items[i] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        this.d((EntityHuman) null);
+        return ContainerUtil.a(this.items, i);
     }
 
     public int m() {
+        this.d((EntityHuman) null);
         int i = -1;
         int j = 1;
 
@@ -98,7 +86,8 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
         return i;
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
+        this.d((EntityHuman) null);
         this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
@@ -132,16 +121,18 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
 
     public void a(NBTTagCompound nbttagcompound) {
         super.a(nbttagcompound);
-        NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
+        if (!this.d(nbttagcompound)) {
+            NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 
-        this.items = new ItemStack[this.getSize()];
+            this.items = new ItemStack[this.getSize()];
 
-        for (int i = 0; i < nbttaglist.size(); ++i) {
-            NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
-            int j = nbttagcompound1.getByte("Slot") & 255;
+            for (int i = 0; i < nbttaglist.size(); ++i) {
+                NBTTagCompound nbttagcompound1 = nbttaglist.get(i);
+                int j = nbttagcompound1.getByte("Slot") & 255;
 
-            if (j >= 0 && j < this.items.length) {
-                this.items[j] = ItemStack.createStack(nbttagcompound1);
+                if (j >= 0 && j < this.items.length) {
+                    this.items[j] = ItemStack.createStack(nbttagcompound1);
+                }
             }
         }
 
@@ -151,25 +142,29 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
 
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
-        NBTTagList nbttaglist = new NBTTagList();
+    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+        super.save(nbttagcompound);
+        if (!this.e(nbttagcompound)) {
+            NBTTagList nbttaglist = new NBTTagList();
 
-        for (int i = 0; i < this.items.length; ++i) {
-            if (this.items[i] != null) {
-                NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+            for (int i = 0; i < this.items.length; ++i) {
+                if (this.items[i] != null) {
+                    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
-                nbttagcompound1.setByte("Slot", (byte) i);
-                this.items[i].save(nbttagcompound1);
-                nbttaglist.add(nbttagcompound1);
+                    nbttagcompound1.setByte("Slot", (byte) i);
+                    this.items[i].save(nbttagcompound1);
+                    nbttaglist.add(nbttagcompound1);
+                }
             }
+
+            nbttagcompound.set("Items", nbttaglist);
         }
 
-        nbttagcompound.set("Items", nbttaglist);
         if (this.hasCustomName()) {
             nbttagcompound.setString("CustomName", this.a);
         }
 
+        return nbttagcompound;
     }
 
     public int getMaxStackSize() {
@@ -193,6 +188,7 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
     }
 
     public Container createContainer(PlayerInventory playerinventory, EntityHuman entityhuman) {
+        this.d(entityhuman);
         return new ContainerDispenser(playerinventory, this);
     }
 
@@ -200,13 +196,15 @@ public class TileEntityDispenser extends TileEntityContainer implements IInvento
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;
     }
 
     public void l() {
+        this.d((EntityHuman) null);
+
         for (int i = 0; i < this.items.length; ++i) {
             this.items[i] = null;
         }

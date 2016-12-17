@@ -1,8 +1,11 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import java.util.List;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
 
@@ -12,7 +15,7 @@ public class InventoryMerchant implements IInventory {
     private ItemStack[] itemsInSlots = new ItemStack[3];
     private final EntityHuman player;
     private MerchantRecipe recipe;
-    private int e;
+    public int selectedIndex;
 
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -39,10 +42,15 @@ public class InventoryMerchant implements IInventory {
     }
 
     public org.bukkit.inventory.InventoryHolder getOwner() {
-        return player.getBukkitEntity();
+        return (CraftVillager) ((EntityVillager) this.merchant).getBukkitEntity();
     }
-    // CraftBukkit end    
-    
+
+    @Override
+    public Location getLocation() {
+        return ((EntityVillager) this.merchant).getBukkitEntity().getLocation();
+    }
+    // CraftBukkit end
+
     public InventoryMerchant(EntityHuman entityhuman, IMerchant imerchant) {
         this.player = entityhuman;
         this.merchant = imerchant;
@@ -52,40 +60,23 @@ public class InventoryMerchant implements IInventory {
         return this.itemsInSlots.length;
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
         return this.itemsInSlots[i];
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.itemsInSlots[i] != null) {
-            ItemStack itemstack;
-
-            if (i == 2) {
-                itemstack = this.itemsInSlots[i];
-                this.itemsInSlots[i] = null;
-                return itemstack;
-            } else if (this.itemsInSlots[i].count <= j) {
-                itemstack = this.itemsInSlots[i];
-                this.itemsInSlots[i] = null;
-                if (this.e(i)) {
-                    this.h();
-                }
-
-                return itemstack;
-            } else {
-                itemstack = this.itemsInSlots[i].a(j);
-                if (this.itemsInSlots[i].count == 0) {
-                    this.itemsInSlots[i] = null;
-                }
-
-                if (this.e(i)) {
-                    this.h();
-                }
-
-                return itemstack;
-            }
+        if (i == 2 && this.itemsInSlots[i] != null) {
+            return ContainerUtil.a(this.itemsInSlots, i, this.itemsInSlots[i].count);
         } else {
-            return null;
+            ItemStack itemstack = ContainerUtil.a(this.itemsInSlots, i, j);
+
+            if (itemstack != null && this.e(i)) {
+                this.h();
+            }
+
+            return itemstack;
         }
     }
 
@@ -93,18 +84,12 @@ public class InventoryMerchant implements IInventory {
         return i == 0 || i == 1;
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
-        if (this.itemsInSlots[i] != null) {
-            ItemStack itemstack = this.itemsInSlots[i];
-
-            this.itemsInSlots[i] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        return ContainerUtil.a(this.itemsInSlots, i);
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
         this.itemsInSlots[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
@@ -133,7 +118,7 @@ public class InventoryMerchant implements IInventory {
     }
 
     public boolean a(EntityHuman entityhuman) {
-        return this.merchant.u_() == entityhuman;
+        return this.merchant.getTrader() == entityhuman;
     }
 
     public void startOpen(EntityHuman entityhuman) {}
@@ -164,13 +149,13 @@ public class InventoryMerchant implements IInventory {
             MerchantRecipeList merchantrecipelist = this.merchant.getOffers(this.player);
 
             if (merchantrecipelist != null) {
-                MerchantRecipe merchantrecipe = merchantrecipelist.a(itemstack, itemstack1, this.e);
+                MerchantRecipe merchantrecipe = merchantrecipelist.a(itemstack, itemstack1, this.selectedIndex);
 
                 if (merchantrecipe != null && !merchantrecipe.h()) {
                     this.recipe = merchantrecipe;
                     this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
                 } else if (itemstack1 != null) {
-                    merchantrecipe = merchantrecipelist.a(itemstack1, itemstack, this.e);
+                    merchantrecipe = merchantrecipelist.a(itemstack1, itemstack, this.selectedIndex);
                     if (merchantrecipe != null && !merchantrecipe.h()) {
                         this.recipe = merchantrecipe;
                         this.setItem(2, merchantrecipe.getBuyItem3().cloneItemStack());
@@ -183,7 +168,7 @@ public class InventoryMerchant implements IInventory {
             }
         }
 
-        this.merchant.a_(this.getItem(2));
+        this.merchant.a(this.getItem(2));
     }
 
     public MerchantRecipe getRecipe() {
@@ -191,7 +176,7 @@ public class InventoryMerchant implements IInventory {
     }
 
     public void d(int i) {
-        this.e = i;
+        this.selectedIndex = i;
         this.h();
     }
 
@@ -199,7 +184,7 @@ public class InventoryMerchant implements IInventory {
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;

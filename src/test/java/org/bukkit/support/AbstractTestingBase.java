@@ -43,7 +43,6 @@ public abstract class AbstractTestingBase {
                     Material.DIODE_BLOCK_OFF,
                     Material.IRON_DOOR_BLOCK,
                     Material.WOODEN_DOOR,
-                    Material.LOCKED_CHEST,
                     Material.WATER,
                     Material.STATIONARY_WATER,
                     Material.LAVA,
@@ -65,14 +64,19 @@ public abstract class AbstractTestingBase {
                     Material.BIRCH_DOOR,
                     Material.JUNGLE_DOOR,
                     Material.ACACIA_DOOR,
-                    Material.DARK_OAK_DOOR
+                    Material.DARK_OAK_DOOR,
+                    Material.PURPUR_DOUBLE_SLAB,
+                    Material.BEETROOT_BLOCK,
+                    Material.END_GATEWAY,
+                    Material.STRUCTURE_BLOCK,
+                    Material.BURNING_FURNACE,
+                    Material.FROSTED_ICE
             ).build();
 
     @BeforeClass
     public static void setup() {
         DispenserRegistry.c();
         DummyServer.setup();
-        DummyPotions.setup();
         DummyEnchantments.setup();
     }
 }

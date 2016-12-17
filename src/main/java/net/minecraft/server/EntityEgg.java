@@ -27,12 +27,12 @@ public class EntityEgg extends EntityProjectile {
         }
 
         // CraftBukkit start - Fire PlayerEggThrowEvent
-        boolean hatching = !this.world.isStatic && this.random.nextInt(8) == 0;
+        boolean hatching = !this.world.isClientSide && this.random.nextInt(8) == 0;
         int numHatching = (this.random.nextInt(32) == 0) ? 4 : 1;
         if (!hatching) {
             numHatching = 0;
         }
-        
+
         EntityType hatchingType = EntityType.CHICKEN;
 
         Entity shooter = this.getShooter();
@@ -46,13 +46,14 @@ public class EntityEgg extends EntityProjectile {
             numHatching = event.getNumHatches();
             hatchingType = event.getHatchingType();
         }
-        
+
         if (hatching) {
             for (int k = 0; k < numHatching; k++) {
-                org.bukkit.entity.Entity entity = world.getWorld().spawn(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
-                if (entity instanceof Ageable) {
-                    ((Ageable) entity).setBaby();
+                Entity entity = world.getWorld().createEntity(new org.bukkit.Location(world.getWorld(), this.locX, this.locY, this.locZ, this.yaw, 0.0F), hatchingType.getEntityClass());
+                if (entity.getBukkitEntity() instanceof Ageable) {
+                    ((Ageable) entity.getBukkitEntity()).setBaby();
                 }
+                world.getWorld().addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
              }
         }
         // CraftBukkit end
@@ -63,7 +64,7 @@ public class EntityEgg extends EntityProjectile {
             this.world.addParticle(EnumParticle.ITEM_CRACK, this.locX, this.locY, this.locZ, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, ((double) this.random.nextFloat() - 0.5D) * 0.08D, new int[] { Item.getId(Items.EGG)});
         }
 
-        if (!this.world.isStatic) {
+        if (!this.world.isClientSide) {
             this.die();
         }
 

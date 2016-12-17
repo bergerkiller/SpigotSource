@@ -15,15 +15,15 @@ public class PathfinderGoalTame extends PathfinderGoal {
     }
 
     public boolean a() {
-        if (!this.entity.isTame() && this.entity.passenger != null) {
+        if (!this.entity.isTamed() && this.entity.isVehicle()) {
             Vec3D vec3d = RandomPositionGenerator.a(this.entity, 5, 4);
 
             if (vec3d == null) {
                 return false;
             } else {
-                this.c = vec3d.a;
-                this.d = vec3d.b;
-                this.e = vec3d.c;
+                this.c = vec3d.x;
+                this.d = vec3d.y;
+                this.e = vec3d.z;
                 return true;
             }
         } else {
@@ -36,36 +36,33 @@ public class PathfinderGoalTame extends PathfinderGoal {
     }
 
     public boolean b() {
-        return !this.entity.getNavigation().m() && this.entity.passenger != null;
+        return !this.entity.getNavigation().n() && this.entity.isVehicle();
     }
 
     public void e() {
-        if (this.entity.bb().nextInt(50) == 0) {
-            if (this.entity.passenger instanceof EntityHuman) {
+        if (this.entity.getRandom().nextInt(50) == 0) {
+            Entity entity = (Entity) this.entity.bv().get(0);
+
+            if (entity == null) {
+                return;
+            }
+
+            if (entity instanceof EntityHuman) {
                 int i = this.entity.getTemper();
                 int j = this.entity.getMaxDomestication();
 
                 // CraftBukkit - fire EntityTameEvent
-                if (j > 0 && this.entity.bb().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, (EntityHuman) this.entity.passenger).isCancelled() && this.entity.passenger instanceof EntityHuman) {
-                    this.entity.h((EntityHuman) this.entity.passenger);
+                if (j > 0 && this.entity.getRandom().nextInt(j) < i && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this.entity, ((org.bukkit.craftbukkit.entity.CraftHumanEntity) this.entity.getBukkitEntity().getPassenger()).getHandle()).isCancelled()) {
+                    this.entity.g((EntityHuman) entity);
                     this.entity.world.broadcastEntityEffect(this.entity, (byte) 7);
                     return;
                 }
 
-                this.entity.u(5);
+                this.entity.n(5);
             }
 
-            // CraftBukkit start - Handle dismounting to account for VehicleExitEvent being fired.
-            if (this.entity.passenger != null) {
-                this.entity.passenger.mount((Entity) null);
-                // If the entity still has a passenger, then a plugin cancelled the event.
-                if (this.entity.passenger != null) {
-                    return;
-                }
-            }
-            // this.entity.passenger = null;
-            // CraftBukkit end
-            this.entity.cU();
+            this.entity.az();
+            this.entity.dF();
             this.entity.world.broadcastEntityEffect(this.entity, (byte) 6);
         }
 

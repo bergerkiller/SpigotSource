@@ -52,7 +52,7 @@ public class NibbleArray {
         return i >> 1;
     }
 
-    public byte[] a() {
+    public byte[] asBytes() {
         return this.a;
     }
 }

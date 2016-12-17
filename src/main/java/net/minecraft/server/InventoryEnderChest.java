@@ -9,7 +9,7 @@ import org.bukkit.entity.HumanEntity;
 public class InventoryEnderChest extends InventorySubcontainer {
 
     private TileEntityEnderChest a;
- 
+
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public org.bukkit.entity.Player player;
@@ -94,7 +94,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
 
     public void startOpen(EntityHuman entityhuman) {
         if (this.a != null) {
-            this.a.b();
+            this.a.d();
         }
 
         super.startOpen(entityhuman);
@@ -102,7 +102,7 @@ public class InventoryEnderChest extends InventorySubcontainer {
 
     public void closeContainer(EntityHuman entityhuman) {
         if (this.a != null) {
-            this.a.d();
+            this.a.e();
         }
 
         super.closeContainer(entityhuman);

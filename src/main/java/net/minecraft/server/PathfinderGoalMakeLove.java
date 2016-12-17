@@ -17,20 +17,20 @@ public class PathfinderGoalMakeLove extends PathfinderGoal {
     public boolean a() {
         if (this.b.getAge() != 0) {
             return false;
-        } else if (this.b.bb().nextInt(500) != 0) {
+        } else if (this.b.getRandom().nextInt(500) != 0) {
             return false;
         } else {
-            this.a = this.d.ae().getClosestVillage(new BlockPosition(this.b), 0);
+            this.a = this.d.ai().getClosestVillage(new BlockPosition(this.b), 0);
             if (this.a == null) {
                 return false;
-            } else if (this.f() && this.b.n(true)) {
+            } else if (this.f() && this.b.q(true)) {
                 Entity entity = this.d.a(EntityVillager.class, this.b.getBoundingBox().grow(8.0D, 3.0D, 8.0D), (Entity) this.b);
 
                 if (entity == null) {
                     return false;
                 } else {
                     this.c = (EntityVillager) entity;
-                    return this.c.getAge() == 0 && this.c.n(true);
+                    return this.c.getAge() == 0 && this.c.q(true);
                 }
             } else {
                 return false;
@@ -40,17 +40,17 @@ public class PathfinderGoalMakeLove extends PathfinderGoal {
 
     public void c() {
         this.e = 300;
-        this.b.l(true);
+        this.b.o(true);
     }
 
     public void d() {
         this.a = null;
         this.c = null;
-        this.b.l(false);
+        this.b.o(false);
     }
 
     public boolean b() {
-        return this.e >= 0 && this.f() && this.b.getAge() == 0 && this.b.n(false);
+        return this.e >= 0 && this.f() && this.b.getAge() == 0 && this.b.q(false);
     }
 
     public void e() {
@@ -58,11 +58,11 @@ public class PathfinderGoalMakeLove extends PathfinderGoal {
         this.b.getControllerLook().a(this.c, 10.0F, 30.0F);
         if (this.b.h(this.c) > 2.25D) {
             this.b.getNavigation().a((Entity) this.c, 0.25D);
-        } else if (this.e == 0 && this.c.ck()) {
-            this.g();
+        } else if (this.e == 0 && this.c.db()) {
+            this.i();
         }
 
-        if (this.b.bb().nextInt(35) == 0) {
+        if (this.b.getRandom().nextInt(35) == 0) {
             this.d.broadcastEntityEffect(this.b, (byte) 12);
         }
 
@@ -78,13 +78,13 @@ public class PathfinderGoalMakeLove extends PathfinderGoal {
         }
     }
 
-    private void g() {
+    private void i() {
         EntityVillager entityvillager = this.b.b((EntityAgeable) this.c);
 
         this.c.setAgeRaw(6000);
         this.b.setAgeRaw(6000);
-        this.c.o(false);
-        this.b.o(false);
+        this.c.r(false);
+        this.b.r(false);
         entityvillager.setAgeRaw(-24000);
         entityvillager.setPositionRotation(this.b.locX, this.b.locY, this.b.locZ, 0.0F, 0.0F);
         this.d.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason

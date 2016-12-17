@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class NBTTagIntArray extends NBTBase {
@@ -14,7 +15,7 @@ public class NBTTagIntArray extends NBTBase {
         this.data = aint;
     }
 
-    void write(DataOutput dataoutput) throws java.io.IOException {
+    void write(DataOutput dataoutput) throws IOException {
         dataoutput.writeInt(this.data.length);
 
         for (int i = 0; i < this.data.length; ++i) {
@@ -23,7 +24,8 @@ public class NBTTagIntArray extends NBTBase {
 
     }
 
-    void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws java.io.IOException {
+    void load(DataInput datainput, int i, NBTReadLimiter nbtreadlimiter) throws IOException {
+        nbtreadlimiter.a(192L);
         int j = datainput.readInt();
        com.google.common.base.Preconditions.checkArgument( j < 1 << 24);
 

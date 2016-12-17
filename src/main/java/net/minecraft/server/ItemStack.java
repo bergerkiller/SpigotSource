@@ -4,9 +4,11 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import java.text.DecimalFormat;
 import java.util.Random;
+import javax.annotation.Nullable;
 
 // CraftBukkit start
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Location;
 import org.bukkit.TreeType;
@@ -19,7 +21,7 @@ import org.bukkit.event.world.StructureGrowEvent;
 
 public final class ItemStack {
 
-    public static final DecimalFormat a = new DecimalFormat("#.###");
+    public static final DecimalFormat a = new DecimalFormat("#.##");
     public int count;
     public int c;
     private Item item;
@@ -58,13 +60,21 @@ public final class ItemStack {
         this.k = false;
         this.item = item;
         this.count = i;
+
         // CraftBukkit start - Pass to setData to do filtering
         this.setData(j);
         //this.damage = j;
         //if (this.damage < 0) {
         //    this.damage = 0;
         //}
+        if (MinecraftServer.getServer() != null) {
+            NBTTagCompound savedStack = new NBTTagCompound();
+            this.save(savedStack);
+            MinecraftServer.getServer().getDataConverterManager().a(DataConverterTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
+            this.c(savedStack); // PAIL: load
+        }
         // CraftBukkit end
+
     }
 
     public static ItemStack createStack(NBTTagCompound nbttagcompound) {
@@ -81,7 +91,8 @@ public final class ItemStack {
         this.k = false;
     }
 
-    public ItemStack a(int i) {
+    public ItemStack cloneAndSubtract(int i) {
+        i = Math.min(i, this.count);
         ItemStack itemstack = new ItemStack(this.item, i, this.damage);
 
         if (this.tag != null) {
@@ -96,7 +107,7 @@ public final class ItemStack {
         return this.item;
     }
 
-    public boolean placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+    public EnumInteractionResult placeItem(EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
         // CraftBukkit start - handle all block place event logic here
         int data = this.getData();
         int count = this.count;
@@ -111,13 +122,13 @@ public final class ItemStack {
                 }
             }
         }
-        boolean flag = this.getItem().interactWith(this, entityhuman, world, blockposition, enumdirection, f, f1, f2);
+        EnumInteractionResult enuminteractionresult = this.getItem().a(this, entityhuman, world, blockposition, enumhand, enumdirection, f, f1, f2);
         int newData = this.getData();
         int newCount = this.count;
         this.count = count;
         this.setData(data);
         world.captureBlockStates = false;
-        if (flag && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
+        if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
             world.captureTreeGeneration = false;
             Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
             TreeType treeType = BlockSapling.treeType;
@@ -126,7 +137,8 @@ public final class ItemStack {
             world.capturedBlockStates.clear();
             StructureGrowEvent event = null;
             if (treeType != null) {
-                event = new StructureGrowEvent(location, treeType, false, (Player) entityhuman.getBukkitEntity(), blocks);
+                boolean isBonemeal = getItem() == Items.DYE && data == 15;
+                event = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), blocks);
                 org.bukkit.Bukkit.getPluginManager().callEvent(event);
             }
             if (event == null || !event.isCancelled()) {
@@ -140,22 +152,24 @@ public final class ItemStack {
                 }
             }
 
-            return flag;
+            return enuminteractionresult;
         }
         world.captureTreeGeneration = false;
 
-        if (flag) {
+        if (enuminteractionresult == EnumInteractionResult.SUCCESS) {
             org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
             List<BlockState> blocks = (List<BlockState>) world.capturedBlockStates.clone();
             world.capturedBlockStates.clear();
             if (blocks.size() > 1) {
-                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, enumhand, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
             } else if (blocks.size() == 1) {
-                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, enumhand, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
             }
 
             if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
-                flag = false; // cancel placement
+                enuminteractionresult = EnumInteractionResult.FAIL; // cancel placement
+                // PAIL: Remove this when MC-99075 fixed
+                placeEvent.getPlayer().updateInventory();
                 // revert back all captured blocks
                 for (BlockState blockstate : blocks) {
                     blockstate.update(true, false);
@@ -176,35 +190,68 @@ public final class ItemStack {
                     BlockPosition newblockposition = new BlockPosition(x, y, z);
                     IBlockData block = world.getType(newblockposition);
 
-                    if (!(block instanceof BlockContainer)) { // Containers get placed automatically
+                    if (!(block instanceof BlockTileEntity)) { // Containers get placed automatically
                         block.getBlock().onPlace(world, newblockposition, block);
                     }
 
-                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block.getBlock(), updateFlag); // send null chunk as chunk.k() returns false by this point
+                    world.notifyAndUpdatePhysics(newblockposition, null, oldBlock.getBlockData(), block, updateFlag); // send null chunk as chunk.k() returns false by this point
                 }
-                entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
+
+                for (Map.Entry<BlockPosition, TileEntity> e : world.capturedTileEntities.entrySet()) {
+                    world.setTileEntity(e.getKey(), e.getValue());
+                }
+
+                // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
+                // PAIL: checkme on updates.
+                if (this.getItem() instanceof ItemRecord) {
+                    ((BlockJukeBox) Blocks.JUKEBOX).a(world, blockposition, world.getType(blockposition), this);
+                    world.a((EntityHuman) null, 1010, blockposition, Item.getId(this.item));
+                    --this.count;
+                    entityhuman.b(StatisticList.Z);
+                }
+
+                if (this.getItem() == Items.SKULL) { // Special case skulls to allow wither spawns to be cancelled
+                    BlockPosition bp = blockposition;
+                    if (!world.getType(blockposition).getBlock().a(world, blockposition)) {
+                        if (!world.getType(blockposition).getMaterial().isBuildable()) {
+                            bp = null;
+                        } else {
+                            bp = bp.shift(enumdirection);
+                        }
+                    }
+                    if (bp != null) {
+                        TileEntity te = world.getTileEntity(bp);
+                        if (te instanceof TileEntitySkull) {
+                            Blocks.SKULL.a(world, bp, (TileEntitySkull) te);
+                        }
+                    }
+                }
+
+                entityhuman.b(StatisticList.b(this.item));
             }
         }
+        world.capturedTileEntities.clear();
         world.capturedBlockStates.clear();
         // CraftBukkit end
 
-        return flag;
+        return enuminteractionresult;
     }
 
-    public float a(Block block) {
-        return this.getItem().getDestroySpeed(this, block);
+    public float a(IBlockData iblockdata) {
+        return this.getItem().getDestroySpeed(this, iblockdata);
     }
 
-    public ItemStack a(World world, EntityHuman entityhuman) {
-        return this.getItem().a(this, world, entityhuman);
+    public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+        return this.getItem().a(this, world, entityhuman, enumhand);
     }
 
-    public ItemStack b(World world, EntityHuman entityhuman) {
-        return this.getItem().b(this, world, entityhuman);
+    @Nullable
+    public ItemStack a(World world, EntityLiving entityliving) {
+        return this.getItem().a(this, world, entityliving);
     }
 
     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
-        MinecraftKey minecraftkey = (MinecraftKey) Item.REGISTRY.c(this.item);
+        MinecraftKey minecraftkey = (MinecraftKey) Item.REGISTRY.b(this.item);
 
         nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
         nbttagcompound.setByte("Count", (byte) this.count);
@@ -217,12 +264,7 @@ public final class ItemStack {
     }
 
     public void c(NBTTagCompound nbttagcompound) {
-        if (nbttagcompound.hasKeyOfType("id", 8)) {
-            this.item = Item.d(nbttagcompound.getString("id"));
-        } else {
-            this.item = Item.getById(nbttagcompound.getShort("id"));
-        }
-
+        this.item = Item.d(nbttagcompound.getString("id"));
         this.count = nbttagcompound.getByte("Count");
         /* CraftBukkit start - Route through setData for filtering
         this.damage = nbttagcompound.getShort("Damage");
@@ -298,16 +340,14 @@ public final class ItemStack {
             i = 0;
         }
         // CraftBukkit end
-        
         this.damage = i;
-        if (this.damage < -1) { // CraftBukkit
-            this.damage = 0;
+        if (this.damage < 0) {
+            // this.damage = 0; // CraftBukkit - remove this.
         }
-
     }
 
     public int j() {
-        return this.item.getMaxDurability();
+        return this.item == null ? 0 : this.item.getMaxDurability();
     }
 
     public boolean isDamaged(int i, Random random) {
@@ -320,7 +360,7 @@ public final class ItemStack {
             return false;
         } else {
             if (i > 0) {
-                int j = EnchantmentManager.getEnchantmentLevel(Enchantment.DURABILITY.id, this);
+                int j = EnchantmentManager.getEnchantmentLevel(Enchantments.DURABILITY, this);
                 int k = 0;
 
                 for (int l = 0; j > 0 && l < i; ++l) {
@@ -352,22 +392,19 @@ public final class ItemStack {
     public void damage(int i, EntityLiving entityliving) {
         if (!(entityliving instanceof EntityHuman) || !((EntityHuman) entityliving).abilities.canInstantlyBuild) {
             if (this.e()) {
-                if (this.isDamaged(i, entityliving.bb(), entityliving)) { // Spigot
+                if (this.isDamaged(i, entityliving.getRandom(), entityliving)) { // Spigot
                     entityliving.b(this);
                     --this.count;
                     if (entityliving instanceof EntityHuman) {
                         EntityHuman entityhuman = (EntityHuman) entityliving;
 
-                        entityhuman.b(StatisticList.BREAK_ITEM_COUNT[Item.getId(this.item)]);
-                        if (this.count == 0 && this.getItem() instanceof ItemBow) {
-                            entityhuman.bZ();
-                        }
+                        entityhuman.b(StatisticList.c(this.item));
                     }
 
                     if (this.count < 0) {
                         this.count = 0;
                     }
- 
+
                     // CraftBukkit start - Check for item breaking
                     if (this.count == 0 && entityliving instanceof EntityHuman) {
                         org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
@@ -382,29 +419,29 @@ public final class ItemStack {
     }
 
     public void a(EntityLiving entityliving, EntityHuman entityhuman) {
-        boolean flag = this.item.a(this, entityliving, (EntityLiving) entityhuman);
+        boolean flag = this.item.a(this, entityliving, entityhuman);
 
         if (flag) {
-            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
+            entityhuman.b(StatisticList.b(this.item));
         }
 
     }
 
-    public void a(World world, Block block, BlockPosition blockposition, EntityHuman entityhuman) {
-        boolean flag = this.item.a(this, world, block, blockposition, entityhuman);
+    public void a(World world, IBlockData iblockdata, BlockPosition blockposition, EntityHuman entityhuman) {
+        boolean flag = this.item.a(this, world, iblockdata, blockposition, entityhuman);
 
         if (flag) {
-            entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this.item)]);
+            entityhuman.b(StatisticList.b(this.item));
         }
 
     }
 
-    public boolean b(Block block) {
-        return this.item.canDestroySpecialBlock(block);
+    public boolean b(IBlockData iblockdata) {
+        return this.item.canDestroySpecialBlock(iblockdata);
     }
 
-    public boolean a(EntityHuman entityhuman, EntityLiving entityliving) {
-        return this.item.a(this, entityhuman, entityliving);
+    public boolean a(EntityHuman entityhuman, EntityLiving entityliving, EnumHand enumhand) {
+        return this.item.a(this, entityhuman, entityliving, enumhand);
     }
 
     public ItemStack cloneItemStack() {
@@ -417,31 +454,51 @@ public final class ItemStack {
         return itemstack;
     }
 
-    public static boolean equals(ItemStack itemstack, ItemStack itemstack1) {
+    public static boolean equals(@Nullable ItemStack itemstack, @Nullable ItemStack itemstack1) {
         return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? (itemstack.tag == null && itemstack1.tag != null ? false : itemstack.tag == null || itemstack.tag.equals(itemstack1.tag)) : false);
     }
 
-    public static boolean matches(ItemStack itemstack, ItemStack itemstack1) {
-        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.d(itemstack1) : false);
+    // Spigot Start
+    public static boolean fastMatches(ItemStack itemstack, ItemStack itemstack1) {
+        if (itemstack == null && itemstack1 == null) {
+            return true;
+        }
+        if (itemstack != null && itemstack1 != null) {
+            return itemstack.count == itemstack1.count && itemstack.item == itemstack1.item && itemstack.damage == itemstack1.damage;
+        }
+        return false;
+    }
+    // Spigot End
+
+    public static boolean matches(@Nullable ItemStack itemstack, @Nullable ItemStack itemstack1) {
+        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.e(itemstack1) : false);
     }
 
-    private boolean d(ItemStack itemstack) {
+    private boolean e(ItemStack itemstack) {
         return this.count != itemstack.count ? false : (this.item != itemstack.item ? false : (this.damage != itemstack.damage ? false : (this.tag == null && itemstack.tag != null ? false : this.tag == null || this.tag.equals(itemstack.tag))));
     }
 
-    public static boolean c(ItemStack itemstack, ItemStack itemstack1) {
-        return itemstack == null && itemstack1 == null ? true : (itemstack != null && itemstack1 != null ? itemstack.doMaterialsMatch(itemstack1) : false);
+    public static boolean c(@Nullable ItemStack itemstack, @Nullable ItemStack itemstack1) {
+        return itemstack == itemstack1 ? true : (itemstack != null && itemstack1 != null ? itemstack.doMaterialsMatch(itemstack1) : false);
     }
 
-    public boolean doMaterialsMatch(ItemStack itemstack) {
+    public static boolean d(@Nullable ItemStack itemstack, @Nullable ItemStack itemstack1) {
+        return itemstack == itemstack1 ? true : (itemstack != null && itemstack1 != null ? itemstack.b(itemstack1) : false);
+    }
+
+    public boolean doMaterialsMatch(@Nullable ItemStack itemstack) {
         return itemstack != null && this.item == itemstack.item && this.damage == itemstack.damage;
     }
 
-    public String a() {
-        return this.item.e_(this);
+    public boolean b(@Nullable ItemStack itemstack) {
+        return !this.e() ? this.doMaterialsMatch(itemstack) : itemstack != null && this.item == itemstack.item;
     }
 
-    public static ItemStack b(ItemStack itemstack) {
+    public String a() {
+        return this.item.f_(this);
+    }
+
+    public static ItemStack c(ItemStack itemstack) {
         return itemstack == null ? null : itemstack.cloneItemStack();
     }
 
@@ -454,30 +511,34 @@ public final class ItemStack {
             --this.c;
         }
 
-        this.item.a(this, world, entity, i, flag);
+        if (this.item != null) {
+            this.item.a(this, world, entity, i, flag);
+        }
+
     }
 
     public void a(World world, EntityHuman entityhuman, int i) {
-        entityhuman.a(StatisticList.CRAFT_BLOCK_COUNT[Item.getId(this.item)], i);
-        this.item.d(this, world, entityhuman);
+        entityhuman.a(StatisticList.a(this.item), i);
+        this.item.b(this, world, entityhuman);
     }
 
     public int l() {
-        return this.getItem().d(this);
-    }
-
-    public EnumAnimation m() {
         return this.getItem().e(this);
     }
 
-    public void b(World world, EntityHuman entityhuman, int i) {
-        this.getItem().a(this, world, entityhuman, i);
+    public EnumAnimation m() {
+        return this.getItem().f(this);
+    }
+
+    public void a(World world, EntityLiving entityliving, int i) {
+        this.getItem().a(this, world, entityliving, i);
     }
 
     public boolean hasTag() {
         return this.tag != null;
     }
 
+    @Nullable
     public NBTTagCompound getTag() {
         return this.tag;
     }
@@ -556,7 +617,7 @@ public final class ItemStack {
     }
 
     public boolean v() {
-        return !this.getItem().f_(this) ? false : !this.hasEnchantments();
+        return !this.getItem().g_(this) ? false : !this.hasEnchantments();
     }
 
     public void addEnchantment(Enchantment enchantment, int i) {
@@ -571,7 +632,7 @@ public final class ItemStack {
         NBTTagList nbttaglist = this.tag.getList("ench", 10);
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-        nbttagcompound.setShort("id", (short) enchantment.id);
+        nbttagcompound.setShort("id", (short) Enchantment.getId(enchantment));
         nbttagcompound.setShort("lvl", (short) ((byte) i));
         nbttaglist.add(nbttagcompound);
     }
@@ -600,6 +661,7 @@ public final class ItemStack {
         this.g = entityitemframe;
     }
 
+    @Nullable
     public EntityItemFrame z() {
         return this.g;
     }
@@ -616,7 +678,7 @@ public final class ItemStack {
         this.tag.setInt("RepairCost", i);
     }
 
-    public Multimap B() {
+    public Multimap<String, AttributeModifier> a(EnumItemSlot enumitemslot) {
         Object object;
 
         if (this.hasTag() && this.tag.hasKeyOfType("AttributeModifiers", 9)) {
@@ -627,23 +689,44 @@ public final class ItemStack {
                 NBTTagCompound nbttagcompound = nbttaglist.get(i);
                 AttributeModifier attributemodifier = GenericAttributes.a(nbttagcompound);
 
-                if (attributemodifier != null && attributemodifier.a().getLeastSignificantBits() != 0L && attributemodifier.a().getMostSignificantBits() != 0L) {
+                if (attributemodifier != null && (!nbttagcompound.hasKeyOfType("Slot", 8) || nbttagcompound.getString("Slot").equals(enumitemslot.d())) && attributemodifier.a().getLeastSignificantBits() != 0L && attributemodifier.a().getMostSignificantBits() != 0L) {
                     ((Multimap) object).put(nbttagcompound.getString("AttributeName"), attributemodifier);
                 }
             }
         } else {
-            object = this.getItem().i();
+            object = this.getItem().a(enumitemslot);
         }
 
         return (Multimap) object;
     }
 
+    public void a(String s, AttributeModifier attributemodifier, EnumItemSlot enumitemslot) {
+        if (this.tag == null) {
+            this.tag = new NBTTagCompound();
+        }
+
+        if (!this.tag.hasKeyOfType("AttributeModifiers", 9)) {
+            this.tag.set("AttributeModifiers", new NBTTagList());
+        }
+
+        NBTTagList nbttaglist = this.tag.getList("AttributeModifiers", 10);
+        NBTTagCompound nbttagcompound = GenericAttributes.a(attributemodifier);
+
+        nbttagcompound.setString("AttributeName", s);
+        if (enumitemslot != null) {
+            nbttagcompound.setString("Slot", enumitemslot.d());
+        }
+
+        nbttaglist.add(nbttagcompound);
+    }
+
+    @Deprecated
     public void setItem(Item item) {
         this.item = item;
         this.setData(this.getData()); // CraftBukkit - Set data again to ensure it is filtered properly
     }
 
-    public IChatBaseComponent C() {
+    public IChatBaseComponent B() {
         ChatComponentText chatcomponenttext = new ChatComponentText(this.getName());
 
         if (this.hasName()) {
@@ -653,17 +736,16 @@ public final class ItemStack {
         IChatBaseComponent ichatbasecomponent = (new ChatComponentText("[")).addSibling(chatcomponenttext).a("]");
 
         if (this.item != null) {
-            NBTTagCompound nbttagcompound = new NBTTagCompound();
+            NBTTagCompound nbttagcompound = this.save(new NBTTagCompound());
 
-            this.save(nbttagcompound);
-            ichatbasecomponent.getChatModifier().setChatHoverable(new ChatHoverable(EnumHoverAction.SHOW_ITEM, new ChatComponentText(nbttagcompound.toString())));
+            ichatbasecomponent.getChatModifier().setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_ITEM, new ChatComponentText(nbttagcompound.toString())));
             ichatbasecomponent.getChatModifier().setColor(this.u().e);
         }
 
         return ichatbasecomponent;
     }
 
-    public boolean c(Block block) {
+    public boolean a(Block block) {
         if (block == this.h) {
             return this.i;
         } else {
@@ -686,7 +768,7 @@ public final class ItemStack {
         }
     }
 
-    public boolean d(Block block) {
+    public boolean b(Block block) {
         if (block == this.j) {
             return this.k;
         } else {

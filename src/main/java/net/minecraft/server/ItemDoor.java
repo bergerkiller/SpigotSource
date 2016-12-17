@@ -9,48 +9,58 @@ public class ItemDoor extends Item {
         this.a(CreativeModeTab.d);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+    public EnumInteractionResult a(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
         if (enumdirection != EnumDirection.UP) {
-            return false;
+            return EnumInteractionResult.FAIL;
         } else {
             IBlockData iblockdata = world.getType(blockposition);
             Block block = iblockdata.getBlock();
 
-            if (!block.f(world, blockposition)) {
+            if (!block.a((IBlockAccess) world, blockposition)) {
                 blockposition = blockposition.shift(enumdirection);
             }
 
-            if (!entityhuman.a(blockposition, enumdirection, itemstack)) {
-                return false;
-            } else if (!this.a.canPlace(world, blockposition)) {
-                return false;
-            } else {
-                a(world, blockposition, EnumDirection.fromAngle((double) entityhuman.yaw), this.a);
+            if (entityhuman.a(blockposition, enumdirection, itemstack) && this.a.canPlace(world, blockposition)) {
+                EnumDirection enumdirection1 = EnumDirection.fromAngle((double) entityhuman.yaw);
+                int i = enumdirection1.getAdjacentX();
+                int j = enumdirection1.getAdjacentZ();
+                boolean flag = i < 0 && f2 < 0.5F || i > 0 && f2 > 0.5F || j < 0 && f > 0.5F || j > 0 && f < 0.5F;
+
+                a(world, blockposition, enumdirection1, this.a, flag);
+                SoundEffectType soundeffecttype = this.a.w();
+
+                world.a(entityhuman, blockposition, soundeffecttype.e(), SoundCategory.BLOCKS, (soundeffecttype.a() + 1.0F) / 2.0F, soundeffecttype.b() * 0.8F);
                 --itemstack.count;
-                return true;
+                return EnumInteractionResult.SUCCESS;
+            } else {
+                return EnumInteractionResult.FAIL;
             }
         }
     }
 
-    public static void a(World world, BlockPosition blockposition, EnumDirection enumdirection, Block block) {
+    public static void a(World world, BlockPosition blockposition, EnumDirection enumdirection, Block block, boolean flag) {
         BlockPosition blockposition1 = blockposition.shift(enumdirection.e());
         BlockPosition blockposition2 = blockposition.shift(enumdirection.f());
-        int i = (world.getType(blockposition2).getBlock().isOccluding() ? 1 : 0) + (world.getType(blockposition2.up()).getBlock().isOccluding() ? 1 : 0);
-        int j = (world.getType(blockposition1).getBlock().isOccluding() ? 1 : 0) + (world.getType(blockposition1.up()).getBlock().isOccluding() ? 1 : 0);
-        boolean flag = world.getType(blockposition2).getBlock() == block || world.getType(blockposition2.up()).getBlock() == block;
-        boolean flag1 = world.getType(blockposition1).getBlock() == block || world.getType(blockposition1.up()).getBlock() == block;
-        boolean flag2 = false;
+        int i = (world.getType(blockposition2).l() ? 1 : 0) + (world.getType(blockposition2.up()).l() ? 1 : 0);
+        int j = (world.getType(blockposition1).l() ? 1 : 0) + (world.getType(blockposition1.up()).l() ? 1 : 0);
+        boolean flag1 = world.getType(blockposition2).getBlock() == block || world.getType(blockposition2.up()).getBlock() == block;
+        boolean flag2 = world.getType(blockposition1).getBlock() == block || world.getType(blockposition1.up()).getBlock() == block;
 
-        if (flag && !flag1 || j > i) {
-            flag2 = true;
+        if ((!flag1 || flag2) && j <= i) {
+            if (flag2 && !flag1 || j < i) {
+                flag = false;
+            }
+        } else {
+            flag = true;
         }
 
         BlockPosition blockposition3 = blockposition.up();
-        IBlockData iblockdata = block.getBlockData().set(BlockDoor.FACING, enumdirection).set(BlockDoor.HINGE, flag2 ? EnumDoorHinge.RIGHT : EnumDoorHinge.LEFT);
+        boolean flag3 = world.isBlockIndirectlyPowered(blockposition) || world.isBlockIndirectlyPowered(blockposition3);
+        IBlockData iblockdata = block.getBlockData().set(BlockDoor.FACING, enumdirection).set(BlockDoor.HINGE, flag ? BlockDoor.EnumDoorHinge.RIGHT : BlockDoor.EnumDoorHinge.LEFT).set(BlockDoor.POWERED, Boolean.valueOf(flag3)).set(BlockDoor.OPEN, Boolean.valueOf(flag3));
 
         // Spigot start - update physics after the block multi place event
-        world.setTypeAndData(blockposition, iblockdata.set(BlockDoor.HALF, EnumDoorHalf.LOWER), 3);
-        world.setTypeAndData(blockposition3, iblockdata.set(BlockDoor.HALF, EnumDoorHalf.UPPER), 3);
+        world.setTypeAndData(blockposition, iblockdata.set(BlockDoor.HALF, BlockDoor.EnumDoorHalf.LOWER), 3);
+        world.setTypeAndData(blockposition3, iblockdata.set(BlockDoor.HALF, BlockDoor.EnumDoorHalf.UPPER), 3);
         // world.applyPhysics(blockposition, block);
         // world.applyPhysics(blockposition3, block);
         // Spigot end

@@ -2,22 +2,22 @@ package net.minecraft.server;
 
 public class ControllerMove {
 
-    protected EntityInsentient a;
+    protected final EntityInsentient a;
     protected double b;
     protected double c;
     protected double d;
     protected double e;
-    protected boolean f;
+    protected float f;
+    protected float g;
+    protected ControllerMove.Operation h;
 
     public ControllerMove(EntityInsentient entityinsentient) {
+        this.h = ControllerMove.Operation.WAIT;
         this.a = entityinsentient;
-        this.b = entityinsentient.locX;
-        this.c = entityinsentient.locY;
-        this.d = entityinsentient.locZ;
     }
 
     public boolean a() {
-        return this.f;
+        return this.h == ControllerMove.Operation.MOVE_TO;
     }
 
     public double b() {
@@ -29,31 +29,86 @@ public class ControllerMove {
         this.c = d1;
         this.d = d2;
         this.e = d3;
-        this.f = true;
+        this.h = ControllerMove.Operation.MOVE_TO;
+    }
+
+    public void a(float f, float f1) {
+        this.h = ControllerMove.Operation.STRAFE;
+        this.f = f;
+        this.g = f1;
+        this.e = 0.25D;
+    }
+
+    public void a(ControllerMove controllermove) {
+        this.h = controllermove.h;
+        this.b = controllermove.b;
+        this.c = controllermove.c;
+        this.d = controllermove.d;
+        this.e = Math.max(controllermove.e, 1.0D);
+        this.f = controllermove.f;
+        this.g = controllermove.g;
     }
 
     public void c() {
-        this.a.m(0.0F);
-        if (this.f) {
-            this.f = false;
-            int i = MathHelper.floor(this.a.getBoundingBox().b + 0.5D);
+        float f;
+
+        if (this.h == ControllerMove.Operation.STRAFE) {
+            float f1 = (float) this.a.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).getValue();
+            float f2 = (float) this.e * f1;
+            float f3 = this.f;
+            float f4 = this.g;
+            float f5 = MathHelper.c(f3 * f3 + f4 * f4);
+
+            if (f5 < 1.0F) {
+                f5 = 1.0F;
+            }
+
+            f5 = f2 / f5;
+            f3 *= f5;
+            f4 *= f5;
+            float f6 = MathHelper.sin(this.a.yaw * 0.017453292F);
+            float f7 = MathHelper.cos(this.a.yaw * 0.017453292F);
+            float f8 = f3 * f7 - f4 * f6;
+
+            f = f4 * f7 + f3 * f6;
+            NavigationAbstract navigationabstract = this.a.getNavigation();
+
+            if (navigationabstract != null) {
+                PathfinderAbstract pathfinderabstract = navigationabstract.q();
+
+                if (pathfinderabstract != null && pathfinderabstract.a(this.a.world, MathHelper.floor(this.a.locX + (double) f8), MathHelper.floor(this.a.locY), MathHelper.floor(this.a.locZ + (double) f)) != PathType.WALKABLE) {
+                    this.f = 1.0F;
+                    this.g = 0.0F;
+                    f2 = f1;
+                }
+            }
+
+            this.a.l(f2);
+            this.a.o(this.f);
+            this.a.p(this.g);
+            this.h = ControllerMove.Operation.WAIT;
+        } else if (this.h == ControllerMove.Operation.MOVE_TO) {
+            this.h = ControllerMove.Operation.WAIT;
             double d0 = this.b - this.a.locX;
             double d1 = this.d - this.a.locZ;
-            double d2 = this.c - (double) i;
+            double d2 = this.c - this.a.locY;
             double d3 = d0 * d0 + d2 * d2 + d1 * d1;
 
-            if (d3 >= 2.500000277905201E-7D) {
-                // CraftBukkit - Math -> TrigMath
-                float f = (float) (org.bukkit.craftbukkit.TrigMath.atan2(d1, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-
-                this.a.yaw = this.a(this.a.yaw, f, 30.0F);
-                this.a.j((float) (this.e * this.a.getAttributeInstance(GenericAttributes.d).getValue()));
-                if (d2 > 0.0D && d0 * d0 + d1 * d1 < 1.0D) {
-                    this.a.getControllerJump().a();
-                }
-
+            if (d3 < 2.500000277905201E-7D) {
+                this.a.o(0.0F);
+                return;
             }
+
+            f = (float) (MathHelper.b(d1, d0) * 57.2957763671875D) - 90.0F;
+            this.a.yaw = this.a(this.a.yaw, f, 90.0F);
+            this.a.l((float) (this.e * this.a.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).getValue()));
+            if (d2 > (double) this.a.P && d0 * d0 + d1 * d1 < 1.0D) {
+                this.a.getControllerJump().a();
+            }
+        } else {
+            this.a.o(0.0F);
         }
+
     }
 
     protected float a(float f, float f1, float f2) {
@@ -88,5 +143,12 @@ public class ControllerMove {
 
     public double f() {
         return this.d;
+    }
+
+    public static enum Operation {
+
+        WAIT, MOVE_TO, STRAFE;
+
+        private Operation() {}
     }
 }

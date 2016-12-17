@@ -1,8 +1,9 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
+
 public class RecipeBookClone extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
-    // CraftBukkit start - Delegate to new parent class
     public RecipeBookClone() {
         super(new ItemStack(Items.WRITTEN_BOOK, 0, -1), java.util.Arrays.asList(new ItemStack(Items.WRITABLE_BOOK, 0, 0)));
     }
@@ -35,7 +36,8 @@ public class RecipeBookClone extends ShapelessRecipes implements IRecipe { // Cr
         return itemstack != null && i > 0;
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         int i = 0;
         ItemStack itemstack = null;
 
@@ -78,6 +80,7 @@ public class RecipeBookClone extends ShapelessRecipes implements IRecipe { // Cr
         return 9;
     }
 
+    @Nullable
     public ItemStack b() {
         return null;
     }
@@ -89,7 +92,8 @@ public class RecipeBookClone extends ShapelessRecipes implements IRecipe { // Cr
             ItemStack itemstack = inventorycrafting.getItem(i);
 
             if (itemstack != null && itemstack.getItem() instanceof ItemWrittenBook) {
-                aitemstack[i] = itemstack;
+                aitemstack[i] = itemstack.cloneItemStack();
+                aitemstack[i].count = 1;
                 break;
             }
         }

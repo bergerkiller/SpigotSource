@@ -3,75 +3,59 @@ package net.minecraft.server;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import javax.annotation.Nullable;
 
 import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
 
 public class BlockTripwire extends Block {
 
     public static final BlockStateBoolean POWERED = BlockStateBoolean.of("powered");
-    public static final BlockStateBoolean SUSPENDED = BlockStateBoolean.of("suspended");
     public static final BlockStateBoolean ATTACHED = BlockStateBoolean.of("attached");
     public static final BlockStateBoolean DISARMED = BlockStateBoolean.of("disarmed");
     public static final BlockStateBoolean NORTH = BlockStateBoolean.of("north");
     public static final BlockStateBoolean EAST = BlockStateBoolean.of("east");
     public static final BlockStateBoolean SOUTH = BlockStateBoolean.of("south");
     public static final BlockStateBoolean WEST = BlockStateBoolean.of("west");
+    protected static final AxisAlignedBB B = new AxisAlignedBB(0.0D, 0.0625D, 0.0D, 1.0D, 0.15625D, 1.0D);
+    protected static final AxisAlignedBB C = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.5D, 1.0D);
 
     public BlockTripwire() {
         super(Material.ORIENTABLE);
-        this.j(this.blockStateList.getBlockData().set(BlockTripwire.POWERED, Boolean.valueOf(false)).set(BlockTripwire.SUSPENDED, Boolean.valueOf(false)).set(BlockTripwire.ATTACHED, Boolean.valueOf(false)).set(BlockTripwire.DISARMED, Boolean.valueOf(false)).set(BlockTripwire.NORTH, Boolean.valueOf(false)).set(BlockTripwire.EAST, Boolean.valueOf(false)).set(BlockTripwire.SOUTH, Boolean.valueOf(false)).set(BlockTripwire.WEST, Boolean.valueOf(false)));
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.15625F, 1.0F);
+        this.w(this.blockStateList.getBlockData().set(BlockTripwire.POWERED, Boolean.valueOf(false)).set(BlockTripwire.ATTACHED, Boolean.valueOf(false)).set(BlockTripwire.DISARMED, Boolean.valueOf(false)).set(BlockTripwire.NORTH, Boolean.valueOf(false)).set(BlockTripwire.EAST, Boolean.valueOf(false)).set(BlockTripwire.SOUTH, Boolean.valueOf(false)).set(BlockTripwire.WEST, Boolean.valueOf(false)));
         this.a(true);
     }
 
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return !((Boolean) iblockdata.get(BlockTripwire.ATTACHED)).booleanValue() ? BlockTripwire.C : BlockTripwire.B;
+    }
+
     public IBlockData updateState(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
-        return iblockdata.set(BlockTripwire.NORTH, Boolean.valueOf(c(iblockaccess, blockposition, iblockdata, EnumDirection.NORTH))).set(BlockTripwire.EAST, Boolean.valueOf(c(iblockaccess, blockposition, iblockdata, EnumDirection.EAST))).set(BlockTripwire.SOUTH, Boolean.valueOf(c(iblockaccess, blockposition, iblockdata, EnumDirection.SOUTH))).set(BlockTripwire.WEST, Boolean.valueOf(c(iblockaccess, blockposition, iblockdata, EnumDirection.WEST)));
+        return iblockdata.set(BlockTripwire.NORTH, Boolean.valueOf(a(iblockaccess, blockposition, iblockdata, EnumDirection.NORTH))).set(BlockTripwire.EAST, Boolean.valueOf(a(iblockaccess, blockposition, iblockdata, EnumDirection.EAST))).set(BlockTripwire.SOUTH, Boolean.valueOf(a(iblockaccess, blockposition, iblockdata, EnumDirection.SOUTH))).set(BlockTripwire.WEST, Boolean.valueOf(a(iblockaccess, blockposition, iblockdata, EnumDirection.WEST)));
     }
 
-    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        return null;
+    @Nullable
+    public AxisAlignedBB a(IBlockData iblockdata, World world, BlockPosition blockposition) {
+        return BlockTripwire.k;
     }
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return Items.STRING;
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
-        boolean flag = ((Boolean) iblockdata.get(BlockTripwire.SUSPENDED)).booleanValue();
-        boolean flag1 = !World.a((IBlockAccess) world, blockposition.down());
-
-        if (flag != flag1) {
-            this.b(world, blockposition, iblockdata, 0);
-            world.setAir(blockposition);
-        }
-
-    }
-
-    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        IBlockData iblockdata = iblockaccess.getType(blockposition);
-        boolean flag = ((Boolean) iblockdata.get(BlockTripwire.ATTACHED)).booleanValue();
-        boolean flag1 = ((Boolean) iblockdata.get(BlockTripwire.SUSPENDED)).booleanValue();
-
-        if (!flag1) {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.09375F, 1.0F);
-        } else if (!flag) {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
-        } else {
-            this.a(0.0F, 0.0625F, 0.0F, 1.0F, 0.15625F, 1.0F);
-        }
-
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Items.STRING);
     }
 
     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        iblockdata = iblockdata.set(BlockTripwire.SUSPENDED, Boolean.valueOf(!World.a((IBlockAccess) world, blockposition.down())));
         world.setTypeAndData(blockposition, iblockdata, 3);
         this.e(world, blockposition, iblockdata);
     }
@@ -81,8 +65,8 @@ public class BlockTripwire extends Block {
     }
 
     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
-        if (!world.isStatic) {
-            if (entityhuman.bY() != null && entityhuman.bY().getItem() == Items.SHEARS) {
+        if (!world.isClientSide) {
+            if (entityhuman.getItemInMainHand() != null && entityhuman.getItemInMainHand().getItem() == Items.SHEARS) {
                 world.setTypeAndData(blockposition, iblockdata.set(BlockTripwire.DISARMED, Boolean.valueOf(true)), 4);
             }
 
@@ -121,9 +105,9 @@ public class BlockTripwire extends Block {
     }
 
     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
-        if (!world.isStatic) {
+        if (!world.isClientSide) {
             if (!((Boolean) iblockdata.get(BlockTripwire.POWERED)).booleanValue()) {
-                this.d(world, blockposition);
+                this.b(world, blockposition);
             }
         }
     }
@@ -131,18 +115,18 @@ public class BlockTripwire extends Block {
     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {}
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
-        if (!world.isStatic) {
+        if (!world.isClientSide) {
             if (((Boolean) world.getType(blockposition).get(BlockTripwire.POWERED)).booleanValue()) {
-                this.d(world, blockposition);
+                this.b(world, blockposition);
             }
         }
     }
 
-    private void d(World world, BlockPosition blockposition) {
+    private void b(World world, BlockPosition blockposition) {
         IBlockData iblockdata = world.getType(blockposition);
         boolean flag = ((Boolean) iblockdata.get(BlockTripwire.POWERED)).booleanValue();
         boolean flag1 = false;
-        List list = world.getEntities((Entity) null, new AxisAlignedBB((double) blockposition.getX() + this.minX, (double) blockposition.getY() + this.minY, (double) blockposition.getZ() + this.minZ, (double) blockposition.getX() + this.maxX, (double) blockposition.getY() + this.maxY, (double) blockposition.getZ() + this.maxZ));
+        List list = world.getEntities((Entity) null, iblockdata.c(world, blockposition).a(blockposition));
 
         if (!list.isEmpty()) {
             Iterator iterator = list.iterator();
@@ -150,13 +134,13 @@ public class BlockTripwire extends Block {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
 
-                if (!entity.aH()) {
+                if (!entity.isIgnoreBlockTrigger()) {
                     flag1 = true;
                     break;
                 }
             }
         }
-        
+
         // CraftBukkit start - Call interact even when triggering connected tripwire
         if (flag != flag1 && flag1 && (Boolean)iblockdata.get(ATTACHED)) {
             org.bukkit.World bworld = world.getWorld();
@@ -170,7 +154,7 @@ public class BlockTripwire extends Block {
                     org.bukkit.event.Cancellable cancellable;
 
                     if (object instanceof EntityHuman) {
-                        cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null);
+                        cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) object, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
                     } else if (object instanceof Entity) {
                         cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), block);
                         manager.callEvent((EntityInteractEvent) cancellable);
@@ -198,12 +182,12 @@ public class BlockTripwire extends Block {
         }
 
         if (flag1) {
-            world.a(blockposition, (Block) this, this.a(world));
+            world.a(new BlockPosition(blockposition), (Block) this, this.a(world));
         }
 
     }
 
-    public static boolean c(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
+    public static boolean a(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
         BlockPosition blockposition1 = blockposition.shift(enumdirection);
         IBlockData iblockdata1 = iblockaccess.getType(blockposition1);
         Block block = iblockdata1.getBlock();
@@ -212,18 +196,13 @@ public class BlockTripwire extends Block {
             EnumDirection enumdirection1 = enumdirection.opposite();
 
             return iblockdata1.get(BlockTripwireHook.FACING) == enumdirection1;
-        } else if (block == Blocks.TRIPWIRE) {
-            boolean flag = ((Boolean) iblockdata.get(BlockTripwire.SUSPENDED)).booleanValue();
-            boolean flag1 = ((Boolean) iblockdata1.get(BlockTripwire.SUSPENDED)).booleanValue();
-
-            return flag == flag1;
         } else {
-            return false;
+            return block == Blocks.TRIPWIRE;
         }
     }
 
     public IBlockData fromLegacyData(int i) {
-        return this.getBlockData().set(BlockTripwire.POWERED, Boolean.valueOf((i & 1) > 0)).set(BlockTripwire.SUSPENDED, Boolean.valueOf((i & 2) > 0)).set(BlockTripwire.ATTACHED, Boolean.valueOf((i & 4) > 0)).set(BlockTripwire.DISARMED, Boolean.valueOf((i & 8) > 0));
+        return this.getBlockData().set(BlockTripwire.POWERED, Boolean.valueOf((i & 1) > 0)).set(BlockTripwire.ATTACHED, Boolean.valueOf((i & 4) > 0)).set(BlockTripwire.DISARMED, Boolean.valueOf((i & 8) > 0));
     }
 
     public int toLegacyData(IBlockData iblockdata) {
@@ -231,10 +210,6 @@ public class BlockTripwire extends Block {
 
         if (((Boolean) iblockdata.get(BlockTripwire.POWERED)).booleanValue()) {
             i |= 1;
-        }
-
-        if (((Boolean) iblockdata.get(BlockTripwire.SUSPENDED)).booleanValue()) {
-            i |= 2;
         }
 
         if (((Boolean) iblockdata.get(BlockTripwire.ATTACHED)).booleanValue()) {
@@ -248,7 +223,77 @@ public class BlockTripwire extends Block {
         return i;
     }
 
+    public IBlockData a(IBlockData iblockdata, EnumBlockRotation enumblockrotation) {
+        switch (BlockTripwire.SyntheticClass_1.a[enumblockrotation.ordinal()]) {
+        case 1:
+            return iblockdata.set(BlockTripwire.NORTH, iblockdata.get(BlockTripwire.SOUTH)).set(BlockTripwire.EAST, iblockdata.get(BlockTripwire.WEST)).set(BlockTripwire.SOUTH, iblockdata.get(BlockTripwire.NORTH)).set(BlockTripwire.WEST, iblockdata.get(BlockTripwire.EAST));
+
+        case 2:
+            return iblockdata.set(BlockTripwire.NORTH, iblockdata.get(BlockTripwire.EAST)).set(BlockTripwire.EAST, iblockdata.get(BlockTripwire.SOUTH)).set(BlockTripwire.SOUTH, iblockdata.get(BlockTripwire.WEST)).set(BlockTripwire.WEST, iblockdata.get(BlockTripwire.NORTH));
+
+        case 3:
+            return iblockdata.set(BlockTripwire.NORTH, iblockdata.get(BlockTripwire.WEST)).set(BlockTripwire.EAST, iblockdata.get(BlockTripwire.NORTH)).set(BlockTripwire.SOUTH, iblockdata.get(BlockTripwire.EAST)).set(BlockTripwire.WEST, iblockdata.get(BlockTripwire.SOUTH));
+
+        default:
+            return iblockdata;
+        }
+    }
+
+    public IBlockData a(IBlockData iblockdata, EnumBlockMirror enumblockmirror) {
+        switch (BlockTripwire.SyntheticClass_1.b[enumblockmirror.ordinal()]) {
+        case 1:
+            return iblockdata.set(BlockTripwire.NORTH, iblockdata.get(BlockTripwire.SOUTH)).set(BlockTripwire.SOUTH, iblockdata.get(BlockTripwire.NORTH));
+
+        case 2:
+            return iblockdata.set(BlockTripwire.EAST, iblockdata.get(BlockTripwire.WEST)).set(BlockTripwire.WEST, iblockdata.get(BlockTripwire.EAST));
+
+        default:
+            return super.a(iblockdata, enumblockmirror);
+        }
+    }
+
     protected BlockStateList getStateList() {
-        return new BlockStateList(this, new IBlockState[] { BlockTripwire.POWERED, BlockTripwire.SUSPENDED, BlockTripwire.ATTACHED, BlockTripwire.DISARMED, BlockTripwire.NORTH, BlockTripwire.EAST, BlockTripwire.WEST, BlockTripwire.SOUTH});
+        return new BlockStateList(this, new IBlockState[] { BlockTripwire.POWERED, BlockTripwire.ATTACHED, BlockTripwire.DISARMED, BlockTripwire.NORTH, BlockTripwire.EAST, BlockTripwire.WEST, BlockTripwire.SOUTH});
+    }
+
+    static class SyntheticClass_1 {
+
+        static final int[] a;
+        static final int[] b = new int[EnumBlockMirror.values().length];
+
+        static {
+            try {
+                BlockTripwire.SyntheticClass_1.b[EnumBlockMirror.LEFT_RIGHT.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror) {
+                ;
+            }
+
+            try {
+                BlockTripwire.SyntheticClass_1.b[EnumBlockMirror.FRONT_BACK.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror1) {
+                ;
+            }
+
+            a = new int[EnumBlockRotation.values().length];
+
+            try {
+                BlockTripwire.SyntheticClass_1.a[EnumBlockRotation.CLOCKWISE_180.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror2) {
+                ;
+            }
+
+            try {
+                BlockTripwire.SyntheticClass_1.a[EnumBlockRotation.COUNTERCLOCKWISE_90.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror3) {
+                ;
+            }
+
+            try {
+                BlockTripwire.SyntheticClass_1.a[EnumBlockRotation.CLOCKWISE_90.ordinal()] = 3;
+            } catch (NoSuchFieldError nosuchfielderror4) {
+                ;
+            }
+
+        }
     }
 }

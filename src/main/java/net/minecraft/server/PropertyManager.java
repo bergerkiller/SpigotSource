@@ -41,6 +41,7 @@ public class PropertyManager {
             PropertyManager.a.warn(file + " does not exist");
             this.a();
         }
+
     }
 
     // CraftBukkit start
@@ -124,13 +125,13 @@ public class PropertyManager {
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + i);
             this.savePropertiesFile();
-            return getOverride(s ,i); // CraftBukkit
+            return getOverride(s, i); // CraftBukkit
         }
     }
 
     public boolean getBoolean(String s, boolean flag) {
         try {
-            return getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); // CraftBukkit
+            return getOverride(s, Boolean.parseBoolean(this.getString(s, "" + flag))); //CraftBukkit
         } catch (Exception exception) {
             this.properties.setProperty(s, "" + flag);
             this.savePropertiesFile();
@@ -140,5 +141,13 @@ public class PropertyManager {
 
     public void setProperty(String s, Object object) {
         this.properties.setProperty(s, "" + object);
+    }
+
+    public boolean a(String s) {
+        return this.properties.containsKey(s);
+    }
+
+    public void b(String s) {
+        this.properties.remove(s);
     }
 }

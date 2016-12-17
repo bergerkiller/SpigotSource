@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import java.util.List;
+import org.bukkit.Location;
 
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
@@ -14,7 +16,7 @@ public class InventoryCrafting implements IInventory {
     private final int b;
     private final int c;
     private final Container d;
-    
+
     // CraftBukkit start - add fields
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     public IRecipe currentRecipe;
@@ -43,7 +45,7 @@ public class InventoryCrafting implements IInventory {
     }
 
     public org.bukkit.inventory.InventoryHolder getOwner() {
-        return owner.getBukkitEntity();
+        return (owner == null) ? null : owner.getBukkitEntity();
     }
 
     public void setMaxStackSize(int size) {
@@ -51,11 +53,16 @@ public class InventoryCrafting implements IInventory {
         resultInventory.setMaxStackSize(size);
     }
 
+    @Override
+    public Location getLocation() {
+        return owner.getBukkitEntity().getLocation();
+    }
+
     public InventoryCrafting(Container container, int i, int j, EntityHuman player) {
         this(container, i, j);
         this.owner = player;
     }
-    // CraftBukkit end    
+    // CraftBukkit end
 
     public InventoryCrafting(Container container, int i, int j) {
         int k = i * j;
@@ -70,10 +77,12 @@ public class InventoryCrafting implements IInventory {
         return this.items.length;
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
         return i >= this.getSize() ? null : this.items[i];
     }
 
+    @Nullable
     public ItemStack c(int i, int j) {
         return i >= 0 && i < this.b && j >= 0 && j <= this.c ? this.getItem(i + j * this.b) : null;
     }
@@ -90,41 +99,23 @@ public class InventoryCrafting implements IInventory {
         return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
-        if (this.items[i] != null) {
-            ItemStack itemstack = this.items[i];
-
-            this.items[i] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        return ContainerUtil.a(this.items, i);
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.items[i] != null) {
-            ItemStack itemstack;
+        ItemStack itemstack = ContainerUtil.a(this.items, i, j);
 
-            if (this.items[i].count <= j) {
-                itemstack = this.items[i];
-                this.items[i] = null;
-                this.d.a((IInventory) this);
-                return itemstack;
-            } else {
-                itemstack = this.items[i].a(j);
-                if (this.items[i].count == 0) {
-                    this.items[i] = null;
-                }
-
-                this.d.a((IInventory) this);
-                return itemstack;
-            }
-        } else {
-            return null;
+        if (itemstack != null) {
+            this.d.a((IInventory) this);
         }
+
+        return itemstack;
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
         this.items[i] = itemstack;
         this.d.a((IInventory) this);
     }
@@ -151,7 +142,7 @@ public class InventoryCrafting implements IInventory {
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;

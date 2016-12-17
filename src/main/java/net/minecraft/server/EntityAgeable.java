@@ -1,20 +1,23 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
+
 public abstract class EntityAgeable extends EntityCreature {
 
+    private static final DataWatcherObject<Boolean> bw = DataWatcher.a(EntityAgeable.class, DataWatcherRegistry.h);
     protected int a;
     protected int b;
     protected int c;
-    private float bk = -1.0F;
-    private float bl;
-    public boolean ageLocked = false; // CraftBukkit
+    private float bx = -1.0F;
+    private float by;
+    public boolean ageLocked; // CraftBukkit
 
     // Spigot start
     @Override
     public void inactiveTick()
     {
         super.inactiveTick();
-        if ( this.world.isStatic || this.ageLocked )
+        if ( this.world.isClientSide || this.ageLocked )
         { // CraftBukkit
             this.a( this.isBaby() );
         } else
@@ -24,11 +27,11 @@ public abstract class EntityAgeable extends EntityCreature {
             if ( i < 0 )
             {
                 ++i;
-                this.setAge( i );
+                this.setAgeRaw( i );
             } else if ( i > 0 )
             {
                 --i;
-                this.setAge( i );
+                this.setAgeRaw( i );
             }
         }
     }
@@ -40,12 +43,10 @@ public abstract class EntityAgeable extends EntityCreature {
 
     public abstract EntityAgeable createChild(EntityAgeable entityageable);
 
-    public boolean a(EntityHuman entityhuman) {
-        ItemStack itemstack = entityhuman.inventory.getItemInHand();
-
+    public boolean a(EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack) {
         if (itemstack != null && itemstack.getItem() == Items.SPAWN_EGG) {
-            if (!this.world.isStatic) {
-                Class oclass = EntityTypes.a(itemstack.getData());
+            if (!this.world.isClientSide) {
+                Class oclass = EntityTypes.a(EntityTypes.a(ItemMonsterEgg.h(itemstack)));
 
                 if (oclass != null && this.getClass() == oclass) {
                     EntityAgeable entityageable = this.createChild(this);
@@ -74,13 +75,13 @@ public abstract class EntityAgeable extends EntityCreature {
         }
     }
 
-    protected void h() {
-        super.h();
-        this.datawatcher.a(12, Byte.valueOf((byte) 0));
+    protected void i() {
+        super.i();
+        this.datawatcher.register(EntityAgeable.bw, Boolean.valueOf(false));
     }
 
     public int getAge() {
-        return this.world.isStatic ? this.datawatcher.getByte(12) : this.a;
+        return this.world.isClientSide ? (((Boolean) this.datawatcher.get(EntityAgeable.bw)).booleanValue() ? -1 : 1) : this.a;
     }
 
     public void setAge(int i, boolean flag) {
@@ -91,7 +92,7 @@ public abstract class EntityAgeable extends EntityCreature {
         if (j > 0) {
             j = 0;
             if (k < 0) {
-                this.n();
+                this.o();
             }
         }
 
@@ -116,7 +117,7 @@ public abstract class EntityAgeable extends EntityCreature {
     }
 
     public void setAgeRaw(int i) {
-        this.datawatcher.watch(12, Byte.valueOf((byte) MathHelper.clamp(i, -1, 1)));
+        this.datawatcher.set(EntityAgeable.bw, Boolean.valueOf(i < 0));
         this.a = i;
         this.a(this.isBaby());
     }
@@ -135,9 +136,17 @@ public abstract class EntityAgeable extends EntityCreature {
         this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
-    public void m() {
-        super.m();
-        if (this.world.isStatic || ageLocked) { // CraftBukkit
+    public void a(DataWatcherObject<?> datawatcherobject) {
+        if (EntityAgeable.bw.equals(datawatcherobject)) {
+            this.a(this.isBaby());
+        }
+
+        super.a(datawatcherobject);
+    }
+
+    public void n() {
+        super.n();
+        if (this.world.isClientSide || ageLocked) { // CraftBukkit
             if (this.c > 0) {
                 if (this.c % 4 == 0) {
                     this.world.addParticle(EnumParticle.VILLAGER_HAPPY, this.locX + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, this.locY + 0.5D + (double) (this.random.nextFloat() * this.length), this.locZ + (double) (this.random.nextFloat() * this.width * 2.0F) - (double) this.width, 0.0D, 0.0D, 0.0D, new int[0]);
@@ -145,8 +154,6 @@ public abstract class EntityAgeable extends EntityCreature {
 
                 --this.c;
             }
-
-            this.a(this.isBaby());
         } else {
             int i = this.getAge();
 
@@ -154,7 +161,7 @@ public abstract class EntityAgeable extends EntityCreature {
                 ++i;
                 this.setAgeRaw(i);
                 if (i == 0) {
-                    this.n();
+                    this.o();
                 }
             } else if (i > 0) {
                 --i;
@@ -164,7 +171,7 @@ public abstract class EntityAgeable extends EntityCreature {
 
     }
 
-    protected void n() {}
+    protected void o() {}
 
     public boolean isBaby() {
         return this.getAge() < 0;
@@ -174,11 +181,11 @@ public abstract class EntityAgeable extends EntityCreature {
         this.a(flag ? 0.5F : 1.0F);
     }
 
-    protected final void a(float f, float f1) {
-        boolean flag = this.bk > 0.0F;
+    public final void setSize(float f, float f1) {
+        boolean flag = this.bx > 0.0F;
 
-        this.bk = f;
-        this.bl = f1;
+        this.bx = f;
+        this.by = f1;
         if (!flag) {
             this.a(1.0F);
         }
@@ -186,6 +193,6 @@ public abstract class EntityAgeable extends EntityCreature {
     }
 
     protected final void a(float f) {
-        super.a(this.bk * f, this.bl * f);
+        super.setSize(this.bx * f, this.by * f);
     }
 }

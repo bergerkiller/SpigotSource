@@ -12,14 +12,16 @@ public class PathfinderGoalDefendVillage extends PathfinderGoalTarget {
     }
 
     public boolean a() {
-        Village village = this.a.n();
+        Village village = this.a.o();
 
         if (village == null) {
             return false;
         } else {
             this.b = village.b((EntityLiving) this.a);
-            if (!this.a(this.b, false)) {
-                if (this.e.bb().nextInt(20) == 0) {
+            if (this.b instanceof EntityCreeper) {
+                return false;
+            } else if (!this.a(this.b, false)) {
+                if (this.e.getRandom().nextInt(20) == 0) {
                     this.b = village.c((EntityLiving) this.a);
                     return this.a(this.b, false);
                 } else {

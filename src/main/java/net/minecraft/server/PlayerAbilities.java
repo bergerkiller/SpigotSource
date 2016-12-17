@@ -7,8 +7,8 @@ public class PlayerAbilities {
     public boolean canFly;
     public boolean canInstantlyBuild;
     public boolean mayBuild = true;
-    public float flySpeed = 0.05F; // CraftBukkit private -> public
-    public float walkSpeed = 0.1F; // CraftBukkit private -> public
+    public float flySpeed = 0.05F;
+    public float walkSpeed = 0.1F;
 
     public PlayerAbilities() {}
 
@@ -42,6 +42,7 @@ public class PlayerAbilities {
                 this.mayBuild = nbttagcompound1.getBoolean("mayBuild");
             }
         }
+
     }
 
     public float a() {

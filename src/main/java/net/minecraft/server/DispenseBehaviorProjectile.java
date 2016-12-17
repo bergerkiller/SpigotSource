@@ -10,14 +10,14 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
     public DispenseBehaviorProjectile() {}
 
     public ItemStack b(ISourceBlock isourceblock, ItemStack itemstack) {
-        World world = isourceblock.i();
+        World world = isourceblock.getWorld();
         IPosition iposition = BlockDispenser.a(isourceblock);
-        EnumDirection enumdirection = BlockDispenser.b(isourceblock.f());
-        IProjectile iprojectile = this.a(world, iposition);
+        EnumDirection enumdirection = BlockDispenser.e(isourceblock.f());
+        IProjectile iprojectile = this.a(world, iposition, itemstack);
 
         // iprojectile.shoot((double) enumdirection.getAdjacentX(), (double) ((float) enumdirection.getAdjacentY() + 0.1F), (double) enumdirection.getAdjacentZ(), this.b(), this.a());
         // CraftBukkit start
-        ItemStack itemstack1 = itemstack.a(1);
+        ItemStack itemstack1 = itemstack.cloneAndSubtract(1);
         org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
         CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 
@@ -35,14 +35,14 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
             itemstack.count++;
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.M.get(eventStack.getItem());
-            if (idispensebehavior != IDispenseBehavior.a && idispensebehavior != this) {
+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.REGISTRY.get(eventStack.getItem());
+            if (idispensebehavior != IDispenseBehavior.NONE && idispensebehavior != this) {
                 idispensebehavior.a(isourceblock, eventStack);
                 return itemstack;
             }
         }
 
-        iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.b(), this.a());
+        iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.a());
         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource((TileEntityDispenser) isourceblock.getTileEntity());
         // CraftBukkit end
         world.addEntity((Entity) iprojectile);
@@ -51,16 +51,16 @@ public abstract class DispenseBehaviorProjectile extends DispenseBehaviorItem {
     }
 
     protected void a(ISourceBlock isourceblock) {
-        isourceblock.i().triggerEffect(1002, isourceblock.getBlockPosition(), 0);
+        isourceblock.getWorld().triggerEffect(1002, isourceblock.getBlockPosition(), 0);
     }
 
-    protected abstract IProjectile a(World world, IPosition iposition);
+    protected abstract IProjectile a(World world, IPosition iposition, ItemStack itemstack);
 
     protected float a() {
         return 6.0F;
     }
 
-    protected float b() {
+    protected float getPower() {
         return 1.1F;
     }
 }

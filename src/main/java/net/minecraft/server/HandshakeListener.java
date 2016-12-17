@@ -22,11 +22,11 @@ public class HandshakeListener implements PacketHandshakingInListener {
     }
 
     public void a(PacketHandshakingInSetProtocol packethandshakinginsetprotocol) {
-        switch (ProtocolOrdinalWrapper.a[packethandshakinginsetprotocol.a().ordinal()]) {
+        switch (HandshakeListener.SyntheticClass_1.a[packethandshakinginsetprotocol.a().ordinal()]) {
         case 1:
-            this.b.a(EnumProtocol.LOGIN);
+            this.b.setProtocol(EnumProtocol.LOGIN);
             ChatComponentText chatcomponenttext;
- 
+
             // CraftBukkit start - Connection throttle
             try {
                 long currentTime = System.currentTimeMillis();
@@ -37,7 +37,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
                         throttleTracker.put(address, currentTime);
                         chatcomponenttext = new ChatComponentText("Connection throttled! Please wait before reconnecting.");
-                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
+                        this.b.sendPacket(new PacketLoginOutDisconnect(chatcomponenttext));
                         this.b.close(chatcomponenttext);
                         return;
                     }
@@ -62,27 +62,27 @@ public class HandshakeListener implements PacketHandshakingInListener {
             }
             // CraftBukkit end
 
-            if (packethandshakinginsetprotocol.b() > 47) {
-                chatcomponenttext = new ChatComponentText( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage, "1.8" ) ); // Spigot
-                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
+            if (packethandshakinginsetprotocol.b() > 110) {
+                chatcomponenttext = new ChatComponentText( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), "1.9.4" ) ); // Spigot
+                this.b.sendPacket(new PacketLoginOutDisconnect(chatcomponenttext));
                 this.b.close(chatcomponenttext);
-            } else if (packethandshakinginsetprotocol.b() < 47) {
-                chatcomponenttext = new ChatComponentText(java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage, "1.8" ) ); // Spigot
-                this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
+            } else if (packethandshakinginsetprotocol.b() < 110) {
+                chatcomponenttext = new ChatComponentText( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), "1.9.4" ) ); // Spigot
+                this.b.sendPacket(new PacketLoginOutDisconnect(chatcomponenttext));
                 this.b.close(chatcomponenttext);
             } else {
-                this.b.a((PacketListener) (new LoginListener(this.a, this.b)));
+                this.b.setPacketListener(new LoginListener(this.a, this.b));
                 // Spigot Start
                 if (org.spigotmc.SpigotConfig.bungee) {
-                    String[] split = packethandshakinginsetprotocol.b.split("\00");
+                    String[] split = packethandshakinginsetprotocol.hostname.split("\00");
                     if ( split.length == 3 || split.length == 4 ) {
-                        packethandshakinginsetprotocol.b = split[0];
-                        b.j = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
+                        packethandshakinginsetprotocol.hostname = split[0];
+                        b.l = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) b.getSocketAddress()).getPort());
                         b.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
                     } else
                     {
                         chatcomponenttext = new ChatComponentText("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
-                        this.b.handle(new PacketLoginOutDisconnect(chatcomponenttext));
+                        this.b.sendPacket(new PacketLoginOutDisconnect(chatcomponenttext));
                         this.b.close(chatcomponenttext);
                         return;
                     }
@@ -92,13 +92,13 @@ public class HandshakeListener implements PacketHandshakingInListener {
                     }
                 }
                 // Spigot End
-                ((LoginListener) this.b.getPacketListener()).hostname = packethandshakinginsetprotocol.b + ":" + packethandshakinginsetprotocol.c; // CraftBukkit - set hostname
+                ((LoginListener) this.b.i()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
             }
             break;
 
         case 2:
-            this.b.a(EnumProtocol.STATUS);
-            this.b.a((PacketListener) (new PacketStatusListener(this.a, this.b)));
+            this.b.setProtocol(EnumProtocol.STATUS);
+            this.b.setPacketListener(new PacketStatusListener(this.a, this.b));
             break;
 
         default:
@@ -108,4 +108,24 @@ public class HandshakeListener implements PacketHandshakingInListener {
     }
 
     public void a(IChatBaseComponent ichatbasecomponent) {}
+
+    static class SyntheticClass_1 {
+
+        static final int[] a = new int[EnumProtocol.values().length];
+
+        static {
+            try {
+                HandshakeListener.SyntheticClass_1.a[EnumProtocol.LOGIN.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror) {
+                ;
+            }
+
+            try {
+                HandshakeListener.SyntheticClass_1.a[EnumProtocol.STATUS.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror1) {
+                ;
+            }
+
+        }
+    }
 }

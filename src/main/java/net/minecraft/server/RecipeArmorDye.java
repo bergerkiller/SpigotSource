@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import javax.annotation.Nullable;
 
 public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // CraftBukkit - added extends
 
@@ -22,7 +23,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
                 if (itemstack1.getItem() instanceof ItemArmor) {
                     ItemArmor itemarmor = (ItemArmor) itemstack1.getItem();
 
-                    if (itemarmor.w_() != EnumArmorMaterial.LEATHER || itemstack != null) {
+                    if (itemarmor.d() != ItemArmor.EnumArmorMaterial.LEATHER || itemstack != null) {
                         return false;
                     }
 
@@ -40,7 +41,8 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
         return itemstack != null && !arraylist.isEmpty();
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         ItemStack itemstack = null;
         int[] aint = new int[3];
         int i = 0;
@@ -59,13 +61,13 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
             if (itemstack1 != null) {
                 if (itemstack1.getItem() instanceof ItemArmor) {
                     itemarmor = (ItemArmor) itemstack1.getItem();
-                    if (itemarmor.w_() != EnumArmorMaterial.LEATHER || itemstack != null) {
+                    if (itemarmor.d() != ItemArmor.EnumArmorMaterial.LEATHER || itemstack != null) {
                         return null;
                     }
 
                     itemstack = itemstack1.cloneItemStack();
                     itemstack.count = 1;
-                    if (itemarmor.d_(itemstack1)) {
+                    if (itemarmor.e_(itemstack1)) {
                         l = itemarmor.b(itemstack);
                         f = (float) (l >> 16 & 255) / 255.0F;
                         f1 = (float) (l >> 8 & 255) / 255.0F;
@@ -110,7 +112,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
             l = (int) ((float) l * f / f1);
             i1 = (k << 8) + l1;
             i1 = (i1 << 8) + l;
-            itemarmor.b(itemstack, i1);
+            itemarmor.a(itemstack, i1);
             return itemstack;
         }
     }
@@ -119,6 +121,7 @@ public class RecipeArmorDye extends ShapelessRecipes implements IRecipe { // Cra
         return 10;
     }
 
+    @Nullable
     public ItemStack b() {
         return null;
     }

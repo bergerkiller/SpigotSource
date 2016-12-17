@@ -1,223 +1,288 @@
 package net.minecraft.server;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import java.util.Iterator;
 import java.util.List;
-
-// CraftBukkit start
+import javax.annotation.Nullable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+// CraftBukkit Start
 import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
-import java.util.HashMap;
 // CraftBukkit end
 
-class PlayerChunk {
+public class PlayerChunk {
 
-    private final List b;
+    private static final Logger a = LogManager.getLogger();
+    private final PlayerChunkMap playerChunkMap;
+    public final List<EntityPlayer> c = Lists.newArrayList(); // CraftBukkit - public
     private final ChunkCoordIntPair location;
-    private short[] dirtyBlocks;
+    private final short[] dirtyBlocks = new short[64];
+    @Nullable
+    public Chunk chunk; // CraftBukkit - public
     private int dirtyCount;
-    private int f;
-    private long g;
-    final PlayerChunkMap playerChunkMap;
-    
+    private int h;
+    private long i;
+    private boolean done;
+
     // CraftBukkit start - add fields
-    private final HashMap<EntityPlayer, Runnable> players = new HashMap<EntityPlayer, Runnable>();
-    private boolean loaded = false;
+    private boolean loadInProgress = false;
     private Runnable loadedRunnable = new Runnable() {
         public void run() {
-            PlayerChunk.this.loaded = true;
+            loadInProgress = false;
+            PlayerChunk.this.chunk = PlayerChunk.this.playerChunkMap.getWorld().getChunkProviderServer().getOrLoadChunkAt(location.x, location.z);
         }
     };
     // CraftBukkit end
 
     public PlayerChunk(PlayerChunkMap playerchunkmap, int i, int j) {
         this.playerChunkMap = playerchunkmap;
-        this.b = Lists.newArrayList();
-        this.dirtyBlocks = new short[64];
         this.location = new ChunkCoordIntPair(i, j);
-        playerchunkmap.a().chunkProviderServer.getChunkAt(i, j, loadedRunnable); // CraftBukkit
+        // CraftBukkit start
+        loadInProgress = true;
+        this.chunk = playerchunkmap.getWorld().getChunkProviderServer().getChunkAt(i, j, loadedRunnable, false);
+        // CraftBukkit end
+    }
+
+    public ChunkCoordIntPair a() {
+        return this.location;
     }
 
     public void a(final EntityPlayer entityplayer) { // CraftBukkit - added final to argument
-        if (this.b.contains(entityplayer)) {
-            PlayerChunkMap.c().debug("Failed to add player. {} already is in chunk {}, {}", new Object[] { entityplayer, Integer.valueOf(this.location.x), Integer.valueOf(this.location.z)});
+        if (this.c.contains(entityplayer)) {
+            PlayerChunk.a.debug("Failed to add player. {} already is in chunk {}, {}", new Object[] { entityplayer, Integer.valueOf(this.location.x), Integer.valueOf(this.location.z)});
         } else {
-            if (this.b.isEmpty()) {
-                this.g = PlayerChunkMap.a(this.playerChunkMap).getTime();
+            if (this.c.isEmpty()) {
+                this.i = this.playerChunkMap.getWorld().getTime();
             }
 
-            this.b.add(entityplayer);
+            this.c.add(entityplayer);
             // CraftBukkit start - use async chunk io
-            Runnable playerRunnable;
-            if (this.loaded) {
-                playerRunnable = null;
-                entityplayer.chunkCoordIntPairQueue.add(this.location);
-            } else {
-                playerRunnable = new Runnable() {
-                    public void run() {
-                        entityplayer.chunkCoordIntPairQueue.add(PlayerChunk.this.location);
-                    }
-                };
-                this.playerChunkMap.a().chunkProviderServer.getChunkAt(this.location.x, this.location.z, playerRunnable);
+            // if (this.done) {
+            //     this.sendChunk(entityplayer);
+            // }
+            if (this.done) {
+                this.sendChunk(entityplayer);
             }
-
-            this.players.put(entityplayer, playerRunnable);
             // CraftBukkit end
+
         }
     }
 
     public void b(EntityPlayer entityplayer) {
-        if (this.b.contains(entityplayer)) {
+        if (this.c.contains(entityplayer)) {
             // CraftBukkit start - If we haven't loaded yet don't load the chunk just so we can clean it up
-            if (!this.loaded) {
-                ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.a(), this.location.x, this.location.z, this.players.get(entityplayer));
-                this.b.remove(entityplayer);
-                this.players.remove(entityplayer);
+            if (!this.done) {
+                this.c.remove(entityplayer);
 
-                if (this.b.isEmpty()) {
-                    ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.a(), this.location.x, this.location.z, this.loadedRunnable);
-                    long i = (long) this.location.x + 2147483647L | (long) this.location.z + 2147483647L << 32;
-                    PlayerChunkMap.b(this.playerChunkMap).remove(i);
-                    PlayerChunkMap.c(this.playerChunkMap).remove(this);
+                if (this.c.isEmpty()) {
+                    ChunkIOExecutor.dropQueuedChunkLoad(this.playerChunkMap.getWorld(), this.location.x, this.location.z, this.loadedRunnable);
+                    this.playerChunkMap.b(this);
                 }
 
                 return;
             }
             // CraftBukkit end
-            Chunk chunk = PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z);
-
-            if (chunk.isReady()) {
-                entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(chunk, true, 0));
+            if (this.done) {
+                entityplayer.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(this.location.x, this.location.z));
             }
 
-            this.players.remove(entityplayer); // CraftBukkit
-            this.b.remove(entityplayer);
-            entityplayer.chunkCoordIntPairQueue.remove(this.location);
-            if (this.b.isEmpty()) {
-                long i = (long) this.location.x + 2147483647L | (long) this.location.z + 2147483647L << 32;
-
-                this.a(chunk);
-                PlayerChunkMap.b(this.playerChunkMap).remove(i);
-                PlayerChunkMap.c(this.playerChunkMap).remove(this);
-                if (this.dirtyCount > 0) {
-                    PlayerChunkMap.d(this.playerChunkMap).remove(this);
-                }
-
-                this.playerChunkMap.a().chunkProviderServer.queueUnload(this.location.x, this.location.z);
+            this.c.remove(entityplayer);
+            if (this.c.isEmpty()) {
+                this.playerChunkMap.b(this);
             }
 
         }
     }
 
-    public void a() {
-        this.a(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z));
+    public boolean a(boolean flag) {
+        if (this.chunk != null) {
+            return true;
+        } else {
+            /* CraftBukkit start
+            if (flag) {
+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z);
+            } else {
+                this.chunk = this.playerChunkMap.getWorld().getChunkProviderServer().getOrLoadChunkAt(this.location.x, this.location.z);
+            }
+            */
+            if (!loadInProgress) {
+                loadInProgress = true;
+                this.chunk = playerChunkMap.getWorld().getChunkProviderServer().getChunkAt(this.location.x, this.location.z, loadedRunnable, flag);
+            }
+            // CraftBukkit end
+
+            return this.chunk != null;
+        }
     }
 
-    private void a(Chunk chunk) {
-        chunk.c(chunk.w() + PlayerChunkMap.a(this.playerChunkMap).getTime() - this.g);
-        this.g = PlayerChunkMap.a(this.playerChunkMap).getTime();
+    public boolean b() {
+        if (this.done) {
+            return true;
+        } else if (this.chunk == null) {
+            return false;
+        } else if (!this.chunk.isReady()) {
+            return false;
+        } else {
+            this.dirtyCount = 0;
+            this.h = 0;
+            this.done = true;
+            PacketPlayOutMapChunk packetplayoutmapchunk = new PacketPlayOutMapChunk(this.chunk, '\uffff');
+            Iterator iterator = this.c.iterator();
+
+            while (iterator.hasNext()) {
+                EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+
+                entityplayer.playerConnection.sendPacket(packetplayoutmapchunk);
+                this.playerChunkMap.getWorld().getTracker().a(entityplayer, this.chunk);
+            }
+
+            return true;
+        }
+    }
+
+    public void sendChunk(EntityPlayer entityplayer) {
+        if (this.done) {
+            entityplayer.playerConnection.sendPacket(new PacketPlayOutMapChunk(this.chunk, '\uffff'));
+            this.playerChunkMap.getWorld().getTracker().a(entityplayer, this.chunk);
+        }
+    }
+
+    public void c() {
+        if (this.chunk != null) {
+            this.chunk.c(this.chunk.x() + this.playerChunkMap.getWorld().getTime() - this.i);
+        }
+
+        this.i = this.playerChunkMap.getWorld().getTime();
     }
 
     public void a(int i, int j, int k) {
-        if (this.dirtyCount == 0) {
-            PlayerChunkMap.d(this.playerChunkMap).add(this);
-        }
-
-        this.f |= 1 << (j >> 4);
-        if (this.dirtyCount < 64) {
-            short short0 = (short) (i << 12 | k << 8 | j);
-
-            for (int l = 0; l < this.dirtyCount; ++l) {
-                if (this.dirtyBlocks[l] == short0) {
-                    return;
-                }
+        if (this.done) {
+            if (this.dirtyCount == 0) {
+                this.playerChunkMap.a(this);
             }
 
-            this.dirtyBlocks[this.dirtyCount++] = short0;
-        }
+            this.h |= 1 << (j >> 4);
+            if (this.dirtyCount < 64) {
+                short short0 = (short) (i << 12 | k << 8 | j);
 
-    }
-
-    public void a(Packet packet) {
-        for (int i = 0; i < this.b.size(); ++i) {
-            EntityPlayer entityplayer = (EntityPlayer) this.b.get(i);
-
-            if (!entityplayer.chunkCoordIntPairQueue.contains(this.location)) {
-                entityplayer.playerConnection.sendPacket(packet);
-            }
-        }
-
-    }
-
-    public void b() {
-        if (this.dirtyCount != 0) {
-            int i;
-            int j;
-            int k;
-
-            if (this.dirtyCount == 1) {
-                i = (this.dirtyBlocks[0] >> 12 & 15) + this.location.x * 16;
-                j = this.dirtyBlocks[0] & 255;
-                k = (this.dirtyBlocks[0] >> 8 & 15) + this.location.z * 16;
-                BlockPosition blockposition = new BlockPosition(i, j, k);
-
-                this.a((Packet) (new PacketPlayOutBlockChange(PlayerChunkMap.a(this.playerChunkMap), blockposition)));
-                if (PlayerChunkMap.a(this.playerChunkMap).getType(blockposition).getBlock().isTileEntity()) {
-                    this.a(PlayerChunkMap.a(this.playerChunkMap).getTileEntity(blockposition));
-                }
-            } else {
-                int l;
-
-                if (this.dirtyCount == 64) {
-                    i = this.location.x * 16;
-                    j = this.location.z * 16;
-                    this.a((Packet) (new PacketPlayOutMapChunk(PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z), (this.f == 0xFFFF), this.f))); // CraftBukkit - send everything (including biome) if all sections flagged
-
-                    for (k = 0; k < 16; ++k) {
-                        if ((this.f & 1 << k) != 0) {
-                            l = k << 4;
-                            List list = PlayerChunkMap.a(this.playerChunkMap).getTileEntities(i, l, j, i + 16, l + 16, j + 16);
-
-                            for (int i1 = 0; i1 < list.size(); ++i1) {
-                                this.a((TileEntity) list.get(i1));
-                            }
-                        }
+                for (int l = 0; l < this.dirtyCount; ++l) {
+                    if (this.dirtyBlocks[l] == short0) {
+                        return;
                     }
+                }
+
+                this.dirtyBlocks[this.dirtyCount++] = short0;
+            }
+
+        }
+    }
+
+    public void a(Packet<?> packet) {
+        if (this.done) {
+            for (int i = 0; i < this.c.size(); ++i) {
+                ((EntityPlayer) this.c.get(i)).playerConnection.sendPacket(packet);
+            }
+
+        }
+    }
+
+    public void d() {
+        if (this.done && this.chunk != null) {
+            if (this.dirtyCount != 0) {
+                int i;
+                int j;
+                int k;
+
+                if (this.dirtyCount == 1) {
+                    i = (this.dirtyBlocks[0] >> 12 & 15) + this.location.x * 16;
+                    j = this.dirtyBlocks[0] & 255;
+                    k = (this.dirtyBlocks[0] >> 8 & 15) + this.location.z * 16;
+                    BlockPosition blockposition = new BlockPosition(i, j, k);
+
+                    this.a((Packet) (new PacketPlayOutBlockChange(this.playerChunkMap.getWorld(), blockposition)));
+                    if (this.playerChunkMap.getWorld().getType(blockposition).getBlock().isTileEntity()) {
+                        this.a(this.playerChunkMap.getWorld().getTileEntity(blockposition));
+                    }
+                } else if (this.dirtyCount == 64) {
+                    this.a((Packet) (new PacketPlayOutMapChunk(this.chunk, this.h)));
                 } else {
-                    this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, PlayerChunkMap.a(this.playerChunkMap).getChunkAt(this.location.x, this.location.z))));
+                    this.a((Packet) (new PacketPlayOutMultiBlockChange(this.dirtyCount, this.dirtyBlocks, this.chunk)));
 
                     for (i = 0; i < this.dirtyCount; ++i) {
                         j = (this.dirtyBlocks[i] >> 12 & 15) + this.location.x * 16;
                         k = this.dirtyBlocks[i] & 255;
-                        l = (this.dirtyBlocks[i] >> 8 & 15) + this.location.z * 16;
+                        int l = (this.dirtyBlocks[i] >> 8 & 15) + this.location.z * 16;
                         BlockPosition blockposition1 = new BlockPosition(j, k, l);
 
-                        if (PlayerChunkMap.a(this.playerChunkMap).getType(blockposition1).getBlock().isTileEntity()) {
-                            this.a(PlayerChunkMap.a(this.playerChunkMap).getTileEntity(blockposition1));
+                        if (this.playerChunkMap.getWorld().getType(blockposition1).getBlock().isTileEntity()) {
+                            this.a(this.playerChunkMap.getWorld().getTileEntity(blockposition1));
                         }
                     }
                 }
-            }
 
-            this.dirtyCount = 0;
-            this.f = 0;
+                this.dirtyCount = 0;
+                this.h = 0;
+            }
         }
     }
 
-    private void a(TileEntity tileentity) {
+    private void a(@Nullable TileEntity tileentity) {
         if (tileentity != null) {
-            Packet packet = tileentity.getUpdatePacket();
+            PacketPlayOutTileEntityData packetplayouttileentitydata = tileentity.getUpdatePacket();
 
-            if (packet != null) {
-                this.a(packet);
+            if (packetplayouttileentitydata != null) {
+                this.a((Packet) packetplayouttileentitydata);
             }
         }
 
     }
 
-    static ChunkCoordIntPair a(PlayerChunk playerchunk) {
-        return playerchunk.location;
+    public boolean d(EntityPlayer entityplayer) {
+        return this.c.contains(entityplayer);
     }
 
-    static List b(PlayerChunk playerchunk) {
-        return playerchunk.b;
+    public boolean a(Predicate<EntityPlayer> predicate) {
+        return Iterables.tryFind(this.c, predicate).isPresent();
+    }
+
+    public boolean a(double d0, Predicate<EntityPlayer> predicate) {
+        int i = 0;
+
+        for (int j = this.c.size(); i < j; ++i) {
+            EntityPlayer entityplayer = (EntityPlayer) this.c.get(i);
+
+            if (predicate.apply(entityplayer) && this.location.a(entityplayer) < d0 * d0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean e() {
+        return this.done;
+    }
+
+    @Nullable
+    public Chunk f() {
+        return this.chunk;
+    }
+
+    public double g() {
+        double d0 = Double.MAX_VALUE;
+        Iterator iterator = this.c.iterator();
+
+        while (iterator.hasNext()) {
+            EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            double d1 = this.location.a(entityplayer);
+
+            if (d1 < d0) {
+                d0 = d1;
+            }
+        }
+
+        return d0;
     }
 }

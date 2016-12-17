@@ -4,78 +4,72 @@ import org.bukkit.event.entity.EntityCombustByEntityEvent; // CraftBukkit
 
 public abstract class EntityMonster extends EntityCreature implements IMonster {
 
-    protected final PathfinderGoal a = new PathfinderGoalAvoidTarget(this, new EntitySelectorExplodingCreeper(this), 4.0F, 1.0D, 2.0D);
-
     public EntityMonster(World world) {
         super(world);
         this.b_ = 5;
     }
 
-    public void m() {
-        this.bw();
-        float f = this.c(1.0F);
-
-        if (f > 0.5F) {
-            this.aO += 2;
-        }
-
-        super.m();
+    public SoundCategory bA() {
+        return SoundCategory.HOSTILE;
     }
 
-    public void s_() {
-        super.s_();
-        if (!this.world.isStatic && this.world.getDifficulty() == EnumDifficulty.PEACEFUL) {
+    public void n() {
+        this.bZ();
+        float f = this.e(1.0F);
+
+        if (f > 0.5F) {
+            this.ticksFarFromPlayer += 2;
+        }
+
+        super.n();
+    }
+
+    public void m() {
+        super.m();
+        if (!this.world.isClientSide && this.world.getDifficulty() == EnumDifficulty.PEACEFUL) {
             this.die();
         }
 
     }
 
-    protected String P() {
-        return "game.hostile.swim";
+    protected SoundEffect aa() {
+        return SoundEffects.cG;
     }
 
-    protected String aa() {
-        return "game.hostile.swim.splash";
+    protected SoundEffect ab() {
+        return SoundEffects.cF;
     }
 
     public boolean damageEntity(DamageSource damagesource, float f) {
-        if (this.isInvulnerable(damagesource)) {
-            return false;
-        } else if (super.damageEntity(damagesource, f)) {
-            Entity entity = damagesource.getEntity();
-
-            return this.passenger != entity && this.vehicle != entity ? true : true;
-        } else {
-            return false;
-        }
+        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f);
     }
 
-    protected String bn() {
-        return "game.hostile.hurt";
+    protected SoundEffect bS() {
+        return SoundEffects.cD;
     }
 
-    protected String bo() {
-        return "game.hostile.die";
+    protected SoundEffect bT() {
+        return SoundEffects.cC;
     }
 
-    protected String n(int i) {
-        return i > 4 ? "game.hostile.hurt.fall.big" : "game.hostile.hurt.fall.small";
+    protected SoundEffect e(int i) {
+        return i > 4 ? SoundEffects.cB : SoundEffects.cE;
     }
 
-    public boolean r(Entity entity) {
-        float f = (float) this.getAttributeInstance(GenericAttributes.e).getValue();
+    public boolean B(Entity entity) {
+        float f = (float) this.getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).getValue();
         int i = 0;
 
         if (entity instanceof EntityLiving) {
-            f += EnchantmentManager.a(this.bz(), ((EntityLiving) entity).getMonsterType());
+            f += EnchantmentManager.a(this.getItemInMainHand(), ((EntityLiving) entity).getMonsterType());
             i += EnchantmentManager.a((EntityLiving) this);
         }
 
         boolean flag = entity.damageEntity(DamageSource.mobAttack(this), f);
 
         if (flag) {
-            if (i > 0) {
-                entity.g((double) (-MathHelper.sin(this.yaw * 3.1415927F / 180.0F) * (float) i * 0.5F), 0.1D, (double) (MathHelper.cos(this.yaw * 3.1415927F / 180.0F) * (float) i * 0.5F));
+            if (i > 0 && entity instanceof EntityLiving) {
+                ((EntityLiving) entity).a(this, (float) i * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
                 this.motX *= 0.6D;
                 this.motZ *= 0.6D;
             }
@@ -93,6 +87,21 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
                 // CraftBukkit end
             }
 
+            if (entity instanceof EntityHuman) {
+                EntityHuman entityhuman = (EntityHuman) entity;
+                ItemStack itemstack = this.getItemInMainHand();
+                ItemStack itemstack1 = entityhuman.ct() ? entityhuman.cw() : null;
+
+                if (itemstack != null && itemstack1 != null && itemstack.getItem() instanceof ItemAxe && itemstack1.getItem() == Items.SHIELD) {
+                    float f1 = 0.25F + (float) EnchantmentManager.getDigSpeedEnchantmentLevel(this) * 0.05F;
+
+                    if (this.random.nextFloat() < f1) {
+                        entityhuman.db().a(Items.SHIELD, 100);
+                        this.world.broadcastEntityEffect(entityhuman, (byte) 30);
+                    }
+                }
+            }
+
             this.a((EntityLiving) this, entity);
         }
 
@@ -100,10 +109,10 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
     }
 
     public float a(BlockPosition blockposition) {
-        return 0.5F - this.world.o(blockposition);
+        return 0.5F - this.world.n(blockposition);
     }
 
-    protected boolean m_() {
+    protected boolean s_() {
         BlockPosition blockposition = new BlockPosition(this.locX, this.getBoundingBox().b, this.locZ);
 
         if (this.world.b(EnumSkyBlock.SKY, blockposition) > this.random.nextInt(32)) {
@@ -111,28 +120,28 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
         } else {
             int i = this.world.getLightLevel(blockposition);
 
-            if (this.world.R()) {
-                int j = this.world.ab();
+            if (this.world.V()) {
+                int j = this.world.af();
 
-                this.world.b(10);
+                this.world.c(10);
                 i = this.world.getLightLevel(blockposition);
-                this.world.b(j);
+                this.world.c(j);
             }
 
             return i <= this.random.nextInt(8);
         }
     }
 
-    public boolean bQ() {
-        return this.world.getDifficulty() != EnumDifficulty.PEACEFUL && this.m_() && super.bQ();
+    public boolean cG() {
+        return this.world.getDifficulty() != EnumDifficulty.PEACEFUL && this.s_() && super.cG();
     }
 
-    protected void aW() {
-        super.aW();
-        this.getAttributeMap().b(GenericAttributes.e);
+    protected void initAttributes() {
+        super.initAttributes();
+        this.getAttributeMap().b(GenericAttributes.ATTACK_DAMAGE);
     }
 
-    protected boolean aZ() {
+    protected boolean isDropExperience() {
         return true;
     }
 }

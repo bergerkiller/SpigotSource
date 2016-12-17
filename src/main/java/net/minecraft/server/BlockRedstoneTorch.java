@@ -5,31 +5,32 @@ import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import javax.annotation.Nullable;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockRedstoneTorch extends BlockTorch {
 
-    private static Map b = new java.util.WeakHashMap(); // Spigot
+    private static Map<World, List<BlockRedstoneTorch.RedstoneUpdateInfo>> g = new java.util.WeakHashMap(); // Spigot
     private final boolean isOn;
 
     private boolean a(World world, BlockPosition blockposition, boolean flag) {
-        if (!BlockRedstoneTorch.b.containsKey(world)) {
-            BlockRedstoneTorch.b.put(world, Lists.newArrayList());
+        if (!BlockRedstoneTorch.g.containsKey(world)) {
+            BlockRedstoneTorch.g.put(world, Lists.<BlockRedstoneTorch.RedstoneUpdateInfo>newArrayList()); // CraftBukkit - fix decompile error
         }
 
-        List list = (List) BlockRedstoneTorch.b.get(world);
+        List list = (List) BlockRedstoneTorch.g.get(world);
 
         if (flag) {
-            list.add(new RedstoneUpdateInfo(blockposition, world.getTime()));
+            list.add(new BlockRedstoneTorch.RedstoneUpdateInfo(blockposition, world.getTime()));
         }
 
         int i = 0;
 
         for (int j = 0; j < list.size(); ++j) {
-            RedstoneUpdateInfo redstoneupdateinfo = (RedstoneUpdateInfo) list.get(j);
+            BlockRedstoneTorch.RedstoneUpdateInfo blockredstonetorch_redstoneupdateinfo = (BlockRedstoneTorch.RedstoneUpdateInfo) list.get(j);
 
-            if (redstoneupdateinfo.a.equals(blockposition)) {
+            if (blockredstonetorch_redstoneupdateinfo.a.equals(blockposition)) {
                 ++i;
                 if (i >= 8) {
                     return true;
@@ -78,7 +79,7 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     }
 
-    public int a(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
+    public int b(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
         return this.isOn && iblockdata.get(BlockRedstoneTorch.FACING) != enumdirection ? 15 : 0;
     }
 
@@ -92,12 +93,12 @@ public class BlockRedstoneTorch extends BlockTorch {
 
     public void b(World world, BlockPosition blockposition, IBlockData iblockdata, Random random) {
         boolean flag = this.g(world, blockposition, iblockdata);
-        List list = (List) BlockRedstoneTorch.b.get(world);
+        List list = (List) BlockRedstoneTorch.g.get(world);
 
-        while (list != null && !list.isEmpty() && world.getTime() - ((RedstoneUpdateInfo) list.get(0)).b > 60L) {
+        while (list != null && !list.isEmpty() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
             list.remove(0);
         }
- 
+
         // CraftBukkit start
         org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
         org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
@@ -119,7 +120,7 @@ public class BlockRedstoneTorch extends BlockTorch {
                 // CraftBukkit end
                 world.setTypeAndData(blockposition, Blocks.UNLIT_REDSTONE_TORCH.getBlockData().set(BlockRedstoneTorch.FACING, iblockdata.get(BlockRedstoneTorch.FACING)), 3);
                 if (this.a(world, blockposition, true)) {
-                    world.makeSound((double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.5F), (double) ((float) blockposition.getZ() + 0.5F), "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+                    world.a((EntityHuman) null, blockposition, SoundEffects.eG, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 
                     for (int i = 0; i < 5; ++i) {
                         double d0 = (double) blockposition.getX() + random.nextDouble() * 0.6D + 0.2D;
@@ -142,13 +143,12 @@ public class BlockRedstoneTorch extends BlockTorch {
                 }
             }
             // CraftBukkit end
-
             world.setTypeAndData(blockposition, Blocks.REDSTONE_TORCH.getBlockData().set(BlockRedstoneTorch.FACING, iblockdata.get(BlockRedstoneTorch.FACING)), 3);
         }
 
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
         if (!this.e(world, blockposition, iblockdata)) {
             if (this.isOn == this.g(world, blockposition, iblockdata)) {
                 world.a(blockposition, (Block) this, this.a(world));
@@ -157,19 +157,35 @@ public class BlockRedstoneTorch extends BlockTorch {
         }
     }
 
-    public int b(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, EnumDirection enumdirection) {
-        return enumdirection == EnumDirection.DOWN ? this.a(iblockaccess, blockposition, iblockdata, enumdirection) : 0;
+    public int c(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
+        return enumdirection == EnumDirection.DOWN ? iblockdata.a(iblockaccess, blockposition, enumdirection) : 0;
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return Item.getItemOf(Blocks.REDSTONE_TORCH);
     }
 
-    public boolean isPowerSource() {
+    public boolean isPowerSource(IBlockData iblockdata) {
         return true;
+    }
+
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Blocks.REDSTONE_TORCH);
     }
 
     public boolean b(Block block) {
         return block == Blocks.UNLIT_REDSTONE_TORCH || block == Blocks.REDSTONE_TORCH;
+    }
+
+    static class RedstoneUpdateInfo {
+
+        BlockPosition a;
+        long b;
+
+        public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
+            this.a = blockposition;
+            this.b = i;
+        }
     }
 }

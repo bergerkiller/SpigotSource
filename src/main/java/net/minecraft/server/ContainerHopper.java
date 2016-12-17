@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
@@ -8,7 +9,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 public class ContainerHopper extends Container {
 
     private final IInventory hopper;
- 
+
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -54,6 +55,7 @@ public class ContainerHopper extends Container {
         return this.hopper.a(entityhuman);
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);

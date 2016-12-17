@@ -1,20 +1,20 @@
 package net.minecraft.server;
 
-import net.minecraft.util.com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 
-public class JsonListEntry {
+public class JsonListEntry<T> {
 
-    private final Object a;
+    private final T a;
 
-    public JsonListEntry(Object object) {
-        this.a = object;
+    public JsonListEntry(T t0) {
+        this.a = t0;
     }
 
-    protected JsonListEntry(Object object, JsonObject jsonobject) {
-        this.a = object;
+    protected JsonListEntry(T t0, JsonObject jsonobject) {
+        this.a = t0;
     }
 
-    public Object getKey() { // CraftBukkit -> package private -> public
+    public T getKey() {
         return this.a;
     }
 

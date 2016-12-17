@@ -11,18 +11,17 @@ public class ItemLeash extends Item {
         this.a(CreativeModeTab.i);
     }
 
-    public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumDirection enumdirection, float f, float f1, float f2) {
+    public EnumInteractionResult a(ItemStack itemstack, EntityHuman entityhuman, World world, BlockPosition blockposition, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) {
         Block block = world.getType(blockposition).getBlock();
 
-        if (block instanceof BlockFence) {
-            if (world.isStatic) {
-                return true;
-            } else {
-                a(entityhuman, world, blockposition);
-                return true;
-            }
+        if (!(block instanceof BlockFence)) {
+            return EnumInteractionResult.PASS;
         } else {
-            return false;
+            if (!world.isClientSide) {
+                a(entityhuman, world, blockposition);
+            }
+
+            return EnumInteractionResult.SUCCESS;
         }
     }
 
@@ -39,7 +38,7 @@ public class ItemLeash extends Item {
         while (iterator.hasNext()) {
             EntityInsentient entityinsentient = (EntityInsentient) iterator.next();
 
-            if (entityinsentient.cb() && entityinsentient.getLeashHolder() == entityhuman) {
+            if (entityinsentient.isLeashed() && entityinsentient.getLeashHolder() == entityhuman) {
                 if (entityleash == null) {
                     entityleash = EntityLeash.a(world, blockposition);
 

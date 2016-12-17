@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
-
 public class PathfinderGoalOcelotAttack extends PathfinderGoal {
 
     World a;
@@ -27,22 +25,18 @@ public class PathfinderGoalOcelotAttack extends PathfinderGoal {
     }
 
     public boolean b() {
-        return !this.c.isAlive() ? false : (this.b.f(this.c) > 225.0D ? false : !this.b.getNavigation().g() || this.a());
+        return !this.c.isAlive() ? false : (this.b.h(this.c) > 225.0D ? false : !this.b.getNavigation().n() || this.a());
     }
 
     public void d() {
-        // CraftBukkit start
-        EntityTargetEvent.TargetReason reason = this.c.isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
-        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(this.c, null, reason);
-        // CraftBukkit end
         this.c = null;
-        this.b.getNavigation().h();
+        this.b.getNavigation().o();
     }
 
     public void e() {
         this.b.getControllerLook().a(this.c, 30.0F, 30.0F);
         double d0 = (double) (this.b.width * 2.0F * this.b.width * 2.0F);
-        double d1 = this.b.e(this.c.locX, this.c.boundingBox.b, this.c.locZ);
+        double d1 = this.b.e(this.c.locX, this.c.getBoundingBox().b, this.c.locZ);
         double d2 = 0.8D;
 
         if (d1 > d0 && d1 < 16.0D) {
@@ -56,7 +50,7 @@ public class PathfinderGoalOcelotAttack extends PathfinderGoal {
         if (d1 <= d0) {
             if (this.d <= 0) {
                 this.d = 20;
-                this.b.n(this.c);
+                this.b.B(this.c);
             }
         }
     }

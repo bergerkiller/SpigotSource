@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityFurnace;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -14,6 +15,11 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
         super(block);
 
         furnace = (TileEntityFurnace) ((CraftWorld) block.getWorld()).getTileEntityAt(getX(), getY(), getZ());
+    }
+
+    public CraftFurnace(final Material material, final TileEntityFurnace te) {
+        super(material);
+        furnace = te;
     }
 
     public FurnaceInventory getInventory() {
@@ -32,18 +38,23 @@ public class CraftFurnace extends CraftBlockState implements Furnace {
     }
 
     public short getBurnTime() {
-        return (short) furnace.burnTime;
+        return (short) furnace.getProperty(0);
     }
 
     public void setBurnTime(short burnTime) {
-        furnace.burnTime = burnTime;
+        furnace.setProperty(0, burnTime);
     }
 
     public short getCookTime() {
-        return (short) furnace.cookTime;
+        return (short) furnace.getProperty(2);
     }
 
     public void setCookTime(short cookTime) {
-        furnace.cookTime = cookTime;
+        furnace.setProperty(2, cookTime);
+    }
+
+    @Override
+    public TileEntityFurnace getTileEntity() {
+        return furnace;
     }
 }

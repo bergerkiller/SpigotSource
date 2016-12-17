@@ -2,9 +2,11 @@ package net.minecraft.server;
 
 import com.google.common.collect.Lists;
 import java.util.List;
+import javax.annotation.Nullable;
 
 // CraftBukkit start
 import java.util.List;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
@@ -14,9 +16,9 @@ public class InventorySubcontainer implements IInventory {
     private String a;
     private int b;
     public ItemStack[] items;
-    private List d;
+    private List<IInventoryListener> d;
     private boolean e;
-    
+
     // CraftBukkit start - add fields and methods
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
@@ -45,12 +47,17 @@ public class InventorySubcontainer implements IInventory {
     public org.bukkit.inventory.InventoryHolder getOwner() {
         return bukkitOwner;
     }
-    
+
+    @Override
+    public Location getLocation() {
+        return null;
+    }
+
     public InventorySubcontainer(String s, boolean flag, int i) {
         this(s, flag, i, null);
     }
 
-    public InventorySubcontainer(String s, boolean flag, int i, org.bukkit.inventory.InventoryHolder owner) { // Added argument 
+    public InventorySubcontainer(String s, boolean flag, int i, org.bukkit.inventory.InventoryHolder owner) { // Added argument
         this.bukkitOwner = owner;
     // CraftBukkit end
         this.a = s;
@@ -71,33 +78,23 @@ public class InventorySubcontainer implements IInventory {
         this.d.remove(iinventorylistener);
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
         return i >= 0 && i < this.items.length ? this.items[i] : null;
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.items[i] != null) {
-            ItemStack itemstack;
+        ItemStack itemstack = ContainerUtil.a(this.items, i, j);
 
-            if (this.items[i].count <= j) {
-                itemstack = this.items[i];
-                this.items[i] = null;
-                this.update();
-                return itemstack;
-            } else {
-                itemstack = this.items[i].a(j);
-                if (this.items[i].count == 0) {
-                    this.items[i] = null;
-                }
-
-                this.update();
-                return itemstack;
-            }
-        } else {
-            return null;
+        if (itemstack != null) {
+            this.update();
         }
+
+        return itemstack;
     }
 
+    @Nullable
     public ItemStack a(ItemStack itemstack) {
         ItemStack itemstack1 = itemstack.cloneItemStack();
 
@@ -132,6 +129,7 @@ public class InventorySubcontainer implements IInventory {
         return itemstack1;
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
         if (this.items[i] != null) {
             ItemStack itemstack = this.items[i];
@@ -143,7 +141,7 @@ public class InventorySubcontainer implements IInventory {
         }
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
         this.items[i] = itemstack;
         if (itemstack != null && itemstack.count > this.getMaxStackSize()) {
             itemstack.count = this.getMaxStackSize();
@@ -202,7 +200,7 @@ public class InventorySubcontainer implements IInventory {
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;

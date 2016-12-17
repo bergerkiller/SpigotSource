@@ -4,18 +4,20 @@ import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
 
 public class EntityWitherSkull extends EntityFireball {
 
+    private static final DataWatcherObject<Boolean> e = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.h);
+
     public EntityWitherSkull(World world) {
         super(world);
-        this.a(0.3125F, 0.3125F);
+        this.setSize(0.3125F, 0.3125F);
     }
 
     public EntityWitherSkull(World world, EntityLiving entityliving, double d0, double d1, double d2) {
         super(world, entityliving, d0, d1, d2);
-        this.a(0.3125F, 0.3125F);
+        this.setSize(0.3125F, 0.3125F);
     }
 
-    protected float j() {
-        return this.isCharged() ? 0.73F : super.j();
+    protected float l() {
+        return this.isCharged() ? 0.73F : super.l();
     }
 
     public boolean isBurning() {
@@ -24,8 +26,9 @@ public class EntityWitherSkull extends EntityFireball {
 
     public float a(Explosion explosion, World world, BlockPosition blockposition, IBlockData iblockdata) {
         float f = super.a(explosion, world, blockposition, iblockdata);
+        Block block = iblockdata.getBlock();
 
-        if (this.isCharged() && iblockdata.getBlock() != Blocks.BEDROCK && iblockdata.getBlock() != Blocks.END_PORTAL && iblockdata.getBlock() != Blocks.END_PORTAL_FRAME && iblockdata.getBlock() != Blocks.COMMAND_BLOCK) {
+        if (this.isCharged() && EntityWither.a(block)) {
             f = Math.min(0.8F, f);
         }
 
@@ -33,12 +36,12 @@ public class EntityWitherSkull extends EntityFireball {
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {
-        if (!this.world.isStatic) {
+        if (!this.world.isClientSide) {
             if (movingobjectposition.entity != null) {
                 // Spigot start
-                boolean didDamage = false;         	
+                boolean didDamage = false;
                 if (this.shooter != null) {
-                    didDamage = movingobjectposition.entity.damageEntity(DamageSource.mobAttack(this.shooter), 8.0F);
+                    didDamage = movingobjectposition.entity.damageEntity(DamageSource.projectile(this, shooter), 8.0F);
                     if (didDamage) {
                         if (!movingobjectposition.entity.isAlive()) {
                             this.shooter.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
@@ -61,7 +64,7 @@ public class EntityWitherSkull extends EntityFireball {
                     }
 
                     if (b0 > 0) {
-                        ((EntityLiving) movingobjectposition.entity).addEffect(new MobEffect(MobEffectList.WITHER.id, 20 * b0, 1));
+                        ((EntityLiving) movingobjectposition.entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1));
                     }
                 }
             }
@@ -80,7 +83,7 @@ public class EntityWitherSkull extends EntityFireball {
 
     }
 
-    public boolean ad() {
+    public boolean isInteractable() {
         return false;
     }
 
@@ -88,15 +91,19 @@ public class EntityWitherSkull extends EntityFireball {
         return false;
     }
 
-    protected void h() {
-        this.datawatcher.a(10, Byte.valueOf((byte) 0));
+    protected void i() {
+        this.datawatcher.register(EntityWitherSkull.e, Boolean.valueOf(false));
     }
 
     public boolean isCharged() {
-        return this.datawatcher.getByte(10) == 1;
+        return ((Boolean) this.datawatcher.get(EntityWitherSkull.e)).booleanValue();
     }
 
     public void setCharged(boolean flag) {
-        this.datawatcher.watch(10, Byte.valueOf((byte) (flag ? 1 : 0)));
+        this.datawatcher.set(EntityWitherSkull.e, Boolean.valueOf(flag));
+    }
+
+    protected boolean k() {
+        return false;
     }
 }

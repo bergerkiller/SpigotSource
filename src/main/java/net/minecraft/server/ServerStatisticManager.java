@@ -24,7 +24,7 @@ public class ServerStatisticManager extends StatisticManager {
     private static final Logger b = LogManager.getLogger();
     private final MinecraftServer c;
     private final File d;
-    private final Set e = Sets.newHashSet();
+    private final Set<Statistic> e = Sets.newHashSet();
     private int f = -300;
     private boolean g = false;
 
@@ -73,21 +73,21 @@ public class ServerStatisticManager extends StatisticManager {
         this.e.add(statistic);
         if (statistic.d() && j == 0 && i > 0) {
             this.g = true;
-            if (this.c.az()) {
+            if (this.c.ax()) {
                 this.c.getPlayerList().sendMessage(new ChatMessage("chat.type.achievement", new Object[] { entityhuman.getScoreboardDisplayName(), statistic.j()}));
             }
         }
 
         if (statistic.d() && j > 0 && i == 0) {
             this.g = true;
-            if (this.c.az()) {
+            if (this.c.ax()) {
                 this.c.getPlayerList().sendMessage(new ChatMessage("chat.type.achievement.taken", new Object[] { entityhuman.getScoreboardDisplayName(), statistic.j()}));
             }
         }
 
     }
 
-    public Set c() {
+    public Set<Statistic> c() {
         HashSet hashset = Sets.newHashSet(this.e);
 
         this.e.clear();
@@ -95,7 +95,7 @@ public class ServerStatisticManager extends StatisticManager {
         return hashset;
     }
 
-    public Map a(String s) {
+    public Map<Statistic, StatisticWrapper> a(String s) {
         JsonElement jsonelement = (new JsonParser()).parse(s);
 
         if (!jsonelement.isJsonObject()) {
@@ -144,7 +144,7 @@ public class ServerStatisticManager extends StatisticManager {
         }
     }
 
-    public static String a(Map map) {
+    public static String a(Map<Statistic, StatisticWrapper> map) {
         JsonObject jsonobject = new JsonObject();
         Iterator iterator = map.entrySet().iterator();
 
@@ -183,7 +183,7 @@ public class ServerStatisticManager extends StatisticManager {
     }
 
     public void a(EntityPlayer entityplayer) {
-        int i = this.c.ar();
+        int i = this.c.ap();
         HashMap hashmap = Maps.newHashMap();
 
         if (this.g || i - this.f > 300) {
@@ -219,5 +219,4 @@ public class ServerStatisticManager extends StatisticManager {
     public boolean e() {
         return this.g;
     }
-
 }

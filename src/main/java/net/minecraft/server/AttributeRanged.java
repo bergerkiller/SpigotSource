@@ -1,12 +1,14 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
+
 public class AttributeRanged extends AttributeBase {
 
     private final double a;
     public double b; // Spigot
     private String c;
 
-    public AttributeRanged(IAttribute iattribute, String s, double d0, double d1, double d2) {
+    public AttributeRanged(@Nullable IAttribute iattribute, String s, double d0, double d1, double d2) {
         super(iattribute, s, d0);
         this.a = d1;
         this.b = d2;

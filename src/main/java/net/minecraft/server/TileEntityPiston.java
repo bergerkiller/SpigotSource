@@ -1,10 +1,8 @@
 package net.minecraft.server;
 
-import com.google.common.collect.Lists;
-import java.util.Iterator;
 import java.util.List;
 
-public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox {
+public class TileEntityPiston extends TileEntity implements ITickable {
 
     private IBlockData a;
     private EnumDirection f;
@@ -12,7 +10,6 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
     private boolean h;
     private float i;
     private float j;
-    private List k = Lists.newArrayList();
 
     public TileEntityPiston() {}
 
@@ -23,7 +20,7 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
         this.h = flag1;
     }
 
-    public IBlockData b() {
+    public IBlockData d() {
         return this.a;
     }
 
@@ -31,73 +28,104 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
         return 0;
     }
 
-    public boolean d() {
+    public boolean e() {
         return this.g;
     }
 
-    public EnumDirection e() {
+    public EnumDirection g() {
         return this.f;
     }
 
-    public float a(float f) {
-        if (f > 1.0F) {
-            f = 1.0F;
-        }
-
-        return this.j + (this.i - this.j) * f;
+    private float e(float f) {
+        return this.g ? f - 1.0F : 1.0F - f;
     }
 
-    private void a(float f, float f1) {
-        if (this.g) {
-            f = 1.0F - f;
-        } else {
-            --f;
-        }
+    public AxisAlignedBB a(IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return this.a(iblockaccess, blockposition, this.i).a(this.a(iblockaccess, blockposition, this.j));
+    }
 
-        AxisAlignedBB axisalignedbb = Blocks.PISTON_EXTENSION.a(this.world, this.position, this.a, f, this.f);
+    public AxisAlignedBB a(IBlockAccess iblockaccess, BlockPosition blockposition, float f) {
+        f = this.e(f);
+        return this.a.c(iblockaccess, blockposition).c((double) (f * (float) this.f.getAdjacentX()), (double) (f * (float) this.f.getAdjacentY()), (double) (f * (float) this.f.getAdjacentZ()));
+    }
 
-        if (axisalignedbb != null) {
-            List list = this.world.getEntities((Entity) null, axisalignedbb);
+    private void j() {
+        AxisAlignedBB axisalignedbb = this.a((IBlockAccess) this.world, this.position).a(this.position);
+        List list = this.world.getEntities((Entity) null, axisalignedbb);
 
-            if (!list.isEmpty()) {
-                this.k.addAll(list);
-                Iterator iterator = this.k.iterator();
+        if (!list.isEmpty()) {
+            EnumDirection enumdirection = this.g ? this.f : this.f.opposite();
 
-                while (iterator.hasNext()) {
-                    Entity entity = (Entity) iterator.next();
+            for (int i = 0; i < list.size(); ++i) {
+                Entity entity = (Entity) list.get(i);
 
-                    if (this.a.getBlock() == Blocks.SLIME && this.g) {
-                        switch (SwitchHelperTileEntityPiston.a[this.f.k().ordinal()]) {
+                if (entity.z() != EnumPistonReaction.IGNORE) {
+                    if (this.a.getBlock() == Blocks.SLIME) {
+                        switch (TileEntityPiston.SyntheticClass_1.a[enumdirection.k().ordinal()]) {
                         case 1:
-                            entity.motX = (double) this.f.getAdjacentX();
+                            entity.motX = (double) enumdirection.getAdjacentX();
                             break;
 
                         case 2:
-                            entity.motY = (double) this.f.getAdjacentY();
+                            entity.motY = (double) enumdirection.getAdjacentY();
                             break;
 
                         case 3:
-                            entity.motZ = (double) this.f.getAdjacentZ();
+                            entity.motZ = (double) enumdirection.getAdjacentZ();
                         }
-                    } else {
-                        entity.move((double) (f1 * (float) this.f.getAdjacentX()), (double) (f1 * (float) this.f.getAdjacentY()), (double) (f1 * (float) this.f.getAdjacentZ()));
                     }
+
+                    double d0 = 0.0D;
+                    double d1 = 0.0D;
+                    double d2 = 0.0D;
+                    AxisAlignedBB axisalignedbb1 = entity.getBoundingBox();
+
+                    switch (TileEntityPiston.SyntheticClass_1.a[enumdirection.k().ordinal()]) {
+                    case 1:
+                        if (enumdirection.c() == EnumDirection.EnumAxisDirection.POSITIVE) {
+                            d0 = axisalignedbb.d - axisalignedbb1.a;
+                        } else {
+                            d0 = axisalignedbb1.d - axisalignedbb.a;
+                        }
+
+                        d0 += 0.01D;
+                        break;
+
+                    case 2:
+                        if (enumdirection.c() == EnumDirection.EnumAxisDirection.POSITIVE) {
+                            d1 = axisalignedbb.e - axisalignedbb1.b;
+                        } else {
+                            d1 = axisalignedbb1.e - axisalignedbb.b;
+                        }
+
+                        d1 += 0.01D;
+                        break;
+
+                    case 3:
+                        if (enumdirection.c() == EnumDirection.EnumAxisDirection.POSITIVE) {
+                            d2 = axisalignedbb.f - axisalignedbb1.c;
+                        } else {
+                            d2 = axisalignedbb1.f - axisalignedbb.c;
+                        }
+
+                        d2 += 0.01D;
+                    }
+
+                    entity.move(d0 * (double) enumdirection.getAdjacentX(), d1 * (double) enumdirection.getAdjacentY(), d2 * (double) enumdirection.getAdjacentZ());
                 }
-
-                this.k.clear();
             }
-        }
 
+        }
     }
 
-    public void h() {
+    public void i() {
         if (this.j < 1.0F && this.world != null) {
             this.j = this.i = 1.0F;
-            this.world.t(this.position);
+            this.world.s(this.position);
             this.y();
             if (this.world.getType(this.position).getBlock() == Blocks.PISTON_EXTENSION) {
                 this.world.setTypeAndData(this.position, this.a, 3);
-                this.world.d(this.position, this.a.getBlock());
+                this.world.e(this.position, this.a.getBlock());
             }
         }
 
@@ -107,12 +135,12 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
         if (this.world == null) return; // CraftBukkit
         this.j = this.i;
         if (this.j >= 1.0F) {
-            this.a(1.0F, 0.25F);
-            this.world.t(this.position);
+            this.j();
+            this.world.s(this.position);
             this.y();
             if (this.world.getType(this.position).getBlock() == Blocks.PISTON_EXTENSION) {
                 this.world.setTypeAndData(this.position, this.a, 3);
-                this.world.d(this.position, this.a.getBlock());
+                this.world.e(this.position, this.a.getBlock());
             }
 
         } else {
@@ -121,10 +149,7 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
                 this.i = 1.0F;
             }
 
-            if (this.g) {
-                this.a(this.i, this.i - this.j + 0.0625F);
-            }
-
+            this.j();
         }
     }
 
@@ -136,12 +161,39 @@ public class TileEntityPiston extends TileEntity implements IUpdatePlayerListBox
         this.g = nbttagcompound.getBoolean("extending");
     }
 
-    public void b(NBTTagCompound nbttagcompound) {
-        super.b(nbttagcompound);
+    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+        super.save(nbttagcompound);
         nbttagcompound.setInt("blockId", Block.getId(this.a.getBlock()));
         nbttagcompound.setInt("blockData", this.a.getBlock().toLegacyData(this.a));
         nbttagcompound.setInt("facing", this.f.a());
         nbttagcompound.setFloat("progress", this.j);
         nbttagcompound.setBoolean("extending", this.g);
+        return nbttagcompound;
+    }
+
+    static class SyntheticClass_1 {
+
+        static final int[] a = new int[EnumDirection.EnumAxis.values().length];
+
+        static {
+            try {
+                TileEntityPiston.SyntheticClass_1.a[EnumDirection.EnumAxis.X.ordinal()] = 1;
+            } catch (NoSuchFieldError nosuchfielderror) {
+                ;
+            }
+
+            try {
+                TileEntityPiston.SyntheticClass_1.a[EnumDirection.EnumAxis.Y.ordinal()] = 2;
+            } catch (NoSuchFieldError nosuchfielderror1) {
+                ;
+            }
+
+            try {
+                TileEntityPiston.SyntheticClass_1.a[EnumDirection.EnumAxis.Z.ordinal()] = 3;
+            } catch (NoSuchFieldError nosuchfielderror2) {
+                ;
+            }
+
+        }
     }
 }

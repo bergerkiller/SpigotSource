@@ -1,11 +1,12 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView; // CraftBukkit
 
 public class ContainerBeacon extends Container {
 
-    private IInventory a;
-    private final SlotBeacon f;
+    private IInventory beacon;
+    private final ContainerBeacon.SlotBeacon f;
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
     private PlayerInventory player;
@@ -13,8 +14,8 @@ public class ContainerBeacon extends Container {
 
     public ContainerBeacon(IInventory iinventory, IInventory iinventory1) {
         player = (PlayerInventory) iinventory; // CraftBukkit - TODO: check this
-        this.a = iinventory1;
-        this.a((Slot) (this.f = new SlotBeacon(this, iinventory1, 0, 136, 110)));
+        this.beacon = iinventory1;
+        this.a((Slot) (this.f = new ContainerBeacon.SlotBeacon(iinventory1, 0, 136, 110)));
         byte b0 = 36;
         short short0 = 137;
 
@@ -34,18 +35,31 @@ public class ContainerBeacon extends Container {
 
     public void addSlotListener(ICrafting icrafting) {
         super.addSlotListener(icrafting);
-        icrafting.setContainerData(this, this.a);
+        icrafting.setContainerData(this, this.beacon);
     }
 
     public IInventory e() {
-        return this.a;
+        return this.beacon;
+    }
+
+    public void b(EntityHuman entityhuman) {
+        super.b(entityhuman);
+        if (entityhuman != null && !entityhuman.world.isClientSide) {
+            ItemStack itemstack = this.f.a(this.f.getMaxStackSize());
+
+            if (itemstack != null) {
+                entityhuman.drop(itemstack, false);
+            }
+
+        }
     }
 
     public boolean a(EntityHuman entityhuman) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.a.a(entityhuman);
+        return this.beacon.a(entityhuman);
     }
 
+    @Nullable
     public ItemStack b(EntityHuman entityhuman, int i) {
         ItemStack itemstack = null;
         Slot slot = (Slot) this.c.get(i);
@@ -91,7 +105,22 @@ public class ContainerBeacon extends Container {
 
         return itemstack;
     }
-    
+
+    class SlotBeacon extends Slot {
+
+        public SlotBeacon(IInventory iinventory, int i, int j, int k) {
+            super(iinventory, i, j, k);
+        }
+
+        public boolean isAllowed(@Nullable ItemStack itemstack) {
+            return itemstack == null ? false : itemstack.getItem() == Items.EMERALD || itemstack.getItem() == Items.DIAMOND || itemstack.getItem() == Items.GOLD_INGOT || itemstack.getItem() == Items.IRON_INGOT;
+        }
+
+        public int getMaxStackSize() {
+            return 1;
+        }
+    }
+
     // CraftBukkit start
     @Override
     public CraftInventoryView getBukkitView() {
@@ -99,7 +128,7 @@ public class ContainerBeacon extends Container {
             return bukkitEntity;
         }
 
-        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon((TileEntityBeacon) this.a); // TODO - check this
+        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon((TileEntityBeacon) this.beacon); // TODO - check this
         bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
         return bukkitEntity;
     }

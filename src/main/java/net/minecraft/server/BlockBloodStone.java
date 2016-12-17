@@ -1,7 +1,5 @@
 package net.minecraft.server;
 
-import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
-
 public class BlockBloodStone extends Block {
 
     public BlockBloodStone() {
@@ -9,20 +7,7 @@ public class BlockBloodStone extends Block {
         this.a(CreativeModeTab.b);
     }
 
-    public MaterialMapColor g(IBlockData iblockdata) {
+    public MaterialMapColor r(IBlockData iblockdata) {
         return MaterialMapColor.K;
     }
-
-    // CraftBukkit start
-    @Override
-    public void doPhysics(World world, BlockPosition position, IBlockData iblockdata, Block block) {
-        if (block != null && block.isPowerSource()) {
-            org.bukkit.block.Block bl = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
-            int power = bl.getBlockPower();
-
-            BlockRedstoneEvent event = new BlockRedstoneEvent(bl, power, power);
-            world.getServer().getPluginManager().callEvent(event);
-        }
-    }
-    // CraftBukkit end
 }

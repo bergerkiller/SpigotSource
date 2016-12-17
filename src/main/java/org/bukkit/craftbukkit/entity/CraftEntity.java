@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.server.*;
@@ -14,10 +16,17 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
+import org.bukkit.permissions.PermissibleBase;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.permissions.PermissionAttachmentInfo;
+import org.bukkit.permissions.ServerOperator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
+    private static PermissibleBase perm;
+
     protected final CraftServer server;
     protected Entity entity;
     private EntityDamageEvent lastDamageEvent;
@@ -86,6 +95,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                 else if (entity instanceof EntityGolem) {
                     if (entity instanceof EntitySnowman) { return new CraftSnowman(server, (EntitySnowman) entity); }
                     else if (entity instanceof EntityIronGolem) { return new CraftIronGolem(server, (EntityIronGolem) entity); }
+                    else if (entity instanceof EntityShulker) { return new CraftShulker(server, (EntityShulker) entity); }
                 }
                 else if (entity instanceof EntityVillager) { return new CraftVillager(server, (EntityVillager) entity); }
                 else { return new CraftCreature(server, (EntityCreature) entity); }
@@ -117,12 +127,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             else { return new CraftComplexPart(server, (EntityComplexPart) entity); }
         }
         else if (entity instanceof EntityExperienceOrb) { return new CraftExperienceOrb(server, (EntityExperienceOrb) entity); }
+        else if (entity instanceof EntityTippedArrow) {
+        	if (((EntityTippedArrow) entity).isTipped()) { return new CraftTippedArrow(server, (EntityTippedArrow) entity); }
+        	else { return new CraftArrow(server, (EntityArrow) entity); }
+        }
+        else if (entity instanceof EntitySpectralArrow) { return new CraftSpectralArrow(server, (EntitySpectralArrow) entity); }
         else if (entity instanceof EntityArrow) { return new CraftArrow(server, (EntityArrow) entity); }
         else if (entity instanceof EntityBoat) { return new CraftBoat(server, (EntityBoat) entity); }
         else if (entity instanceof EntityProjectile) {
             if (entity instanceof EntityEgg) { return new CraftEgg(server, (EntityEgg) entity); }
             else if (entity instanceof EntitySnowball) { return new CraftSnowball(server, (EntitySnowball) entity); }
-            else if (entity instanceof EntityPotion) { return new CraftThrownPotion(server, (EntityPotion) entity); }
+            else if (entity instanceof EntityPotion) {
+                if (!((EntityPotion) entity).isLingering()) { return new CraftSplashPotion(server, (EntityPotion) entity); }
+            	else { return new CraftLingeringPotion(server, (EntityPotion) entity); }
+            }
             else if (entity instanceof EntityEnderPearl) { return new CraftEnderPearl(server, (EntityEnderPearl) entity); }
             else if (entity instanceof EntityThrownExpBottle) { return new CraftThrownExpBottle(server, (EntityThrownExpBottle) entity); }
         }
@@ -131,6 +149,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             if (entity instanceof EntitySmallFireball) { return new CraftSmallFireball(server, (EntitySmallFireball) entity); }
             else if (entity instanceof EntityLargeFireball) { return new CraftLargeFireball(server, (EntityLargeFireball) entity); }
             else if (entity instanceof EntityWitherSkull) { return new CraftWitherSkull(server, (EntityWitherSkull) entity); }
+            else if (entity instanceof EntityDragonFireball) { return new CraftDragonFireball(server, (EntityDragonFireball) entity); }
             else { return new CraftFireball(server, (EntityFireball) entity); }
         }
         else if (entity instanceof EntityEnderSignal) { return new CraftEnderSignal(server, (EntityEnderSignal) entity); }
@@ -157,6 +176,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         else if (entity instanceof EntityTNTPrimed) { return new CraftTNTPrimed(server, (EntityTNTPrimed) entity); }
         else if (entity instanceof EntityFireworks) { return new CraftFirework(server, (EntityFireworks) entity); }
+        else if (entity instanceof EntityShulkerBullet) { return new CraftShulkerBullet(server, (EntityShulkerBullet) entity); }
+        else if (entity instanceof EntityAreaEffectCloud) { return new CraftAreaEffectCloud(server, (EntityAreaEffectCloud) entity); }
 
         throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
     }
@@ -205,12 +226,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean teleport(Location location, TeleportCause cause) {
-        if (entity.passenger != null || entity.dead) {
+        if (entity.isVehicle() || entity.dead) {
             return false;
         }
 
         // If this entity is riding another entity, we must dismount before teleporting.
-        entity.mount(null);
+        entity.stopRiding();
 
         // Spigot start
         if (!location.getWorld().equals(getWorld())) {
@@ -221,6 +242,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // entity.world = ((CraftWorld) location.getWorld()).getHandle();
         // Spigot end
         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        entity.world.entityJoinedWorld(entity, false); // Spigot - register to new chunk
         // entity.setLocation() throws no event, and so cannot be cancelled
         return true;
     }
@@ -234,8 +256,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
-        @SuppressWarnings("unchecked")
-        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.getBoundingBox().grow(x, y, z));
+        List<Entity> notchEntityList = entity.world.getEntities(entity, entity.getBoundingBox().grow(x, y, z), null);
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
         for (Entity e : notchEntityList) {
@@ -285,12 +306,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public org.bukkit.entity.Entity getPassenger() {
-        return isEmpty() ? null : getHandle().passenger.getBukkitEntity();
+        return isEmpty() ? null : getHandle().passengers.get(0).getBukkitEntity();
     }
 
     public boolean setPassenger(org.bukkit.entity.Entity passenger) {
+        Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
         if (passenger instanceof CraftEntity) {
-            ((CraftEntity) passenger).getHandle().setPassengerOf(getHandle());
+            eject();
+            ((CraftEntity) passenger).getHandle().startRiding(getHandle());
             return true;
         } else {
             return false;
@@ -298,15 +321,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean isEmpty() {
-        return getHandle().passenger == null;
+        return !getHandle().isVehicle();
     }
 
     public boolean eject() {
-        if (getHandle().passenger == null) {
+        if (isEmpty()) {
             return false;
         }
 
-        getHandle().passenger.setPassengerOf(null);
+        getPassenger().leaveVehicle();
         return true;
     }
 
@@ -394,24 +417,24 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean isInsideVehicle() {
-        return getHandle().vehicle != null;
+        return getHandle().isPassenger();
     }
 
     public boolean leaveVehicle() {
-        if (getHandle().vehicle == null) {
+        if (!isInsideVehicle()) {
             return false;
         }
 
-        getHandle().setPassengerOf(null);
+        getHandle().stopRiding();
         return true;
     }
 
     public org.bukkit.entity.Entity getVehicle() {
-        if (getHandle().vehicle == null) {
+        if (!isInsideVehicle()) {
             return null;
         }
 
-        return getHandle().vehicle.getBukkitEntity();
+        return getHandle().getVehicle().getBukkitEntity();
     }
 
     @Override
@@ -442,6 +465,138 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean isCustomNameVisible() {
         return getHandle().getCustomNameVisible();
+    }
+
+    @Override
+    public void sendMessage(String message) {
+
+    }
+
+    @Override
+    public void sendMessage(String[] messages) {
+
+    }
+
+    @Override
+    public String getName() {
+        return getHandle().getName();
+    }
+
+    @Override
+    public boolean isPermissionSet(String name) {
+        return getPermissibleBase().isPermissionSet(name);
+    }
+
+    @Override
+    public boolean isPermissionSet(Permission perm) {
+        return CraftEntity.getPermissibleBase().isPermissionSet(perm);
+    }
+
+    @Override
+    public boolean hasPermission(String name) {
+        return getPermissibleBase().hasPermission(name);
+    }
+
+    @Override
+    public boolean hasPermission(Permission perm) {
+        return getPermissibleBase().hasPermission(perm);
+    }
+
+    @Override
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
+        return getPermissibleBase().addAttachment(plugin, name, value);
+    }
+
+    @Override
+    public PermissionAttachment addAttachment(Plugin plugin) {
+        return getPermissibleBase().addAttachment(plugin);
+    }
+
+    @Override
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
+        return getPermissibleBase().addAttachment(plugin, name, value, ticks);
+    }
+
+    @Override
+    public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
+        return getPermissibleBase().addAttachment(plugin, ticks);
+    }
+
+    @Override
+    public void removeAttachment(PermissionAttachment attachment) {
+        getPermissibleBase().removeAttachment(attachment);
+    }
+
+    @Override
+    public void recalculatePermissions() {
+        getPermissibleBase().recalculatePermissions();
+    }
+
+    @Override
+    public Set<PermissionAttachmentInfo> getEffectivePermissions() {
+        return getPermissibleBase().getEffectivePermissions();
+    }
+
+    @Override
+    public boolean isOp() {
+        return getPermissibleBase().isOp();
+    }
+
+    @Override
+    public void setOp(boolean value) {
+        getPermissibleBase().setOp(value);
+    }
+
+    @Override
+    public void setGlowing(boolean flag) {
+        getHandle().glowing = flag;
+        Entity e = getHandle();
+        if (e.getFlag(6) != flag) {
+            e.setFlag(6, flag);
+        }
+    }
+
+    @Override
+    public boolean isGlowing() {
+        return getHandle().glowing;
+    }
+
+    @Override
+    public void setInvulnerable(boolean flag) {
+        getHandle().setInvulnerable(flag);
+    }
+
+    @Override
+    public boolean isInvulnerable() {
+        return getHandle().isInvulnerable(DamageSource.GENERIC);
+    }
+
+    @Override
+	public boolean isSilent() {
+		return getHandle().ad(); // PAIL: Rename isSilent
+	}
+
+	@Override
+	public void setSilent(boolean flag) {
+		getHandle().c(flag); // PAIL: Rename setSilent
+	}
+
+    private static PermissibleBase getPermissibleBase() {
+        if (perm == null) {
+            perm = new PermissibleBase(new ServerOperator() {
+
+                @Override
+                public boolean isOp() {
+                    return false;
+                }
+
+                @Override
+                public void setOp(boolean value) {
+
+                }
+            });
+        }
+        return perm;
     }
 
     // Spigot start

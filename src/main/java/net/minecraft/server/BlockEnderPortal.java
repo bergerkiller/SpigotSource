@@ -2,10 +2,13 @@ package net.minecraft.server;
 
 import java.util.List;
 import java.util.Random;
+import javax.annotation.Nullable;
 
 import org.bukkit.event.entity.EntityPortalEnterEvent; // CraftBukkit
 
-public class BlockEnderPortal extends BlockContainer {
+public class BlockEnderPortal extends BlockTileEntity {
+
+    protected static final AxisAlignedBB a = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.75D, 1.0D);
 
     protected BlockEnderPortal(Material material) {
         super(material);
@@ -16,19 +19,17 @@ public class BlockEnderPortal extends BlockContainer {
         return new TileEntityEnderPortal();
     }
 
-    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        float f = 0.0625F;
-
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return BlockEnderPortal.a;
     }
 
-    public void a(World world, BlockPosition blockposition, IBlockData iblockdata, AxisAlignedBB axisalignedbb, List list, Entity entity) {}
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, AxisAlignedBB axisalignedbb, List<AxisAlignedBB> list, @Nullable Entity entity) {}
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
     }
 
@@ -37,7 +38,7 @@ public class BlockEnderPortal extends BlockContainer {
     }
 
     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
-        if (entity.vehicle == null && entity.passenger == null && !world.isStatic) {
+        if (!entity.isPassenger() && !entity.isVehicle() && entity.aV() && !world.isClientSide && entity.getBoundingBox().b(iblockdata.c(world, blockposition).a(blockposition))) {
             // CraftBukkit start - Entity in portal
             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
             world.getServer().getPluginManager().callEvent(event);
@@ -47,7 +48,12 @@ public class BlockEnderPortal extends BlockContainer {
 
     }
 
-    public MaterialMapColor g(IBlockData iblockdata) {
-        return MaterialMapColor.J;
+    @Nullable
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return null;
+    }
+
+    public MaterialMapColor r(IBlockData iblockdata) {
+        return MaterialMapColor.E;
     }
 }

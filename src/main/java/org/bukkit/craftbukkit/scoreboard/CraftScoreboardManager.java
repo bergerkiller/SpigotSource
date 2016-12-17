@@ -109,11 +109,4 @@ public final class CraftScoreboardManager implements ScoreboardManager {
         }
         return collection;
     }
-
-    // CraftBukkit method
-    public void updateAllScoresForList(IScoreboardCriteria criteria, String name, List<EntityPlayer> of) {
-        for (ScoreboardScore score : getScoreboardScores(criteria, name, new ArrayList<ScoreboardScore>())) {
-            score.updateForList(of);
-        }
-    }
 }

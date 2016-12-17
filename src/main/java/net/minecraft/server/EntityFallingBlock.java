@@ -3,19 +3,21 @@ package net.minecraft.server;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Iterator;
+import javax.annotation.Nullable;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityFallingBlock extends Entity {
 
-    public IBlockData block;
+    private IBlockData block;
     public int ticksLived;
     public boolean dropItem = true;
-    private boolean e;
-    private boolean hurtEntities;
+    private boolean f;
+    public boolean hurtEntities;
     private int fallHurtMax = 40;
     private float fallHurtAmount = 2.0F;
     public NBTTagCompound tileEntityData;
+    protected static final DataWatcherObject<BlockPosition> d = DataWatcher.a(EntityFallingBlock.class, DataWatcherRegistry.j);
 
     public EntityFallingBlock(World world) {
         super(world);
@@ -24,31 +26,38 @@ public class EntityFallingBlock extends Entity {
     public EntityFallingBlock(World world, double d0, double d1, double d2, IBlockData iblockdata) {
         super(world);
         this.block = iblockdata;
-        this.k = true;
-        this.a(0.98F, 0.98F);
-        this.setPosition(d0, d1, d2);
+        this.i = true;
+        this.setSize(0.98F, 0.98F);
+        this.setPosition(d0, d1 + (double) ((1.0F - this.length) / 2.0F), d2);
         this.motX = 0.0D;
         this.motY = 0.0D;
         this.motZ = 0.0D;
         this.lastX = d0;
         this.lastY = d1;
         this.lastZ = d2;
+        this.a(new BlockPosition(this));
     }
 
-    protected boolean r_() {
+    public void a(BlockPosition blockposition) {
+        this.datawatcher.set(EntityFallingBlock.d, blockposition);
+    }
+
+    protected boolean playStepSound() {
         return false;
     }
 
-    protected void h() {}
+    protected void i() {
+        this.datawatcher.register(EntityFallingBlock.d, BlockPosition.ZERO);
+    }
 
-    public boolean ad() {
+    public boolean isInteractable() {
         return !this.dead;
     }
 
-    public void s_() {
+    public void m() {
         Block block = this.block.getBlock();
 
-        if (block.getMaterial() == Material.AIR) {
+        if (this.block.getMaterial() == Material.AIR) {
             this.die();
         } else {
             this.lastX = this.locX;
@@ -60,8 +69,7 @@ public class EntityFallingBlock extends Entity {
                 blockposition = new BlockPosition(this);
                 if (this.world.getType(blockposition).getBlock() == block && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), Blocks.AIR, 0).isCancelled()) {
                     this.world.setAir(blockposition);
-                    world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                } else if (!this.world.isStatic) {
+                } else if (!this.world.isClientSide) {
                     this.die();
                     return;
                 }
@@ -72,53 +80,60 @@ public class EntityFallingBlock extends Entity {
             this.motX *= 0.9800000190734863D;
             this.motY *= 0.9800000190734863D;
             this.motZ *= 0.9800000190734863D;
-            if (!this.world.isStatic) {
+            if (!this.world.isClientSide) {
                 blockposition = new BlockPosition(this);
                 if (this.onGround) {
+                    IBlockData iblockdata = this.world.getType(blockposition);
+
+                    if (BlockFalling.i(this.world.getType(new BlockPosition(this.locX, this.locY - 0.009999999776482582D, this.locZ)))) {
+                        this.onGround = false;
+                        // return; // CraftBukkit
+                    }
+
                     this.motX *= 0.699999988079071D;
                     this.motZ *= 0.699999988079071D;
                     this.motY *= -0.5D;
-                    if (this.world.getType(blockposition).getBlock() != Blocks.PISTON_EXTENSION) {
+                    if (iblockdata.getBlock() != Blocks.PISTON_EXTENSION) {
                         this.die();
-                        if (!this.e && this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.canFall(this.world, blockposition.down()) /* mimic the false conditions of setTypeIdAndData */ && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000 && blockposition.getY() >= 0 && blockposition.getY() < 256 && this.world.getType(blockposition) != this.block) {
-                            if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
-                                return;
-                            }
-                            this.world.setTypeAndData(blockposition, this.block, 3);
-                            world.spigotConfig.antiXrayInstance.updateNearbyBlocks(world, blockposition); // Spigot
-                            // CraftBukkit end
-                            if (block instanceof BlockFalling) {
-                                ((BlockFalling) block).a_(this.world, blockposition);
-                            }
-
-                            if (this.tileEntityData != null && block instanceof IContainer) {
-                                TileEntity tileentity = this.world.getTileEntity(blockposition);
-
-                                if (tileentity != null) {
-                                    NBTTagCompound nbttagcompound = new NBTTagCompound();
-
-                                    tileentity.b(nbttagcompound);
-                                    Iterator iterator = this.tileEntityData.c().iterator();
-
-                                    while (iterator.hasNext()) {
-                                        String s = (String) iterator.next();
-                                        NBTBase nbtbase = this.tileEntityData.get(s);
-
-                                        if (!s.equals("x") && !s.equals("y") && !s.equals("z")) {
-                                            nbttagcompound.set(s, nbtbase.clone());
-                                        }
-                                    }
-
-                                    tileentity.a(nbttagcompound);
-                                    tileentity.update();
+                        if (!this.f) {
+                            // CraftBukkit start
+                            if (this.world.a(block, blockposition, true, EnumDirection.UP, (Entity) null, (ItemStack) null) && !BlockFalling.i(this.world.getType(blockposition.down()))) {
+                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.block.getBlock(), this.block.getBlock().toLegacyData(this.block)).isCancelled()) {
+                                    return;
                                 }
+                                this.world.setTypeAndData(blockposition, this.block, 3);
+                                // CraftBukkit end
+                                if (block instanceof BlockFalling) {
+                                    ((BlockFalling) block).a_(this.world, blockposition);
+                                }
+
+                                if (this.tileEntityData != null && block instanceof ITileEntity) {
+                                    TileEntity tileentity = this.world.getTileEntity(blockposition);
+
+                                    if (tileentity != null) {
+                                        NBTTagCompound nbttagcompound = tileentity.save(new NBTTagCompound());
+                                        Iterator iterator = this.tileEntityData.c().iterator();
+
+                                        while (iterator.hasNext()) {
+                                            String s = (String) iterator.next();
+                                            NBTBase nbtbase = this.tileEntityData.get(s);
+
+                                            if (!s.equals("x") && !s.equals("y") && !s.equals("z")) {
+                                                nbttagcompound.set(s, nbtbase.clone());
+                                            }
+                                        }
+
+                                        tileentity.a(nbttagcompound);
+                                        tileentity.update();
+                                    }
+                                }
+                            } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                                this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
                             }
-                        } else if (this.dropItem && !this.e && this.world.getGameRules().getBoolean("doTileDrops")) {
-                            this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
                         }
                     }
-                } else if (this.ticksLived > 100 && !this.world.isStatic && (blockposition.getY() < 1 || blockposition.getY() > 256) || this.ticksLived > 600) {
-                    if (this.dropItem && this.world.getGameRules().getBoolean("doTileDrops")) {
+                } else if (this.ticksLived > 100 && !this.world.isClientSide && (blockposition.getY() < 1 || blockposition.getY() > 256) || this.ticksLived > 600) {
+                    if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
                         this.a(new ItemStack(block, 1, block.getDropData(this.block)), 0.0F);
                     }
 
@@ -154,7 +169,7 @@ public class EntityFallingBlock extends Entity {
 
                     ++j;
                     if (j > 2) {
-                        this.e = true;
+                        this.f = true;
                     } else {
                         this.block = this.block.set(BlockAnvil.DAMAGE, Integer.valueOf(j));
                     }
@@ -166,11 +181,11 @@ public class EntityFallingBlock extends Entity {
 
     protected void b(NBTTagCompound nbttagcompound) {
         Block block = this.block != null ? this.block.getBlock() : Blocks.AIR;
-        MinecraftKey minecraftkey = (MinecraftKey) Block.REGISTRY.c(block);
+        MinecraftKey minecraftkey = (MinecraftKey) Block.REGISTRY.b(block);
 
         nbttagcompound.setString("Block", minecraftkey == null ? "" : minecraftkey.toString());
         nbttagcompound.setByte("Data", (byte) block.toLegacyData(this.block));
-        nbttagcompound.setByte("Time", (byte) this.ticksLived);
+        nbttagcompound.setInt("Time", this.ticksLived);
         nbttagcompound.setBoolean("DropItem", this.dropItem);
         nbttagcompound.setBoolean("HurtEntities", this.hurtEntities);
         nbttagcompound.setFloat("FallHurtAmount", this.fallHurtAmount);
@@ -192,7 +207,7 @@ public class EntityFallingBlock extends Entity {
             this.block = Block.getById(nbttagcompound.getByte("Tile") & 255).fromLegacyData(i);
         }
 
-        this.ticksLived = nbttagcompound.getByte("Time") & 255;
+        this.ticksLived = nbttagcompound.getInt("Time");
         Block block = this.block.getBlock();
 
         if (nbttagcompound.hasKeyOfType("HurtEntities", 99)) {
@@ -211,7 +226,7 @@ public class EntityFallingBlock extends Entity {
             this.tileEntityData = nbttagcompound.getCompound("TileEntityData");
         }
 
-        if (block == null || block.getMaterial() == Material.AIR) {
+        if (block == null || block.getBlockData().getMaterial() == Material.AIR) {
             this.block = Blocks.SAND.getBlockData();
         }
 
@@ -232,7 +247,12 @@ public class EntityFallingBlock extends Entity {
 
     }
 
+    @Nullable
     public IBlockData getBlock() {
         return this.block;
+    }
+
+    public boolean bs() {
+        return true;
     }
 }

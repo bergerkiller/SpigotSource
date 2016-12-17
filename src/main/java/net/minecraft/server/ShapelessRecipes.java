@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 
 // CraftBukkit start
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -13,13 +14,13 @@ import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 public class ShapelessRecipes implements IRecipe {
 
     public final ItemStack result; // Spigot
-    private final List ingredients;
+    private final List<ItemStack> ingredients;
 
-    public ShapelessRecipes(ItemStack itemstack, List list) {
+    public ShapelessRecipes(ItemStack itemstack, List<ItemStack> list) {
         this.result = itemstack;
         this.ingredients = list;
     }
-    
+
     // CraftBukkit start
     @SuppressWarnings("unchecked")
     public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
@@ -34,6 +35,7 @@ public class ShapelessRecipes implements IRecipe {
     }
     // CraftBukkit end
 
+    @Nullable
     public ItemStack b() {
         return this.result;
     }
@@ -83,7 +85,8 @@ public class ShapelessRecipes implements IRecipe {
         return arraylist.isEmpty();
     }
 
-    public ItemStack a(InventoryCrafting inventorycrafting) {
+    @Nullable
+    public ItemStack craftItem(InventoryCrafting inventorycrafting) {
         return this.result.cloneItemStack();
     }
 

@@ -1,6 +1,8 @@
 package net.minecraft.server;
 
+import javax.annotation.Nullable;
 // CraftBukkit start
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 // CraftBukkit end
@@ -8,7 +10,7 @@ import org.bukkit.entity.HumanEntity;
 public class InventoryCraftResult implements IInventory {
 
     private ItemStack[] items = new ItemStack[1];
-    
+
     // CraftBukkit start
     private int maxStack = MAX_STACK;
 
@@ -30,7 +32,12 @@ public class InventoryCraftResult implements IInventory {
     public void setMaxStackSize(int size) {
         maxStack = size;
     }
-    // CraftBukkit end    
+
+    @Override
+    public Location getLocation() {
+        return null;
+    }
+    // CraftBukkit end
 
     public InventoryCraftResult() {}
 
@@ -38,6 +45,7 @@ public class InventoryCraftResult implements IInventory {
         return 1;
     }
 
+    @Nullable
     public ItemStack getItem(int i) {
         return this.items[0];
     }
@@ -54,29 +62,17 @@ public class InventoryCraftResult implements IInventory {
         return (IChatBaseComponent) (this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatMessage(this.getName(), new Object[0]));
     }
 
+    @Nullable
     public ItemStack splitStack(int i, int j) {
-        if (this.items[0] != null) {
-            ItemStack itemstack = this.items[0];
-
-            this.items[0] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        return ContainerUtil.a(this.items, 0);
     }
 
+    @Nullable
     public ItemStack splitWithoutUpdate(int i) {
-        if (this.items[0] != null) {
-            ItemStack itemstack = this.items[0];
-
-            this.items[0] = null;
-            return itemstack;
-        } else {
-            return null;
-        }
+        return ContainerUtil.a(this.items, 0);
     }
 
-    public void setItem(int i, ItemStack itemstack) {
+    public void setItem(int i, @Nullable ItemStack itemstack) {
         this.items[0] = itemstack;
     }
 
@@ -102,7 +98,7 @@ public class InventoryCraftResult implements IInventory {
         return 0;
     }
 
-    public void b(int i, int j) {}
+    public void setProperty(int i, int j) {}
 
     public int g() {
         return 0;

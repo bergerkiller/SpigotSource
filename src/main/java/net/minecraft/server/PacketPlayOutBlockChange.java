@@ -1,48 +1,30 @@
 package net.minecraft.server;
 
-public class PacketPlayOutBlockChange extends Packet {
+import java.io.IOException;
 
-    private int a;
-    private int b;
-    private int c;
-    public Block block; // CraftBukkit - public
-    public int data; // CraftBukkit - public
+public class PacketPlayOutBlockChange implements Packet<PacketListenerPlayOut> {
+
+    private BlockPosition a;
+    public IBlockData block;
 
     public PacketPlayOutBlockChange() {}
 
-    public PacketPlayOutBlockChange(int i, int j, int k, World world) {
-        this.a = i;
-        this.b = j;
-        this.c = k;
-        this.block = world.getType(i, j, k);
-        this.data = world.getData(i, j, k);
+    public PacketPlayOutBlockChange(World world, BlockPosition blockposition) {
+        this.a = blockposition;
+        this.block = world.getType(blockposition);
     }
 
-    public void a(PacketDataSerializer packetdataserializer) {
-        this.a = packetdataserializer.readInt();
-        this.b = packetdataserializer.readUnsignedByte();
-        this.c = packetdataserializer.readInt();
-        this.block = Block.getById(packetdataserializer.a());
-        this.data = packetdataserializer.readUnsignedByte();
+    public void a(PacketDataSerializer packetdataserializer) throws IOException {
+        this.a = packetdataserializer.e();
+        this.block = (IBlockData) Block.REGISTRY_ID.fromId(packetdataserializer.g());
     }
 
-    public void b(PacketDataSerializer packetdataserializer) {
-        packetdataserializer.writeInt(this.a);
-        packetdataserializer.writeByte(this.b);
-        packetdataserializer.writeInt(this.c);
-        packetdataserializer.b(Block.getId(this.block));
-        packetdataserializer.writeByte(this.data);
+    public void b(PacketDataSerializer packetdataserializer) throws IOException {
+        packetdataserializer.a(this.a);
+        packetdataserializer.d(Block.REGISTRY_ID.getId(this.block));
     }
 
-    public void a(PacketPlayOutListener packetplayoutlistener) {
-        packetplayoutlistener.a(this);
-    }
-
-    public String b() {
-        return String.format("type=%d, data=%d, x=%d, y=%d, z=%d", new Object[] { Integer.valueOf(Block.getId(this.block)), Integer.valueOf(this.data), Integer.valueOf(this.a), Integer.valueOf(this.b), Integer.valueOf(this.c)});
-    }
-
-    public void handle(PacketListener packetlistener) {
-        this.a((PacketPlayOutListener) packetlistener);
+    public void a(PacketListenerPlayOut packetlistenerplayout) {
+        packetlistenerplayout.a(this);
     }
 }

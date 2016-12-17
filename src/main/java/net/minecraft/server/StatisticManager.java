@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class StatisticManager {
 
-    protected final Map a = Maps.newConcurrentMap();
+    protected final Map<Statistic, StatisticWrapper> a = Maps.newConcurrentMap();
 
     public StatisticManager() {}
 
@@ -46,13 +46,13 @@ public class StatisticManager {
         return statisticwrapper == null ? 0 : statisticwrapper.a();
     }
 
-    public IJsonStatistic b(Statistic statistic) {
+    public <T extends IJsonStatistic> T b(Statistic statistic) {
         StatisticWrapper statisticwrapper = (StatisticWrapper) this.a.get(statistic);
 
-        return statisticwrapper != null ? statisticwrapper.b() : null;
+        return statisticwrapper != null ? (T) statisticwrapper.b() : null; // CraftBukkit - fix decompile error
     }
 
-    public IJsonStatistic a(Statistic statistic, IJsonStatistic ijsonstatistic) {
+    public <T extends IJsonStatistic> T a(Statistic statistic, T t0) {
         StatisticWrapper statisticwrapper = (StatisticWrapper) this.a.get(statistic);
 
         if (statisticwrapper == null) {
@@ -60,7 +60,7 @@ public class StatisticManager {
             this.a.put(statistic, statisticwrapper);
         }
 
-        statisticwrapper.a(ijsonstatistic);
-        return ijsonstatistic;
+        statisticwrapper.a(t0);
+        return t0;
     }
 }

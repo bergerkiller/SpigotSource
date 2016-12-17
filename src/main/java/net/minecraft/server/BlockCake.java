@@ -1,59 +1,39 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import javax.annotation.Nullable;
 
 public class BlockCake extends Block {
 
     public static final BlockStateInteger BITES = BlockStateInteger.of("bites", 0, 6);
+    protected static final AxisAlignedBB[] b = new AxisAlignedBB[] { new AxisAlignedBB(0.0625D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.1875D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.3125D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.4375D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.5625D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.6875D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D), new AxisAlignedBB(0.8125D, 0.0D, 0.0625D, 0.9375D, 0.5D, 0.9375D)};
 
     protected BlockCake() {
         super(Material.CAKE);
-        this.j(this.blockStateList.getBlockData().set(BlockCake.BITES, Integer.valueOf(0)));
+        this.w(this.blockStateList.getBlockData().set(BlockCake.BITES, Integer.valueOf(0)));
         this.a(true);
     }
 
-    public void updateShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
-        float f = 0.0625F;
-        float f1 = (float) (1 + ((Integer) iblockaccess.getType(blockposition).get(BlockCake.BITES)).intValue() * 2) / 16.0F;
-        float f2 = 0.5F;
-
-        this.a(f1, 0.0F, f, 1.0F - f, f2, 1.0F - f);
+    public AxisAlignedBB a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
+        return BlockCake.b[((Integer) iblockdata.get(BlockCake.BITES)).intValue()];
     }
 
-    public void h() {
-        float f = 0.0625F;
-        float f1 = 0.5F;
-
-        this.a(f, 0.0F, f, 1.0F - f, f1, 1.0F - f);
-    }
-
-    public AxisAlignedBB a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-        float f = 0.0625F;
-        float f1 = (float) (1 + ((Integer) iblockdata.get(BlockCake.BITES)).intValue() * 2) / 16.0F;
-        float f2 = 0.5F;
-
-        return new AxisAlignedBB((double) ((float) blockposition.getX() + f1), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + f), (double) ((float) (blockposition.getX() + 1) - f), (double) ((float) blockposition.getY() + f2), (double) ((float) (blockposition.getZ() + 1) - f));
-    }
-
-    public boolean d() {
+    public boolean c(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean c() {
+    public boolean b(IBlockData iblockdata) {
         return false;
     }
 
-    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumDirection enumdirection, float f, float f1, float f2) {
+    public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2) {
         this.b(world, blockposition, iblockdata, entityhuman);
         return true;
     }
 
-    public void attack(World world, BlockPosition blockposition, EntityHuman entityhuman) {
-        this.b(world, blockposition, world.getType(blockposition), entityhuman);
-    }
-
     private void b(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
-        if (entityhuman.j(false)) {
+        if (entityhuman.l(false)) {
+            entityhuman.b(StatisticList.J);
             // CraftBukkit start
             // entityhuman.getFoodData().eat(2, 0.1F);
             int oldFoodLevel = entityhuman.getFoodData().foodLevel;
@@ -78,26 +58,31 @@ public class BlockCake extends Block {
     }
 
     public boolean canPlace(World world, BlockPosition blockposition) {
-        return super.canPlace(world, blockposition) ? this.d(world, blockposition) : false;
+        return super.canPlace(world, blockposition) ? this.b(world, blockposition) : false;
     }
 
-    public void doPhysics(World world, BlockPosition blockposition, IBlockData iblockdata, Block block) {
-        if (!this.d(world, blockposition)) {
+    public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Block block) {
+        if (!this.b(world, blockposition)) {
             world.setAir(blockposition);
         }
 
     }
 
-    private boolean d(World world, BlockPosition blockposition) {
-        return world.getType(blockposition.down()).getBlock().getMaterial().isBuildable();
+    private boolean b(World world, BlockPosition blockposition) {
+        return world.getType(blockposition.down()).getMaterial().isBuildable();
     }
 
     public int a(Random random) {
         return 0;
     }
 
+    @Nullable
     public Item getDropType(IBlockData iblockdata, Random random, int i) {
         return null;
+    }
+
+    public ItemStack a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+        return new ItemStack(Items.CAKE);
     }
 
     public IBlockData fromLegacyData(int i) {
@@ -112,11 +97,11 @@ public class BlockCake extends Block {
         return new BlockStateList(this, new IBlockState[] { BlockCake.BITES});
     }
 
-    public int l(World world, BlockPosition blockposition) {
-        return (7 - ((Integer) world.getType(blockposition).get(BlockCake.BITES)).intValue()) * 2;
+    public int d(IBlockData iblockdata, World world, BlockPosition blockposition) {
+        return (7 - ((Integer) iblockdata.get(BlockCake.BITES)).intValue()) * 2;
     }
 
-    public boolean isComplexRedstone() {
+    public boolean isComplexRedstone(IBlockData iblockdata) {
         return true;
     }
 }

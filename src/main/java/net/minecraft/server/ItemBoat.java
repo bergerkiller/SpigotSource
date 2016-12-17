@@ -4,12 +4,16 @@ import java.util.List;
 
 public class ItemBoat extends Item {
 
-    public ItemBoat() {
+    private final EntityBoat.EnumBoatType a;
+
+    public ItemBoat(EntityBoat.EnumBoatType entityboat_enumboattype) {
+        this.a = entityboat_enumboattype;
         this.maxStackSize = 1;
         this.a(CreativeModeTab.e);
+        this.c("boat." + entityboat_enumboattype.a());
     }
 
-    public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    public InteractionResultWrapper<ItemStack> a(ItemStack itemstack, World world, EntityHuman entityhuman, EnumHand enumhand) {
         float f = 1.0F;
         float f1 = entityhuman.lastPitch + (entityhuman.pitch - entityhuman.lastPitch) * f;
         float f2 = entityhuman.lastYaw + (entityhuman.yaw - entityhuman.lastYaw) * f;
@@ -28,19 +32,17 @@ public class ItemBoat extends Item {
         MovingObjectPosition movingobjectposition = world.rayTrace(vec3d, vec3d1, true);
 
         if (movingobjectposition == null) {
-            return itemstack;
+            return new InteractionResultWrapper(EnumInteractionResult.PASS, itemstack);
         } else {
-            Vec3D vec3d2 = entityhuman.d(f);
+            Vec3D vec3d2 = entityhuman.f(f);
             boolean flag = false;
-            float f9 = 1.0F;
-            List list = world.getEntities(entityhuman, entityhuman.getBoundingBox().a(vec3d2.a * d3, vec3d2.b * d3, vec3d2.c * d3).grow((double) f9, (double) f9, (double) f9));
+            List list = world.getEntities(entityhuman, entityhuman.getBoundingBox().a(vec3d2.x * d3, vec3d2.y * d3, vec3d2.z * d3).g(1.0D));
 
             for (int i = 0; i < list.size(); ++i) {
                 Entity entity = (Entity) list.get(i);
 
-                if (entity.ad()) {
-                    float f10 = entity.ao();
-                    AxisAlignedBB axisalignedbb = entity.getBoundingBox().grow((double) f10, (double) f10, (double) f10);
+                if (entity.isInteractable()) {
+                    AxisAlignedBB axisalignedbb = entity.getBoundingBox().g((double) entity.aA());
 
                     if (axisalignedbb.a(vec3d)) {
                         flag = true;
@@ -49,31 +51,27 @@ public class ItemBoat extends Item {
             }
 
             if (flag) {
-                return itemstack;
+                return new InteractionResultWrapper(EnumInteractionResult.PASS, itemstack);
+            } else if (movingobjectposition.type != MovingObjectPosition.EnumMovingObjectType.BLOCK) {
+                return new InteractionResultWrapper(EnumInteractionResult.PASS, itemstack);
             } else {
-                if (movingobjectposition.type == EnumMovingObjectType.BLOCK) {
-                    BlockPosition blockposition = movingobjectposition.a();
- 
-                    // CraftBukkit start - Boat placement
-                    org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, blockposition, movingobjectposition.direction, itemstack);
+                // CraftBukkit start - Boat placement
+                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectposition.a(), movingobjectposition.direction, itemstack, enumhand);
 
-                    if (event.isCancelled()) {
-                        return itemstack;
-                    }
-                    // CraftBukkit end
+                if (event.isCancelled()) {
+                    return new InteractionResultWrapper(EnumInteractionResult.PASS, itemstack);
+                }
+                // CraftBukkit end
+                Block block = world.getType(movingobjectposition.a()).getBlock();
+                boolean flag1 = block == Blocks.WATER || block == Blocks.FLOWING_WATER;
+                EntityBoat entityboat = new EntityBoat(world, movingobjectposition.pos.x, flag1 ? movingobjectposition.pos.y - 0.12D : movingobjectposition.pos.y, movingobjectposition.pos.z);
 
-                    if (world.getType(blockposition).getBlock() == Blocks.SNOW_LAYER) {
-                        blockposition = blockposition.down();
-                    }
-
-                    EntityBoat entityboat = new EntityBoat(world, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 1.0F), (double) ((float) blockposition.getZ() + 0.5F));
-
-                    entityboat.yaw = (float) (((MathHelper.floor((double) (entityhuman.yaw * 4.0F / 360.0F) + 0.5D) & 3) - 1) * 90);
-                    if (!world.getCubes(entityboat, entityboat.getBoundingBox().grow(-0.1D, -0.1D, -0.1D)).isEmpty()) {
-                        return itemstack;
-                    }
-
-                    if (!world.isStatic) {
+                entityboat.setType(this.a);
+                entityboat.yaw = entityhuman.yaw;
+                if (!world.getCubes(entityboat, entityboat.getBoundingBox().g(-0.1D)).isEmpty()) {
+                    return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
+                } else {
+                    if (!world.isClientSide) {
                         world.addEntity(entityboat);
                     }
 
@@ -81,10 +79,9 @@ public class ItemBoat extends Item {
                         --itemstack.count;
                     }
 
-                    entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+                    entityhuman.b(StatisticList.b((Item) this));
+                    return new InteractionResultWrapper(EnumInteractionResult.SUCCESS, itemstack);
                 }
-
-                return itemstack;
             }
         }
     }

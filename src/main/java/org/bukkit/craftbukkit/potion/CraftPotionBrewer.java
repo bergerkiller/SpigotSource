@@ -6,42 +6,43 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.server.MobEffect;
+import net.minecraft.server.PotionRegistry;
 
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.potion.PotionBrewer;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 public class CraftPotionBrewer implements PotionBrewer {
-    private static final Map<Integer, Collection<PotionEffect>> cache = Maps.newHashMap();
+    private static final Map<PotionType, Collection<PotionEffect>> cache = Maps.newHashMap();
 
-    public Collection<PotionEffect> getEffectsFromDamage(int damage) {
+    public Collection<PotionEffect> getEffects(PotionType damage, boolean upgraded, boolean extended) {
         if (cache.containsKey(damage))
             return cache.get(damage);
 
-        List<?> mcEffects = net.minecraft.server.PotionBrewer.getEffects(damage, false);
-        List<PotionEffect> effects = new ArrayList<PotionEffect>();
-        if (mcEffects == null)
-            return effects;
+        List<MobEffect> mcEffects = PotionRegistry.a(CraftPotionUtil.fromBukkit(new PotionData(damage, extended, upgraded))).a();
 
-        for (Object raw : mcEffects) {
-            if (raw == null || !(raw instanceof MobEffect))
-                continue;
-            MobEffect mcEffect = (MobEffect) raw;
-            PotionEffect effect = new PotionEffect(PotionEffectType.getById(mcEffect.getEffectId()),
-                    mcEffect.getDuration(), mcEffect.getAmplifier());
-            // Minecraft PotionBrewer applies duration modifiers automatically.
-            effects.add(effect);
+        ImmutableList.Builder<PotionEffect> builder = new ImmutableList.Builder<PotionEffect>();
+        for (MobEffect effect : mcEffects) {
+            builder.add(CraftPotionUtil.toBukkit(effect));
         }
 
-        cache.put(damage, effects);
+        cache.put(damage, builder.build());
 
-        return effects;
+        return cache.get(damage);
     }
 
+    @Override
+    public Collection<PotionEffect> getEffectsFromDamage(int damage) {
+        return new ArrayList<PotionEffect>();
+    }
+
+    @Override
     public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier) {
-        return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()),
-                amplifier);
+        return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()), amplifier);
     }
 }
